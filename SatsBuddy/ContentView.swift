@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import BitcoinDevKit
 
 struct ContentView: View {
     var body: some View {

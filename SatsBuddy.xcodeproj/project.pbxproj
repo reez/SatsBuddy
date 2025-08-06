@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AE75A9BC2E43D13700A3A159 /* BitcoinDevKit in Frameworks */ = {isa = PBXBuildFile; productRef = AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		AE2B975B2E43ADDF002051EC /* SatsBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SatsBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE75A9BC2E43D13700A3A159 /* BitcoinDevKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = SatsBuddy;
 			packageProductDependencies = (
+				AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */,
 			);
 			productName = SatsBuddy;
 			productReference = AE2B975B2E43ADDF002051EC /* SatsBuddy.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = AE2B97522E43ADDF002051EC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AE75A9BA2E43D13700A3A159 /* XCRemoteSwiftPackageReference "bdk-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AE2B975C2E43ADDF002051EC /* Products */;
 			projectDirPath = "";
@@ -324,6 +333,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AE75A9BA2E43D13700A3A159 /* XCRemoteSwiftPackageReference "bdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/bitcoindevkit/bdk-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE75A9BA2E43D13700A3A159 /* XCRemoteSwiftPackageReference "bdk-swift" */;
+			productName = BitcoinDevKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AE2B97532E43ADDF002051EC /* Project object */;
 }
