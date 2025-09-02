@@ -11,7 +11,13 @@ import SwiftUI
 struct SatsBuddyApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(
+                viewModel: .init(
+                    ckTapService: .live(
+                        bdk: .live
+                    )
+                )
+            )
         }
     }
 }

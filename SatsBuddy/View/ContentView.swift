@@ -1,0 +1,105 @@
+//
+//  ContentView.swift
+//  SatsBuddy
+//
+//  Created by Matthew Ramsden on 8/6/25.
+//
+
+import SwiftUI
+
+struct ContentView: View {
+    @State var viewModel: SatsCardViewModel
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                if viewModel.scannedCards.isEmpty {
+                    VStack(spacing: 20) {
+                        Image(systemName: "bitcoinsign")
+                            .imageScale(.large)
+                            .foregroundStyle(.tint)
+
+                        Text("Hello, sats buddy!")
+                            .font(.title2)
+                            .fontWeight(.medium)
+
+                        Text("Tap the + button to scan your first SatsCard")
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                } else {
+                    ScrollView {
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.adaptive(minimum: 300))
+                            ],
+                            spacing: 16
+                        ) {
+                            ForEach(viewModel.scannedCards) { card in
+                                SatsCardView(
+                                    card: card,
+                                    onRemove: {
+                                        viewModel.removeCard(card)
+                                    },
+                                    cardViewModel: viewModel
+                                )
+                            }
+                        }
+                        .padding()
+                    }
+                }
+
+                Spacer()
+            }
+            .navigationTitle("SatsBuddy")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        viewModel.beginNFCSession()
+                    } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    let vm = SatsCardViewModel(ckTapService: .mock)
+    vm.scannedCards = [
+        SatsCardInfo(
+            version: "1.0.3",
+            birth: 1,
+            address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+            activeSlot: 1,
+            totalSlots: 10,
+            slots: [
+                SlotInfo(
+                    slotNumber: 0,
+                    isActive: false,
+                    isUsed: true,
+                    pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f",
+                    pubkeyDescriptor:
+                        "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f)",
+                    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+                ),
+                SlotInfo(
+                    slotNumber: 1,
+                    isActive: true,
+                    isUsed: true,
+                    pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
+                    pubkeyDescriptor:
+                        "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c)",
+                    address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+                ),
+            ],
+            isActive: true
+        )
+    ]
+    return ContentView(viewModel: vm)
+}
