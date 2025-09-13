@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AE44A8672E7614EE00F00611 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AE44A8662E7614EE00F00611 /* README.md */; };
 		AE75A9BC2E43D13700A3A159 /* BitcoinDevKit in Frameworks */ = {isa = PBXBuildFile; productRef = AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */; };
 		AEA64EAB2E67604100108F53 /* CKTap in Frameworks */ = {isa = PBXBuildFile; productRef = AEA64EAA2E67604100108F53 /* CKTap */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AE2B975B2E43ADDF002051EC /* SatsBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SatsBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE44A8662E7614EE00F00611 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -52,6 +54,7 @@
 		AE2B97522E43ADDF002051EC = {
 			isa = PBXGroup;
 			children = (
+				AE44A8662E7614EE00F00611 /* README.md */,
 				AE2B975D2E43ADDF002051EC /* SatsBuddy */,
 				AE2B975C2E43ADDF002051EC /* Products */,
 			);
@@ -135,6 +138,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE44A8672E7614EE00F00611 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
