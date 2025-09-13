@@ -35,7 +35,7 @@ final class CkTapCardService {
     ///   - Use `status()` for basic metadata (version, slots, etc.)
     ///   - Use `address()` only for the currently active (sealed) slot
     ///   - For each used slot: call `dump(slot:)` to get pubkey + descriptor
-    ///   - For unsealed historical slots: derive real addresses via `AddressDeriver`
+    ///   - For unsealed historical slots: derive real addresses via BDK (BdkClient)
     func readCardInfo(transport: CkTransport) async throws -> SatsCardInfo {
         Log.cktap.info("Reading card info via CKTap…")
         let cardType = try await CKTap.toCktap(transport: transport)
