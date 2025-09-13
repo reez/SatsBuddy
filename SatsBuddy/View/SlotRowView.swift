@@ -132,3 +132,16 @@ struct SlotRowView: View {
         )
     }
 }
+
+#Preview {
+    SlotRowView(
+        slot: .init(
+            slotNumber: UInt8(1),
+            isActive: true,
+            isUsed: false,
+            pubkey: "pubkey",
+            pubkeyDescriptor: "pubkeyDescriptor",
+            address: "address"
+        )
+    )
+}
