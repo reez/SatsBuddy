@@ -10,15 +10,9 @@ import SwiftUI
 
 struct SatsCardDetailView: View {
     let card: SatsCardInfo
-    @State private var viewModel: SatsCardDetailViewModel
+    @State private var viewModel = SatsCardDetailViewModel()
     @Bindable var cardViewModel: SatsCardViewModel
     @Environment(\.dismiss) private var dismiss
-
-    init(card: SatsCardInfo, cardViewModel: SatsCardViewModel) {
-        self.card = card
-        self.cardViewModel = cardViewModel
-        self._viewModel = State(wrappedValue: SatsCardDetailViewModel(bdkClient: .live))
-    }
 
     var body: some View {
         NavigationStack {
