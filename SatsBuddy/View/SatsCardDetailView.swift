@@ -19,33 +19,44 @@ struct SatsCardDetailView: View {
             ScrollView {
                 VStack(spacing: 20) {
 
-                    VStack(spacing: 12) {
-                        Image(systemName: "creditcard.fill")
-                            .symbolRenderingMode(.hierarchical)
-                            .font(.largeTitle)
-                            .foregroundColor(.orange)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "creditcard.fill")
+                                .symbolRenderingMode(.hierarchical)
+                                .font(.headline)
 
-                        Text("SATSCARD")
-                            .fontWeight(.bold)
-                            .font(.title2)
+                            Text("SATSCARD")
+                                .font(.headline)
+                                .fontWeight(.medium)
+                        }
 
-                        Text("Version: \(card.version)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
+                        HStack {
+                            Text("Version \(card.version)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
 
-                        Text("Last updated: \(card.dateScanned, style: .relative)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {
+                                Text("• Slot \(activeSlot)/\(totalSlots)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
 
-                        Text("\(card.dateScanned.formatted(date: .omitted, time: .shortened))")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .fontDesign(.monospaced)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Last updated: \(card.dateScanned, style: .relative)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text("\(card.dateScanned.formatted(date: .omitted, time: .shortened))")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                                .fontDesign(.monospaced)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(.regularMaterial)
                             .stroke(.quaternary, lineWidth: 1)
                     )
@@ -71,7 +82,7 @@ struct SatsCardDetailView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Card Details")
+            .navigationTitle("SATSCARD")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

@@ -12,120 +12,46 @@ struct SatsCardView: View {
     let onRemove: () -> Void
     let cardViewModel: SatsCardViewModel
 
-    @State private var addressCopied = false
-    @State private var showCheckmark = false
     @State private var showingDetail = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            VStack(spacing: 8) {
-                Image(systemName: "creditcard.fill")
-                    .symbolRenderingMode(.hierarchical)
-                    .font(.title2)
-                    .foregroundColor(.orange)
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "creditcard.fill")
+                        .symbolRenderingMode(.hierarchical)
+                        .font(.headline)
 
-                Text("SATSCARD")
-                    .fontWeight(.semibold)
-                    .font(.caption)
-                    .foregroundColor(.primary)
-            }
+                    Text("SATSCARD")
+                        .font(.headline)
+                        .fontWeight(.medium)
+                }
 
-            VStack(spacing: 8) {
                 HStack {
-                    Text("Version: \(card.version)")
-                        .font(.caption)
+                    Text("Version \(card.version)")
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
-                        .fontDesign(.monospaced)
 
                     if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {
-                        Spacer()
-                        Text("Slot \(activeSlot)/\(totalSlots)")
-                            .font(.caption)
+                        Text("• Slot \(activeSlot)/\(totalSlots)")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
                     }
                 }
 
                 if let address = card.address {
-                    HStack {
-                        HStack(spacing: 4) {
-                            Text("Address:")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Text(address)
-                                .font(.caption2)
-                                .fontDesign(.monospaced)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-                        }
-
-                        Button {
-                            UIPasteboard.general.string = address
-                            addressCopied = true
-                            showCheckmark = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                addressCopied = false
-                                showCheckmark = false
-                            }
-                        } label: {
-                            Image(systemName: showCheckmark ? "doc.on.doc.fill" : "doc.on.doc")
-                                .font(.caption2)
-                                .contentTransition(.symbolEffect(.replace))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                if let pubkey = card.pubkey {
-                    HStack {
-                        HStack(spacing: 4) {
-                            Text("Pubkey:")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Text(pubkey)
-                                .font(.caption2)
-                                .fontDesign(.monospaced)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-                        }
-
-                        Button {
-                            UIPasteboard.general.string = pubkey
-                        } label: {
-                            Image(systemName: "doc.on.doc")
-                                .font(.caption2)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                HStack {
-                    Text(
-                        "Scanned: \(card.dateScanned.formatted(date: .abbreviated, time: .shortened))"
-                    )
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-
-                    Spacer()
-
-                    Button {
-                        onRemove()
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.caption2)
-                            .foregroundColor(.red)
-                    }
-                    .buttonStyle(.plain)
+                    Text(address)
+                        .font(.caption)
+                        .fontDesign(.monospaced)
+                        .foregroundStyle(.tertiary)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
                 }
             }
-            .padding(.horizontal, 8)
+
+            Spacer()
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.regularMaterial)
-                .stroke(.quaternary, lineWidth: 1)
-        )
+        .contentShape(Rectangle())
         .onTapGesture {
             showingDetail = true
         }
