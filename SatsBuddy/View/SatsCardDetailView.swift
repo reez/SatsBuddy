@@ -10,7 +10,7 @@ import SwiftUI
 
 struct SatsCardDetailView: View {
     let card: SatsCardInfo
-    @State private var viewModel = SatsCardDetailViewModel()
+    @State var viewModel: SatsCardDetailViewModel
     @Bindable var cardViewModel: SatsCardViewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -157,5 +157,5 @@ struct SatsCardDetailView: View {
         isActive: true
     )
 
-    SatsCardDetailView(card: sampleCard, cardViewModel: SatsCardViewModel(ckTapService: .mock))
+    SatsCardDetailView(card: sampleCard, viewModel: SatsCardDetailViewModel(), cardViewModel: SatsCardViewModel(ckTapService: .mock))
 }
