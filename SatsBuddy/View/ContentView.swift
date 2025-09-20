@@ -14,41 +14,29 @@ struct ContentView: View {
         NavigationStack {
             VStack {
                 if viewModel.scannedCards.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "bitcoinsign")
-                            .imageScale(.large)
-                            .foregroundStyle(.tint)
-
-                        Text("Hello, sats buddy!")
-                            .font(.title2)
-                            .fontWeight(.medium)
-
-                        Text("Tap the + button to scan your first SatsCard")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
+                    ContentUnavailableView(
+                        "No Cards",
+                        systemImage: "creditcard",
+                        description: Text("Tap + to scan your first SatsCard")
+                    )
                 } else {
-                    ScrollView {
-                        LazyVGrid(
-                            columns: [
-                                GridItem(.adaptive(minimum: 300))
-                            ],
-                            spacing: 16
-                        ) {
-                            ForEach(viewModel.scannedCards) { card in
-                                SatsCardView(
-                                    card: card,
-                                    onRemove: {
-                                        viewModel.removeCard(card)
-                                    },
-                                    cardViewModel: viewModel
-                                )
+                    List {
+                        ForEach(viewModel.scannedCards) { card in
+                            SatsCardView(
+                                card: card,
+                                onRemove: {
+                                    viewModel.removeCard(card)
+                                },
+                                cardViewModel: viewModel
+                            )
+                        }
+                        .onDelete { indexSet in
+                            for index in indexSet {
+                                viewModel.removeCard(viewModel.scannedCards[index])
                             }
                         }
-                        .padding()
                     }
+                    .listStyle(.insetGrouped)
                 }
 
                 Spacer()
