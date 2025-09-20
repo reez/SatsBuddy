@@ -44,15 +44,19 @@ struct ContentView: View {
             .navigationTitle("SatsBuddy")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Spacer()
                     Button {
                         viewModel.beginNFCSession()
                     } label: {
                         Image(systemName: "plus")
                             .fontWeight(.medium)
                     }
+//                    .buttonStyle(.borderedProminent)
                 }
             }
+            .toolbarBackground(.visible, for: .bottomBar)
+            .toolbarBackground(.ultraThinMaterial, for: .bottomBar)
         }
     }
 }

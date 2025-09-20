@@ -79,6 +79,13 @@ struct SatsCardDetailView: View {
                         ProgressView("Loading slot details...")
                             .padding()
                     }
+                    
+                    HStack {
+                        Text("Made in Nashville.")
+                            .foregroundStyle(.secondary)
+                            .fontDesign(.monospaced)
+                            .font(.caption)
+                    }
                 }
                 .padding()
             }
