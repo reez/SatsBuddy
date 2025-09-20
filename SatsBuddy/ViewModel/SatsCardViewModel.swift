@@ -100,20 +100,22 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     }
                     session.invalidate()
 
-                } catch let error as Error {
-                    Log.cktap.error("CKTap error: \(String(describing: error), privacy: .public)")
-                    await MainActor.run {
-                        self.lastStatusMessage = "Error: \(error.localizedDescription)"
-                    }
-                    session.invalidate(errorMessage: "Error reading card.")
                 } catch {
                     Log.cktap.error(
-                        "Unexpected error: \(error.localizedDescription, privacy: .public)"
+                        "CKTap error: \(String(describing: error), privacy: .public)"
                     )
-                    await MainActor.run {
-                        self.lastStatusMessage = "Error: \(error.localizedDescription)"
+                    let message: String
+                    if let localizedError = error as? LocalizedError,
+                        let description = localizedError.errorDescription
+                    {
+                        message = description
+                    } else {
+                        message = "Error: \(error.localizedDescription)"
                     }
-                    session.invalidate(errorMessage: "Error reading card.")
+                    await MainActor.run {
+                        self.lastStatusMessage = message
+                    }
+                    session.invalidate(errorMessage: message)
                 }
             }
         }

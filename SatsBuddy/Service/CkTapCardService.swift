@@ -10,6 +10,17 @@ import CKTap
 import Foundation
 import os
 
+enum CkTapCardError: LocalizedError {
+    case unsupportedCard(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedCard(let message):
+            return message
+        }
+    }
+}
+
 final class CkTapCardService {
     let addressDeriver: BdkClient
     let network: Network
@@ -46,11 +57,11 @@ final class CkTapCardService {
 
         case .tapSigner(_):
             Log.cktap.info("TapSigner detected")
-            return SatsCardInfo(version: "TapSigner", isActive: true)
+            throw CkTapCardError.unsupportedCard("TAPSIGNER not supported")
 
         case .satsChip(_):
             Log.cktap.info("SatsChip detected")
-            return SatsCardInfo(version: "SatsChip", isActive: true)
+            throw CkTapCardError.unsupportedCard("SATSCHIP not supported")
         }
     }
 
