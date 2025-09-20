@@ -78,7 +78,8 @@ struct ContentView: View {
                     pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f",
                     pubkeyDescriptor:
                         "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f)",
-                    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+                    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+                    balance: nil
                 ),
                 SlotInfo(
                     slotNumber: 1,
@@ -87,7 +88,8 @@ struct ContentView: View {
                     pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
                     pubkeyDescriptor:
                         "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c)",
-                    address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+                    address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
+                    balance: 50000
                 ),
             ],
             isActive: true

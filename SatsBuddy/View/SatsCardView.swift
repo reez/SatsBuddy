@@ -56,7 +56,7 @@ struct SatsCardView: View {
             showingDetail = true
         }
         .sheet(isPresented: $showingDetail) {
-            SatsCardDetailView(card: card, cardViewModel: cardViewModel)
+            SatsCardDetailView(card: card, viewModel: .init(), cardViewModel: cardViewModel)
         }
     }
 }

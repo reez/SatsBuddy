@@ -135,7 +135,8 @@ final class CkTapCardService {
                 isUsed: isUsed,
                 pubkey: slotPubkey,
                 pubkeyDescriptor: slotDescriptor,
-                address: slotAddress
+                address: slotAddress,
+                balance: nil
             )
             slots.append(slotInfo)
         }

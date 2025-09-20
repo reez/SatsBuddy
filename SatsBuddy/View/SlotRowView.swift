@@ -56,6 +56,38 @@ struct SlotRowView: View {
                                 .fontDesign(.monospaced)
                                 .truncationMode(.middle)
                                 .lineLimit(1)
+
+                            if slot.isActive {
+                                if let balance = slot.balance {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 2) {
+                                            Image(systemName: "bitcoinsign")
+                                                .font(.caption2)
+                                                .foregroundStyle(.primary)
+                                            Text("\(balance)")
+                                                .font(.caption2)
+                                                .foregroundStyle(.primary)
+                                                .fontWeight(.medium)
+                                        }
+
+                                        Button {
+                                            if let url = URL(string: "https://mempool.space/address/\(address)") {
+                                                UIApplication.shared.open(url)
+                                            }
+                                        } label: {
+                                            Text("View on Mempool.space")
+                                                .font(.caption2)
+                                                .foregroundStyle(.blue)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                } else {
+                                    Text("Balance: Loading...")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .fontWeight(.medium)
+                                }
+                            }
                         }
 
                         Spacer()
@@ -141,7 +173,8 @@ struct SlotRowView: View {
             isUsed: false,
             pubkey: "pubkey",
             pubkeyDescriptor: "pubkeyDescriptor",
-            address: "address"
+            address: "address",
+            balance: 21000
         )
     )
 }

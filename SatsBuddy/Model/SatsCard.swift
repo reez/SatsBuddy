@@ -15,6 +15,7 @@ struct SlotInfo: Identifiable {
     let pubkey: String?
     let pubkeyDescriptor: String?
     let address: String?
+    var balance: UInt64?
 }
 
 struct SatsCardInfo: Identifiable {
