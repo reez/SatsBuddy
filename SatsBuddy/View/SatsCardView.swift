@@ -16,64 +16,45 @@ struct SatsCardView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Image(systemName: "creditcard.fill")
-                        .symbolRenderingMode(.hierarchical)
-                        .font(.headline)
+            Image(systemName: "square.grid.3x3.square")
+                .symbolRenderingMode(.hierarchical)
+                .font(.title2)
 
+            VStack(alignment: .leading, spacing: 2) {
+                if let pubkey = card.pubkey {
+                    Text(pubkey)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .fontDesign(.monospaced)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+                } else {
                     Text("SATSCARD")
-                        .font(.headline)
+                        .font(.body)
                         .fontWeight(.medium)
                 }
 
-                HStack {
-                    Text("Version \(card.version)")
+                if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {
+                    Text("Slot \(activeSlot)/\(totalSlots)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-
-                    if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {
-                        Text("• Slot \(activeSlot)/\(totalSlots)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                if let pubkey = card.pubkey {
-                    Text(pubkey)
-                        .font(.caption)
-                        .fontDesign(.monospaced)
-                        .foregroundStyle(.tertiary)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
-                }
-
-                if let address = card.address {
-                    Text(address)
-                        .font(.caption)
-                        .fontDesign(.monospaced)
-                        .foregroundStyle(.tertiary)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
                 }
             }
 
             Spacer()
         }
         .contentShape(Rectangle())
-        .onTapGesture {
-            showingDetail = true
-        }
-        .sheet(isPresented: $showingDetail) {
-            SatsCardDetailView(card: card, viewModel: .init(), cardViewModel: cardViewModel)
-        }
     }
 }
 
 #Preview {
     let sampleCard = SatsCardInfo(
         version: "1.0.3",
+        birth: 1,
         address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+        pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388",
+        activeSlot: 2,
+        totalSlots: 10,
         isActive: true
     )
 

@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  SatsCardListView.swift
 //  SatsBuddy
 //
 //  Created by Matthew Ramsden on 8/6/25.
@@ -21,18 +21,30 @@ struct ContentView: View {
                     )
                 } else {
                     List {
-                        ForEach(viewModel.scannedCards) { card in
-                            SatsCardView(
-                                card: card,
-                                onRemove: {
-                                    viewModel.removeCard(card)
-                                },
-                                cardViewModel: viewModel
-                            )
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                viewModel.removeCard(viewModel.scannedCards[index])
+                        Section("SATSCARDs") {
+                            ForEach(viewModel.scannedCards) { card in
+                                NavigationLink {
+                                    SatsCardDetailView(
+                                        card: card,
+                                        viewModel: .init(),
+                                        cardViewModel: viewModel
+                                    )
+                                } label: {
+                                    SatsCardView(
+                                        card: card,
+                                        onRemove: {
+                                            viewModel.removeCard(card)
+                                        },
+                                        cardViewModel: viewModel
+                                    )
+                                }
+                                .listRowBackground(Color.clear)
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    viewModel.removeCard(viewModel.scannedCards[index])
+                                }
                             }
                         }
                     }
@@ -52,7 +64,6 @@ struct ContentView: View {
                         Image(systemName: "plus")
                             .fontWeight(.medium)
                     }
-                    //                    .buttonStyle(.borderedProminent)
                 }
             }
             .toolbarBackground(.visible, for: .bottomBar)
@@ -68,6 +79,7 @@ struct ContentView: View {
             version: "1.0.3",
             birth: 1,
             address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+            pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388",
             activeSlot: 1,
             totalSlots: 10,
             slots: [
