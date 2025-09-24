@@ -92,19 +92,13 @@ struct SatsCardDetailView: View {
             .navigationTitle("SATSCARD")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         cardViewModel.refreshCard(card)
                     }) {
                         Image(systemName: "arrow.clockwise")
                     }
                     .disabled(cardViewModel.isScanning)
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
                 }
             }
         }
