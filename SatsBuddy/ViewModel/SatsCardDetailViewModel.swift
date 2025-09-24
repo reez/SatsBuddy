@@ -38,21 +38,30 @@ class SatsCardDetailViewModel {
     @MainActor
     private func fetchBalanceForActiveSlot(card: SatsCardInfo) async {
         guard let activeSlotIndex = self.slots.firstIndex(where: { $0.isActive }),
-              let cardAddress = card.address else {
-            Log.cktap.debug("No active slot or card address found for balance fetching. Active slots: \(self.slots.filter { $0.isActive }.count, privacy: .public)")
+            let cardAddress = card.address
+        else {
+            Log.cktap.debug(
+                "No active slot or card address found for balance fetching. Active slots: \(self.slots.filter { $0.isActive }.count, privacy: .public)"
+            )
             return
         }
 
-        Log.cktap.debug("Fetching balance for active slot \(activeSlotIndex, privacy: .public) using card address: \(cardAddress, privacy: .public)")
+        Log.cktap.debug(
+            "Fetching balance for active slot \(activeSlotIndex, privacy: .public) using card address: \(cardAddress, privacy: .public)"
+        )
 
         do {
             let balance = try await self.bdkClient.getBalanceFromAddress(cardAddress, .bitcoin)
 
             // Update only the balance for the active slot
             self.slots[activeSlotIndex].balance = balance.total.toSat()
-            Log.cktap.debug("Successfully fetched balance for active slot: \(balance.total.toSat(), privacy: .public)")
+            Log.cktap.debug(
+                "Successfully fetched balance for active slot: \(balance.total.toSat(), privacy: .public)"
+            )
         } catch {
-            Log.cktap.error("Failed to fetch balance for active slot: \(error.localizedDescription, privacy: .public)")
+            Log.cktap.error(
+                "Failed to fetch balance for active slot: \(error.localizedDescription, privacy: .public)"
+            )
             self.errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
             self.slots[activeSlotIndex].balance = 0
         }

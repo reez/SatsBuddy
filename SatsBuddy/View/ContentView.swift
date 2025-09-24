@@ -52,7 +52,7 @@ struct ContentView: View {
                         Image(systemName: "plus")
                             .fontWeight(.medium)
                     }
-//                    .buttonStyle(.borderedProminent)
+                    //                    .buttonStyle(.borderedProminent)
                 }
             }
             .toolbarBackground(.visible, for: .bottomBar)

@@ -79,7 +79,7 @@ struct SatsCardDetailView: View {
                         ProgressView("Loading slot details...")
                             .padding()
                     }
-                    
+
                     HStack {
                         Text("Made in Nashville.")
                             .foregroundStyle(.secondary)
@@ -157,5 +157,9 @@ struct SatsCardDetailView: View {
         isActive: true
     )
 
-    SatsCardDetailView(card: sampleCard, viewModel: SatsCardDetailViewModel(), cardViewModel: SatsCardViewModel(ckTapService: .mock))
+    SatsCardDetailView(
+        card: sampleCard,
+        viewModel: SatsCardDetailViewModel(),
+        cardViewModel: SatsCardViewModel(ckTapService: .mock)
+    )
 }

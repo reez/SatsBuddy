@@ -38,7 +38,7 @@ struct SatsCardView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                
+
                 if let pubkey = card.pubkey {
                     Text(pubkey)
                         .font(.caption)
