@@ -14,74 +14,120 @@ struct SatsCardDetailView: View {
     @Bindable var cardViewModel: SatsCardViewModel
     @Environment(\.dismiss) private var dismiss
 
+    // Get the updated card from the cardViewModel's scannedCards array
+    private var updatedCard: SatsCardInfo {
+        cardViewModel.scannedCards.first(where: { $0.cardIdentifier == card.cardIdentifier })
+            ?? card
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
+            // ScrollView {
+                VStack {
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "creditcard.fill")
-                                .symbolRenderingMode(.hierarchical)
-                                .font(.headline)
+                    if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
+                        VStack(spacing: 16) {
+                            
+                            Spacer()
 
-                            Text("SATSCARD")
-                                .font(.headline)
-                                .fontWeight(.medium)
-                        }
+                            // Balance
+                            if let balance = activeSlot.balance {
+                                VStack(spacing: 32) {
 
-                        HStack {
-                            Text("Version \(card.version)")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                    HStack {
+                                        Image(systemName: "bitcoinsign")
+                                            .font(.title)
+                                            .fontWeight(.regular)
+                                            .foregroundStyle(.secondary)
+                                        Text("\(balance.formatted(.number.grouping(.automatic)))")
+                                    }
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                    .fontDesign(.rounded)
 
-                            if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {
-                                Text("• Slot \(activeSlot)/\(totalSlots)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    Text(
+                                        "\(updatedCard.dateScanned.formatted(date: .omitted, time: .standard))"
+                                    )
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                                    .fontDesign(.monospaced)
+                                }
+                            } else if viewModel.isLoading {
+                                HStack {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                    Text("Loading balance...")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+
+                            // Address
+                            if let address = activeSlot.address,
+                               let activeSlot = updatedCard.activeSlot,
+                                   let totalSlots = updatedCard.totalSlots
+                            {
+                                VStack(spacing: 8) {
+                                    Text("Slot \(activeSlot)/\(totalSlots)")
+
+                                    Button {
+                                        UIPasteboard.general.string = address
+                                    } label: {
+                                        Text(address)
+                                            .fontDesign(.monospaced)
+                                            .truncationMode(.middle)
+                                            .lineLimit(1)
+                                            .foregroundStyle(.primary)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button {
+                                        if let url = URL(
+                                            string: "https://mempool.space/address/\(address)"
+                                        ) {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    } label: {
+                                        Text("Verify on mempool.space")
+                                            .foregroundStyle(.blue)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .font(.callout)
+                            }
+
+                            Spacer()
+
+                            // Info
+//                            HStack(alignment: .firstTextBaseline) {
+//                                Text("Version \(updatedCard.version)")
+//
+//                                if let activeSlot = updatedCard.activeSlot,
+//                                    let totalSlots = updatedCard.totalSlots
+//                                {
+//                                    Text("• Slot \(activeSlot)/\(totalSlots)")
+//                                }
+//                            }
+//                            .font(.caption)
+//                            .foregroundStyle(.secondary)
+//                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Last updated: \(card.dateScanned, style: .relative)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            Text("\(card.dateScanned.formatted(date: .omitted, time: .shortened))")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                                .fontDesign(.monospaced)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.regularMaterial)
-                            .stroke(.quaternary, lineWidth: 1)
-                    )
-
-//                    if let totalSlots = card.totalSlots {
-//                        SlotsRowListView(
-//                            totalSlots: totalSlots,
-//                            slots: viewModel.slots
-//                        )
-//                    }
-
-                    if viewModel.isLoading {
+                    } else if viewModel.isLoading {
                         ProgressView("Loading slot details...")
                             .padding()
                     }
 
-                    HStack {
-                        Text("Made in Nashville.")
-                            .foregroundStyle(.secondary)
-                            .fontDesign(.monospaced)
-                            .font(.caption)
+                    VStack {
+                        Text("SATSCARD • Version \(updatedCard.version)")
+                        Text("SATSBUDDY • Made in Nashville.")
                     }
+                    .foregroundStyle(.secondary)
+                    .fontDesign(.monospaced)
+                    .font(.caption)
+                    .padding(.top, 40)
                 }
                 .padding()
-            }
+            // }
             .navigationTitle("SATSCARD")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -96,7 +142,10 @@ struct SatsCardDetailView: View {
             }
         }
         .onAppear {
-            viewModel.loadSlotDetails(for: card)
+            viewModel.loadSlotDetails(for: updatedCard)
+        }
+        .onChange(of: updatedCard.dateScanned) {
+            viewModel.loadSlotDetails(for: updatedCard)
         }
     }
 }
