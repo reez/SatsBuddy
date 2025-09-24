@@ -61,19 +61,12 @@ struct SatsCardDetailView: View {
                             .stroke(.quaternary, lineWidth: 1)
                     )
 
-                    if let totalSlots = card.totalSlots {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Slots (\(totalSlots) total)")
-                                .font(.headline)
-                                .padding(.horizontal)
-
-                            LazyVStack(spacing: 8) {
-                                ForEach(viewModel.slots) { slot in
-                                    SlotRowView(slot: slot)
-                                }
-                            }
-                        }
-                    }
+//                    if let totalSlots = card.totalSlots {
+//                        SlotsRowListView(
+//                            totalSlots: totalSlots,
+//                            slots: viewModel.slots
+//                        )
+//                    }
 
                     if viewModel.isLoading {
                         ProgressView("Loading slot details...")
