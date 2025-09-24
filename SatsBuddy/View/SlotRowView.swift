@@ -71,7 +71,9 @@ struct SlotRowView: View {
                                         }
 
                                         Button {
-                                            if let url = URL(string: "https://mempool.space/address/\(address)") {
+                                            if let url = URL(
+                                                string: "https://mempool.space/address/\(address)"
+                                            ) {
                                                 UIApplication.shared.open(url)
                                             }
                                         } label: {

@@ -39,6 +39,15 @@ struct SatsCardView: View {
                     }
                 }
 
+                if let pubkey = card.pubkey {
+                    Text(pubkey)
+                        .font(.caption)
+                        .fontDesign(.monospaced)
+                        .foregroundStyle(.tertiary)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+                }
+
                 if let address = card.address {
                     Text(address)
                         .font(.caption)

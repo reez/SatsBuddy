@@ -57,12 +57,18 @@ extension BdkClient {
             try BdkService().deriveAddress(descriptor: descriptor, network: network)
         },
         getBalanceFromAddress: { address, network in
-            Log.cktap.debug("BdkService.getBalanceFromAddress called with address: \(address, privacy: .public)")
+            Log.cktap.debug(
+                "BdkService.getBalanceFromAddress called with address: \(address, privacy: .public)"
+            )
 
             // Use Mempool.space API to get real balance
             let urlString = "https://mempool.space/api/address/\(address)"
             guard let url = URL(string: urlString) else {
-                throw NSError(domain: "BdkService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+                throw NSError(
+                    domain: "BdkService",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Invalid URL"]
+                )
             }
 
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -85,11 +91,15 @@ extension BdkClient {
             let response = try JSONDecoder().decode(MempoolAddressResponse.self, from: data)
 
             // Calculate balance: (confirmed funded - confirmed spent) + (mempool funded - mempool spent)
-            let confirmedBalance = response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum
-            let mempoolBalance = response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum
+            let confirmedBalance =
+                response.chain_stats.funded_txo_sum - response.chain_stats.spent_txo_sum
+            let mempoolBalance =
+                response.mempool_stats.funded_txo_sum - response.mempool_stats.spent_txo_sum
             let totalBalance = confirmedBalance + mempoolBalance
 
-            Log.cktap.debug("Retrieved real balance from Mempool.space: \(totalBalance, privacy: .public) sats")
+            Log.cktap.debug(
+                "Retrieved real balance from Mempool.space: \(totalBalance, privacy: .public) sats"
+            )
 
             let confirmedAmount = Amount.fromSat(satoshi: confirmedBalance)
             let mempoolAmount = Amount.fromSat(satoshi: mempoolBalance)
@@ -122,11 +132,12 @@ extension BdkClient {
             getBalanceFromAddress: { address, _ in
                 // Create a mock balance based on address for testing
                 let seed = abs(address.hashValue) % 3
-                let satAmount: UInt64 = switch seed {
-                case 0: 75000
-                case 1: 125000
-                default: 31500
-                }
+                let satAmount: UInt64 =
+                    switch seed {
+                    case 0: 75000
+                    case 1: 125000
+                    default: 31500
+                    }
 
                 let amount = Amount.fromSat(satoshi: satAmount)
                 let zero = Amount.fromSat(satoshi: 0)

@@ -288,6 +288,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SatsBuddy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SATSBUDDY;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NFCReaderUsageDescription = "We need NFC access to scan SatsCards.";
@@ -321,6 +322,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SatsBuddy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SATSBUDDY;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NFCReaderUsageDescription = "We need NFC access to scan SatsCards.";
