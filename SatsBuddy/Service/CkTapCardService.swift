@@ -68,6 +68,7 @@ final class CkTapCardService {
     private func readSatsCard(_ card: CKTap.SatsCard) async throws -> SatsCardInfo {
         let status = await card.status()
         Log.cktap.debug("status.ver -> \(status.ver, privacy: .public)")
+        Log.cktap.debug("status.pubkey -> \(status.pubkey, privacy: .public)")
         Log.cktap.debug("status slots -> active: \(status.activeSlot), total: \(status.numSlots)")
 
         // Active slot address:
@@ -145,6 +146,7 @@ final class CkTapCardService {
             version: status.ver.isEmpty ? "Unknown" : status.ver,
             birth: status.birth,
             address: currentAddress,
+            pubkey: status.pubkey,
             activeSlot: status.activeSlot,
             totalSlots: status.numSlots,
             slots: slots,
