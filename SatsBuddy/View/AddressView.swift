@@ -17,11 +17,12 @@ struct AddressView: View {
     @State private var copied = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Slot \(activeSlot)/\(totalSlots)")
             
             Text("\(pubkey)")
-
+                .truncationMode(.middle)
+                .lineLimit(1)
 
             Button {
                 UIPasteboard.general.string = address
@@ -55,7 +56,6 @@ struct AddressView: View {
             .buttonStyle(.plain)
         }
         .font(.callout)
-        .fontDesign(.monospaced)
 
     }
 }
@@ -65,7 +65,8 @@ struct AddressView: View {
         AddressView(
             address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
             activeSlot: 1,
-            totalSlots: 10
+            totalSlots: 10,
+            pubkey: "pubkey"
         )
         .padding()
     }
