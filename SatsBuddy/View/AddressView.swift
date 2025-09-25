@@ -12,12 +12,16 @@ struct AddressView: View {
     let address: String
     let activeSlot: UInt8
     let totalSlots: UInt8
+    let pubkey: String
 
     @State private var copied = false
 
     var body: some View {
         VStack(spacing: 8) {
             Text("Slot \(activeSlot)/\(totalSlots)")
+            
+            Text("\(pubkey)")
+
 
             Button {
                 UIPasteboard.general.string = address
@@ -28,7 +32,6 @@ struct AddressView: View {
             } label: {
                 HStack {
                     Text(address)
-                        .fontDesign(.monospaced)
                         .truncationMode(.middle)
                         .lineLimit(1)
 
@@ -39,8 +42,6 @@ struct AddressView: View {
                     }
                 }
             }
-//            .buttonStyle(.plain)
-//            .foregroundStyle(.tint)
             .sensoryFeedback(.success, trigger: copied)
 
             Button {
@@ -54,6 +55,8 @@ struct AddressView: View {
             .buttonStyle(.plain)
         }
         .font(.callout)
+        .fontDesign(.monospaced)
+
     }
 }
 
