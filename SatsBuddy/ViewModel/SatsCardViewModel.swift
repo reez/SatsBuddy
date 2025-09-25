@@ -20,15 +20,21 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     var scannedCards: [SatsCardInfo] = []
 
     let ckTapClient: CkTapClient
+    private let cardsStore: CardsKeychainClient
 
     override init() {
-        self.ckTapClient = .live(bdk: .live)
+        let bdkClient = BdkClient.live
+        self.ckTapClient = .live(bdk: bdkClient)
+        self.cardsStore = .live
         super.init()
+        loadPersistedCards()
     }
 
-    init(ckTapService: CkTapClient) {
+    init(ckTapService: CkTapClient, cardsStore: CardsKeychainClient = .live) {
         self.ckTapClient = ckTapService
+        self.cardsStore = cardsStore
         super.init()
+        loadPersistedCards()
     }
 
     func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
@@ -97,6 +103,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                         self.lastStatusMessage =
                             updated ? "Card updated with latest data 🔄" : "New card added ✅"
                         self.isScanning = false
+                        self.persistCards()
                     }
                     session.invalidate()
 
@@ -139,9 +146,26 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
     func removeCard(_ card: SatsCardInfo) {
         scannedCards.removeAll { $0.id == card.id }
+        persistCards()
     }
 
     func refreshCard(_ card: SatsCardInfo) {
         beginNFCSession()
+    }
+
+    private func loadPersistedCards() {
+        do {
+            scannedCards = try cardsStore.loadCards()
+        } catch {
+            Log.ui.error("Failed to load stored cards: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func persistCards() {
+        do {
+            try cardsStore.saveCards(scannedCards)
+        } catch {
+            Log.ui.error("Failed to save cards: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

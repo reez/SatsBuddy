@@ -185,6 +185,6 @@ struct SatsCardDetailView: View {
     SatsCardDetailView(
         card: sampleCard,
         viewModel: SatsCardDetailViewModel(),
-        cardViewModel: SatsCardViewModel(ckTapService: .mock)
+        cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
     )
 }
