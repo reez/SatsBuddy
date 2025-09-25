@@ -55,6 +55,7 @@ struct SatsCardView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     let sampleCard = SatsCardInfo(
         version: "1.0.3",
@@ -75,3 +76,4 @@ struct SatsCardView: View {
     )
     .padding()
 }
+#endif
