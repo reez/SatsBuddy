@@ -13,20 +13,35 @@ struct AddressView: View {
     let activeSlot: UInt8
     let totalSlots: UInt8
 
+    @State private var copied = false
+
     var body: some View {
         VStack(spacing: 8) {
             Text("Slot \(activeSlot)/\(totalSlots)")
 
             Button {
                 UIPasteboard.general.string = address
+                copied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    copied = false
+                }
             } label: {
-                Text(address)
-                    .fontDesign(.monospaced)
-                    .truncationMode(.middle)
-                    .lineLimit(1)
-                    .foregroundStyle(.primary)
+                HStack {
+                    Text(address)
+                        .fontDesign(.monospaced)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+
+                    if copied {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.green)
+                            .symbolEffect(.bounce, value: copied)
+                    }
+                }
             }
-            .buttonStyle(.plain)
+//            .buttonStyle(.plain)
+//            .foregroundStyle(.tint)
+            .sensoryFeedback(.success, trigger: copied)
 
             Button {
                 if let url = URL(string: "https://mempool.space/address/\(address)") {
