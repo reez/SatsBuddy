@@ -86,7 +86,9 @@ struct SatsCardInfo: Identifiable, Codable {
     }
 
     var displayName: String {
-        if let trimmedLabel = label?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmedLabel.isEmpty {
+        if let trimmedLabel = label?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !trimmedLabel.isEmpty
+        {
             return trimmedLabel
         }
         if let pubkey, !pubkey.isEmpty {

@@ -22,7 +22,7 @@ struct SatsCardView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 if let customLabel = card.label?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   !customLabel.isEmpty
+                    !customLabel.isEmpty
                 {
                     Text(customLabel)
                         .font(.body)

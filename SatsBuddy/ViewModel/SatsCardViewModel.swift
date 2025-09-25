@@ -157,7 +157,9 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     @MainActor
     func updateLabel(for card: SatsCardInfo, to newLabel: String) {
         let trimmed = newLabel.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let index = scannedCards.firstIndex(where: { $0.cardIdentifier == card.cardIdentifier }) else {
+        guard
+            let index = scannedCards.firstIndex(where: { $0.cardIdentifier == card.cardIdentifier })
+        else {
             return
         }
 
@@ -190,7 +192,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
     @MainActor
     private func mergeCardInfo(with newCard: SatsCardInfo) -> SatsCardInfo {
-        guard let existing = scannedCards.first(where: { $0.cardIdentifier == newCard.cardIdentifier }) else {
+        guard
+            let existing = scannedCards.first(where: { $0.cardIdentifier == newCard.cardIdentifier }
+            )
+        else {
             return newCard
         }
 

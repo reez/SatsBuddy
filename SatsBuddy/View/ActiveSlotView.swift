@@ -45,8 +45,8 @@ struct ActiveSlotView: View {
             }
 
             if let address = slot.address,
-               let activeSlot = card.activeSlot,
-               let totalSlots = card.totalSlots
+                let activeSlot = card.activeSlot,
+                let totalSlots = card.totalSlots
             {
                 AddressView(
                     address: address,
@@ -61,27 +61,28 @@ struct ActiveSlotView: View {
 }
 
 #if DEBUG
-#Preview {
-    let slot = SlotInfo(
-        slotNumber: 1,
-        isActive: true,
-        isUsed: true,
-        pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
-        pubkeyDescriptor: "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c)",
-        address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
-        balance: 50_000
-    )
+    #Preview {
+        let slot = SlotInfo(
+            slotNumber: 1,
+            isActive: true,
+            isUsed: true,
+            pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
+            pubkeyDescriptor:
+                "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c)",
+            address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
+            balance: 50_000
+        )
 
-    let card = SatsCardInfo(
-        version: "1.0.3",
-        address: slot.address,
-        activeSlot: 1,
-        totalSlots: 10,
-        slots: [slot],
-        isActive: true
-    )
+        let card = SatsCardInfo(
+            version: "1.0.3",
+            address: slot.address,
+            activeSlot: 1,
+            totalSlots: 10,
+            slots: [slot],
+            isActive: true
+        )
 
-    return ActiveSlotView(slot: slot, card: card, isLoading: false)
-        .padding()
-}
+        return ActiveSlotView(slot: slot, card: card, isLoading: false)
+            .padding()
+    }
 #endif
