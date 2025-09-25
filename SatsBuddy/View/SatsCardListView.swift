@@ -73,7 +73,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    let vm = SatsCardViewModel(ckTapService: .mock)
+    let vm = SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
     vm.scannedCards = [
         SatsCardInfo(
             version: "1.0.3",

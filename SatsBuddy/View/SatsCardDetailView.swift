@@ -60,8 +60,8 @@ struct SatsCardDetailView: View {
 
                     // Address
                     if let address = activeSlot.address,
-                       let activeSlot = updatedCard.activeSlot,
-                       let totalSlots = updatedCard.totalSlots
+                        let activeSlot = updatedCard.activeSlot,
+                        let totalSlots = updatedCard.totalSlots
                     {
                         VStack(spacing: 8) {
                             Text("Slot \(activeSlot)/\(totalSlots)")
@@ -185,6 +185,6 @@ struct SatsCardDetailView: View {
     SatsCardDetailView(
         card: sampleCard,
         viewModel: SatsCardDetailViewModel(),
-        cardViewModel: SatsCardViewModel(ckTapService: .mock)
+        cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
     )
 }

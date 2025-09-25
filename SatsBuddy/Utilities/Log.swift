@@ -2,7 +2,7 @@
 //  Log.swift
 //  SatsBuddy
 //
-//  Created by Codex CLI on 9/2/25.
+//  Created by Matthew Ramsden on 9/2/25.
 //
 
 import Foundation

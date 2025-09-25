@@ -63,7 +63,7 @@ struct SatsCardView: View {
         onRemove: {
             print("Remove card")
         },
-        cardViewModel: SatsCardViewModel(ckTapService: .mock)
+        cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
     )
     .padding()
 }

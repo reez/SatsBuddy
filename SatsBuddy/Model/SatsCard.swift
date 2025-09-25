@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct SlotInfo: Identifiable {
-    let id = UUID()
+struct SlotInfo: Identifiable, Codable {
+    let id: UUID
     let slotNumber: UInt8
     let isActive: Bool
     let isUsed: Bool
@@ -16,10 +16,30 @@ struct SlotInfo: Identifiable {
     let pubkeyDescriptor: String?
     let address: String?
     var balance: UInt64?
+
+    init(
+        id: UUID = UUID(),
+        slotNumber: UInt8,
+        isActive: Bool,
+        isUsed: Bool,
+        pubkey: String?,
+        pubkeyDescriptor: String?,
+        address: String?,
+        balance: UInt64? = nil
+    ) {
+        self.id = id
+        self.slotNumber = slotNumber
+        self.isActive = isActive
+        self.isUsed = isUsed
+        self.pubkey = pubkey
+        self.pubkeyDescriptor = pubkeyDescriptor
+        self.address = address
+        self.balance = balance
+    }
 }
 
-struct SatsCardInfo: Identifiable {
-    let id = UUID()
+struct SatsCardInfo: Identifiable, Codable {
+    let id: UUID
     let version: String
     let birth: UInt64?  // Card birth timestamp - unique identifier
     let address: String?
@@ -29,6 +49,7 @@ struct SatsCardInfo: Identifiable {
     let totalSlots: UInt8?
     let isActive: Bool
     var dateScanned: Date  // Made mutable for refresh
+    var label: String?
     let slots: [SlotInfo]
 
     // Unique identifier for matching cards across scans
@@ -37,6 +58,7 @@ struct SatsCardInfo: Identifiable {
     }
 
     init(
+        id: UUID = UUID(),
         version: String,
         birth: UInt64? = nil,
         address: String? = nil,
@@ -45,8 +67,11 @@ struct SatsCardInfo: Identifiable {
         activeSlot: UInt8? = nil,
         totalSlots: UInt8? = nil,
         slots: [SlotInfo] = [],
-        isActive: Bool = true
+        isActive: Bool = true,
+        dateScanned: Date = Date(),
+        label: String? = nil
     ) {
+        self.id = id
         self.version = version
         self.birth = birth
         self.address = address
@@ -56,6 +81,7 @@ struct SatsCardInfo: Identifiable {
         self.totalSlots = totalSlots
         self.slots = slots
         self.isActive = isActive
-        self.dateScanned = Date()
+        self.dateScanned = dateScanned
+        self.label = label
     }
 }
