@@ -21,21 +21,25 @@ struct SatsCardView: View {
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(card.displayName)
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .truncationMode(.middle)
-                    .lineLimit(1)
-
-                if let pubkey = card.pubkey,
-                   card.displayName != pubkey
+                if let customLabel = card.label?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !customLabel.isEmpty
                 {
+                    Text(customLabel)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+                } else if let pubkey = card.pubkey, !pubkey.isEmpty {
                     Text(pubkey)
-                        .font(.caption)
+                        .font(.body)
+                        .fontWeight(.semibold)
                         .fontDesign(.monospaced)
                         .truncationMode(.middle)
                         .lineLimit(1)
-                        .foregroundStyle(.secondary)
+                } else {
+                    Text("SATSCARD")
+                        .font(.body)
+                        .fontWeight(.medium)
                 }
 
                 if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {

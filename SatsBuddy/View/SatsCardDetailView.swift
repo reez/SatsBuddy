@@ -15,7 +15,7 @@ struct SatsCardDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var traceID = String(UUID().uuidString.prefix(6))
     @State private var labelText: String = ""
-    @FocusState private var isLabelFieldFocused: Bool
+    @State private var isRenaming = false
 
     // Get the updated card from the cardViewModel's scannedCards array
     private var updatedCard: SatsCardInfo {
@@ -25,21 +25,6 @@ struct SatsCardDetailView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            VStack(alignment: .leading, spacing: 4) {
-                TextField("Card name", text: $labelText)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.title3.weight(.semibold))
-                    .textInputAutocapitalization(.words)
-                    .disableAutocorrection(true)
-                    .focused($isLabelFieldFocused)
-                    .submitLabel(.done)
-                    .onSubmit { commitLabelChange() }
-
-                Text("Add a friendly card name (optional)")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-
             if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
                 ActiveSlotView(slot: activeSlot, card: updatedCard, isLoading: viewModel.isLoading)
             } else if viewModel.isLoading {
@@ -53,6 +38,12 @@ struct SatsCardDetailView: View {
         .padding()
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleMenu {
+            Button("Rename Card") {
+                prepareLabelForEditing()
+                isRenaming = true
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
@@ -71,7 +62,6 @@ struct SatsCardDetailView: View {
             DispatchQueue.main.async {
                 Log.ui.info("[\(traceID)] Main queue tick after loadSlotDetails return")
             }
-            syncLabelText()
         }
         .onChange(of: updatedCard.dateScanned) { newValue in
             Log.ui.info(
@@ -79,16 +69,16 @@ struct SatsCardDetailView: View {
             )
             viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
         }
-        .onChange(of: updatedCard.label) { _ in
-            syncLabelText()
-        }
-        .onChange(of: updatedCard.pubkey) { _ in
-            syncLabelText()
-        }
-        .onChange(of: isLabelFieldFocused) { focused in
-            if !focused {
-                commitLabelChange()
-            }
+        .sheet(isPresented: $isRenaming, onDismiss: { prepareLabelForEditing() }) {
+            RenameCardSheet(
+                initialText: labelText,
+                fallbackName: fallbackName,
+                onCancel: { isRenaming = false },
+                onSave: { newValue in
+                    applyLabelChange(newValue)
+                    isRenaming = false
+                }
+            )
         }
     }
 }
@@ -146,7 +136,7 @@ struct SatsCardDetailView: View {
 #endif
 
 extension SatsCardDetailView {
-    private func syncLabelText() {
+    private func prepareLabelForEditing() {
         if let label = updatedCard.label,
            !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
@@ -158,8 +148,8 @@ extension SatsCardDetailView {
         }
     }
 
-    private func commitLabelChange() {
-        let trimmed = labelText.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func applyLabelChange(_ newValue: String) {
+        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let current = updatedCard.label ?? ""
 
         if trimmed == current { return }
@@ -173,8 +163,6 @@ extension SatsCardDetailView {
            let fallback = fallbackName,
            trimmed == fallback
         {
-            // User left the default identifier; keep storage clean.
-            syncLabelText()
             return
         }
 
@@ -182,6 +170,11 @@ extension SatsCardDetailView {
     }
 
     private var fallbackName: String? {
+        if let label = updatedCard.label,
+           !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            return label
+        }
         if let pubkey = updatedCard.pubkey, !pubkey.isEmpty {
             return pubkey
         }
@@ -189,5 +182,43 @@ extension SatsCardDetailView {
             return address
         }
         return nil
+    }
+}
+
+private struct RenameCardSheet: View {
+    @State private var text: String
+    let fallbackName: String?
+    let onCancel: () -> Void
+    let onSave: (String) -> Void
+
+    init(initialText: String, fallbackName: String?, onCancel: @escaping () -> Void, onSave: @escaping (String) -> Void) {
+        _text = State(initialValue: initialText)
+        self.fallbackName = fallbackName
+        self.onCancel = onCancel
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Card Name") {
+                    TextField(fallbackName ?? "Card name", text: $text)
+                        .textInputAutocapitalization(.words)
+                        .disableAutocorrection(true)
+                        .submitLabel(.done)
+                        .onSubmit { onSave(text) }
+                }
+            }
+            .navigationTitle("Rename Card")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { onSave(text) }
+                }
+            }
+        }
     }
 }
