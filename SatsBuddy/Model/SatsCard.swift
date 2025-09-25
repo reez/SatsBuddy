@@ -84,4 +84,19 @@ struct SatsCardInfo: Identifiable, Codable {
         self.dateScanned = dateScanned
         self.label = label
     }
+
+    var displayName: String {
+        if let trimmedLabel = label?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !trimmedLabel.isEmpty
+        {
+            return trimmedLabel
+        }
+        if let pubkey, !pubkey.isEmpty {
+            return pubkey
+        }
+        if let address, !address.isEmpty {
+            return address
+        }
+        return "SATSCARD"
+    }
 }

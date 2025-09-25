@@ -21,7 +21,15 @@ struct SatsCardView: View {
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 2) {
-                if let pubkey = card.pubkey {
+                if let customLabel = card.label?.trimmingCharacters(in: .whitespacesAndNewlines),
+                    !customLabel.isEmpty
+                {
+                    Text(customLabel)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+                } else if let pubkey = card.pubkey, !pubkey.isEmpty {
                     Text(pubkey)
                         .font(.body)
                         .fontWeight(.semibold)
