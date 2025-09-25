@@ -14,6 +14,8 @@ struct SatsCardDetailView: View {
     @Bindable var cardViewModel: SatsCardViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var traceID = String(UUID().uuidString.prefix(6))
+    @State private var labelText: String = ""
+    @FocusState private var isLabelFieldFocused: Bool
 
     // Get the updated card from the cardViewModel's scannedCards array
     private var updatedCard: SatsCardInfo {
@@ -22,94 +24,34 @@ struct SatsCardDetailView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 24) {
+            VStack(alignment: .leading, spacing: 4) {
+                TextField("Card name", text: $labelText)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.title3.weight(.semibold))
+                    .textInputAutocapitalization(.words)
+                    .disableAutocorrection(true)
+                    .focused($isLabelFieldFocused)
+                    .submitLabel(.done)
+                    .onSubmit { commitLabelChange() }
+
+                Text("Add a friendly card name (optional)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+
             if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
-                VStack(spacing: 16) {
-                    Spacer()
-
-                    // Balance
-                    if let balance = activeSlot.balance {
-                        VStack(spacing: 32) {
-                            HStack {
-                                Image(systemName: "bitcoinsign")
-                                    .font(.title)
-                                    .fontWeight(.regular)
-                                    .foregroundStyle(.secondary)
-                                Text("\(balance.formatted(.number.grouping(.automatic)))")
-                            }
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .fontDesign(.rounded)
-
-                            Text(
-                                "\(updatedCard.dateScanned.formatted(date: .omitted, time: .standard))"
-                            )
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .fontDesign(.monospaced)
-                        }
-                    } else if viewModel.isLoading {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Text("Loading balance...")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    // Address
-                    if let address = activeSlot.address,
-                        let activeSlot = updatedCard.activeSlot,
-                        let totalSlots = updatedCard.totalSlots
-                    {
-                        VStack(spacing: 8) {
-                            Text("Slot \(activeSlot)/\(totalSlots)")
-
-                            Button {
-                                UIPasteboard.general.string = address
-                            } label: {
-                                Text(address)
-                                    .fontDesign(.monospaced)
-                                    .truncationMode(.middle)
-                                    .lineLimit(1)
-                                    .foregroundStyle(.primary)
-                            }
-                            .buttonStyle(.plain)
-
-                            Button {
-                                if let url = URL(
-                                    string: "https://mempool.space/address/\(address)"
-                                ) {
-                                    UIApplication.shared.open(url)
-                                }
-                            } label: {
-                                Text("Verify on mempool.space")
-                                    .foregroundStyle(.blue)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .font(.callout)
-                    }
-
-                    Spacer()
-                }
+                ActiveSlotView(slot: activeSlot, card: updatedCard, isLoading: viewModel.isLoading)
             } else if viewModel.isLoading {
                 ProgressView("Loading slot details...")
                     .padding()
             }
 
-            VStack {
-                Text("SATSCARD • Made in Canada • Version \(updatedCard.version)")
-                Text("SATSBUDDY • Made in Nashville • Version 0")
-            }
-            .foregroundStyle(.secondary)
-            .fontDesign(.monospaced)
-            .font(.caption)
-            .padding(.top, 40)
+            FooterView(updatedCard: updatedCard)
+                .padding(.top, 40)
         }
         .padding()
-        .navigationTitle("SATSCARD")
+        .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -129,6 +71,7 @@ struct SatsCardDetailView: View {
             DispatchQueue.main.async {
                 Log.ui.info("[\(traceID)] Main queue tick after loadSlotDetails return")
             }
+            syncLabelText()
         }
         .onChange(of: updatedCard.dateScanned) { newValue in
             Log.ui.info(
@@ -136,9 +79,21 @@ struct SatsCardDetailView: View {
             )
             viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
         }
+        .onChange(of: updatedCard.label) { _ in
+            syncLabelText()
+        }
+        .onChange(of: updatedCard.pubkey) { _ in
+            syncLabelText()
+        }
+        .onChange(of: isLabelFieldFocused) { focused in
+            if !focused {
+                commitLabelChange()
+            }
+        }
     }
 }
 
+#if DEBUG
 #Preview {
     let sampleSlots = [
         SlotInfo(
@@ -187,4 +142,52 @@ struct SatsCardDetailView: View {
         viewModel: SatsCardDetailViewModel(),
         cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
     )
+}
+#endif
+
+extension SatsCardDetailView {
+    private func syncLabelText() {
+        if let label = updatedCard.label,
+           !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            labelText = label
+        } else if let fallback = fallbackName {
+            labelText = fallback
+        } else {
+            labelText = ""
+        }
+    }
+
+    private func commitLabelChange() {
+        let trimmed = labelText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = updatedCard.label ?? ""
+
+        if trimmed == current { return }
+
+        if trimmed.isEmpty {
+            cardViewModel.updateLabel(for: updatedCard, to: trimmed)
+            return
+        }
+
+        if updatedCard.label == nil,
+           let fallback = fallbackName,
+           trimmed == fallback
+        {
+            // User left the default identifier; keep storage clean.
+            syncLabelText()
+            return
+        }
+
+        cardViewModel.updateLabel(for: updatedCard, to: trimmed)
+    }
+
+    private var fallbackName: String? {
+        if let pubkey = updatedCard.pubkey, !pubkey.isEmpty {
+            return pubkey
+        }
+        if let address = updatedCard.address, !address.isEmpty {
+            return address
+        }
+        return nil
+    }
 }

@@ -99,7 +99,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     let transport = NFCTransport(tag: iso7816Tag)
                     let cardInfo = try await self.ckTapClient.readCardInfo(transport)
                     await MainActor.run {
-                        let updated = CardsStore.upsert(&self.scannedCards, with: cardInfo)
+                        let mergedCard = self.mergeCardInfo(with: cardInfo)
+                        let updated = CardsStore.upsert(&self.scannedCards, with: mergedCard)
                         self.lastStatusMessage =
                             updated ? "Card updated with latest data 🔄" : "New card added ✅"
                         self.isScanning = false
@@ -153,6 +154,22 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         beginNFCSession()
     }
 
+    @MainActor
+    func updateLabel(for card: SatsCardInfo, to newLabel: String) {
+        let trimmed = newLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let index = scannedCards.firstIndex(where: { $0.cardIdentifier == card.cardIdentifier }) else {
+            return
+        }
+
+        let normalizedLabel = trimmed.isEmpty ? nil : trimmed
+        if scannedCards[index].label == normalizedLabel {
+            return
+        }
+
+        scannedCards[index].label = normalizedLabel
+        persistCards()
+    }
+
     private func loadPersistedCards() {
         do {
             scannedCards = try cardsStore.loadCards()
@@ -169,5 +186,27 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         } catch {
             Log.ui.error("Failed to save cards: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    @MainActor
+    private func mergeCardInfo(with newCard: SatsCardInfo) -> SatsCardInfo {
+        guard let existing = scannedCards.first(where: { $0.cardIdentifier == newCard.cardIdentifier }) else {
+            return newCard
+        }
+
+        return SatsCardInfo(
+            id: existing.id,
+            version: newCard.version,
+            birth: newCard.birth,
+            address: newCard.address,
+            pubkey: newCard.pubkey,
+            cardNonce: newCard.cardNonce,
+            activeSlot: newCard.activeSlot,
+            totalSlots: newCard.totalSlots,
+            slots: newCard.slots,
+            isActive: newCard.isActive,
+            dateScanned: newCard.dateScanned,
+            label: newCard.label ?? existing.label
+        )
     }
 }
