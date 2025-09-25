@@ -13,6 +13,7 @@ struct SatsCardDetailView: View {
     @State var viewModel: SatsCardDetailViewModel
     @Bindable var cardViewModel: SatsCardViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var traceID = String(UUID().uuidString.prefix(6))
 
     // Get the updated card from the cardViewModel's scannedCards array
     private var updatedCard: SatsCardInfo {
@@ -21,131 +22,119 @@ struct SatsCardDetailView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            // ScrollView {
-                VStack {
+        VStack {
+            if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
+                VStack(spacing: 16) {
+                    Spacer()
 
-                    if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
-                        VStack(spacing: 16) {
-                            
-                            Spacer()
-
-                            // Balance
-                            if let balance = activeSlot.balance {
-                                VStack(spacing: 32) {
-
-                                    HStack {
-                                        Image(systemName: "bitcoinsign")
-                                            .font(.title)
-                                            .fontWeight(.regular)
-                                            .foregroundStyle(.secondary)
-                                        Text("\(balance.formatted(.number.grouping(.automatic)))")
-                                    }
-                                    .font(.largeTitle)
-                                    .fontWeight(.bold)
-                                    .fontDesign(.rounded)
-
-                                    Text(
-                                        "\(updatedCard.dateScanned.formatted(date: .omitted, time: .standard))"
-                                    )
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                                    .fontDesign(.monospaced)
-                                }
-                            } else if viewModel.isLoading {
-                                HStack {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                    Text("Loading balance...")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
+                    // Balance
+                    if let balance = activeSlot.balance {
+                        VStack(spacing: 32) {
+                            HStack {
+                                Image(systemName: "bitcoinsign")
+                                    .font(.title)
+                                    .fontWeight(.regular)
+                                    .foregroundStyle(.secondary)
+                                Text("\(balance.formatted(.number.grouping(.automatic)))")
                             }
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .fontDesign(.rounded)
 
-                            // Address
-                            if let address = activeSlot.address,
-                               let activeSlot = updatedCard.activeSlot,
-                                   let totalSlots = updatedCard.totalSlots
-                            {
-                                VStack(spacing: 8) {
-                                    Text("Slot \(activeSlot)/\(totalSlots)")
-
-                                    Button {
-                                        UIPasteboard.general.string = address
-                                    } label: {
-                                        Text(address)
-                                            .fontDesign(.monospaced)
-                                            .truncationMode(.middle)
-                                            .lineLimit(1)
-                                            .foregroundStyle(.primary)
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    Button {
-                                        if let url = URL(
-                                            string: "https://mempool.space/address/\(address)"
-                                        ) {
-                                            UIApplication.shared.open(url)
-                                        }
-                                    } label: {
-                                        Text("Verify on mempool.space")
-                                            .foregroundStyle(.blue)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                                .font(.callout)
-                            }
-
-                            Spacer()
-
-                            // Info
-//                            HStack(alignment: .firstTextBaseline) {
-//                                Text("Version \(updatedCard.version)")
-//
-//                                if let activeSlot = updatedCard.activeSlot,
-//                                    let totalSlots = updatedCard.totalSlots
-//                                {
-//                                    Text("• Slot \(activeSlot)/\(totalSlots)")
-//                                }
-//                            }
-//                            .font(.caption)
-//                            .foregroundStyle(.secondary)
-//                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Text(
+                                "\(updatedCard.dateScanned.formatted(date: .omitted, time: .standard))"
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .fontDesign(.monospaced)
                         }
                     } else if viewModel.isLoading {
-                        ProgressView("Loading slot details...")
-                            .padding()
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("Loading balance...")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
-                    VStack {
-                        Text("SATSCARD • Version \(updatedCard.version)")
-                        Text("SATSBUDDY • Made in Nashville.")
+                    // Address
+                    if let address = activeSlot.address,
+                       let activeSlot = updatedCard.activeSlot,
+                       let totalSlots = updatedCard.totalSlots
+                    {
+                        VStack(spacing: 8) {
+                            Text("Slot \(activeSlot)/\(totalSlots)")
+
+                            Button {
+                                UIPasteboard.general.string = address
+                            } label: {
+                                Text(address)
+                                    .fontDesign(.monospaced)
+                                    .truncationMode(.middle)
+                                    .lineLimit(1)
+                                    .foregroundStyle(.primary)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                if let url = URL(
+                                    string: "https://mempool.space/address/\(address)"
+                                ) {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                Text("Verify on mempool.space")
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .font(.callout)
                     }
-                    .foregroundStyle(.secondary)
-                    .fontDesign(.monospaced)
-                    .font(.caption)
-                    .padding(.top, 40)
+
+                    Spacer()
                 }
-                .padding()
-            // }
-            .navigationTitle("SATSCARD")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        cardViewModel.refreshCard(card)
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .disabled(cardViewModel.isScanning)
+            } else if viewModel.isLoading {
+                ProgressView("Loading slot details...")
+                    .padding()
+            }
+
+            VStack {
+                Text("SATSCARD • Version \(updatedCard.version)")
+                Text("SATSBUDDY • Made in Nashville.")
+            }
+            .foregroundStyle(.secondary)
+            .fontDesign(.monospaced)
+            .font(.caption)
+            .padding(.top, 40)
+        }
+        .padding()
+        .navigationTitle("SATSCARD")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    cardViewModel.refreshCard(card)
+                }) {
+                    Image(systemName: "arrow.clockwise")
                 }
+                .disabled(cardViewModel.isScanning)
             }
         }
         .onAppear {
-            viewModel.loadSlotDetails(for: updatedCard)
+            Log.ui.info(
+                "[\(traceID)] Detail onAppear for card: \(updatedCard.cardIdentifier, privacy: .public)"
+            )
+            viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
+            DispatchQueue.main.async {
+                Log.ui.info("[\(traceID)] Main queue tick after loadSlotDetails return")
+            }
         }
-        .onChange(of: updatedCard.dateScanned) {
-            viewModel.loadSlotDetails(for: updatedCard)
+        .onChange(of: updatedCard.dateScanned) { newValue in
+            Log.ui.info(
+                "[\(traceID)] updatedCard.dateScanned changed -> \(newValue.formatted(date: .omitted, time: .standard))"
+            )
+            viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
         }
     }
 }

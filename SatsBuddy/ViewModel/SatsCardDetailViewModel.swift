@@ -22,48 +22,84 @@ class SatsCardDetailViewModel {
     }
 
     @MainActor
-    func loadSlotDetails(for card: SatsCardInfo) {
+    func loadSlotDetails(for card: SatsCardInfo, traceID: String? = nil) {
+        errorMessage = nil
         isLoading = true
-        defer { isLoading = false }
 
-        // Load slots immediately from NFC scan data - this shows the UI instantly
+        // Load slots immediately from NFC scan data so the view renders right away.
         slots = card.slots
 
-        // Start balance fetching in completely detached background task
-        Task.detached { [weak self] in
-            await self?.fetchBalanceForActiveSlot(card: card)
-        }
-    }
+        let traceID = traceID ?? String(UUID().uuidString.prefix(6))
+        let loadStart = Date()
+        Log.cktap.info(
+            "[\(traceID)] loadSlotDetails started for card: \(card.cardIdentifier, privacy: .public)"
+        )
+        Log.cktap.debug(
+            "[\(traceID)] Slots copied to detail view (count: \(card.slots.count, privacy: .public))"
+        )
 
-    @MainActor
-    private func fetchBalanceForActiveSlot(card: SatsCardInfo) async {
-        guard let activeSlotIndex = self.slots.firstIndex(where: { $0.isActive }),
-            let cardAddress = card.address
-        else {
-            Log.cktap.debug(
-                "No active slot or card address found for balance fetching. Active slots: \(self.slots.filter { $0.isActive }.count, privacy: .public)"
+        // Kick off balance fetching on a background task so navigation isn't blocked.
+        Task(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            await self.fetchBalanceForActiveSlot(
+                card: card,
+                loadStartedAt: loadStart,
+                traceID: traceID
             )
-            return
         }
 
         Log.cktap.debug(
-            "Fetching balance for active slot \(activeSlotIndex, privacy: .public) using card address: \(cardAddress, privacy: .public)"
+            "[\(traceID)] loadSlotDetails returning on main after \(String(format: "%.3f", Date().timeIntervalSince(loadStart)))s"
         )
+    }
+
+    @MainActor
+    private func fetchBalanceForActiveSlot(card: SatsCardInfo, loadStartedAt: Date, traceID: String)
+        async
+    {
+        guard let cardAddress = card.address else {
+            Log.cktap.debug("[\(traceID)] Missing card address; skipping balance fetch")
+            isLoading = false
+            return
+        }
+
+        Log.cktap.debug("[\(traceID)] Fetching balance for address: \(cardAddress, privacy: .public)")
 
         do {
-            let balance = try await self.bdkClient.getBalanceFromAddress(cardAddress, .bitcoin)
+            let networkStart = Date()
+            let balance = try await bdkClient.getBalanceFromAddress(cardAddress, .bitcoin)
+            let networkDuration = Date().timeIntervalSince(networkStart)
+            let totalDuration = Date().timeIntervalSince(loadStartedAt)
+            let networkDurationString = String(format: "%.3f", networkDuration)
+            let totalDurationString = String(format: "%.3f", totalDuration)
 
-            // Update only the balance for the active slot
-            self.slots[activeSlotIndex].balance = balance.total.toSat()
+            guard let activeSlotIndex = slots.firstIndex(where: { $0.isActive }) else {
+                isLoading = false
+                Log.cktap.debug("[\(traceID)] Active slot missing after network fetch")
+                return
+            }
+
+            slots[activeSlotIndex].balance = balance.total.toSat()
+            isLoading = false
+
             Log.cktap.debug(
-                "Successfully fetched balance for active slot: \(balance.total.toSat(), privacy: .public)"
+                "[\(traceID)] Balance fetched: \(balance.total.toSat(), privacy: .public) sats (network: \(networkDurationString)s, total: \(totalDurationString)s)"
             )
         } catch {
+            let totalDuration = Date().timeIntervalSince(loadStartedAt)
+            let totalDurationString = String(format: "%.3f", totalDuration)
+
             Log.cktap.error(
-                "Failed to fetch balance for active slot: \(error.localizedDescription, privacy: .public)"
+                "[\(traceID)] Balance fetch failed: \(error.localizedDescription, privacy: .public)"
             )
-            self.errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
-            self.slots[activeSlotIndex].balance = 0
+            if let activeSlotIndex = slots.firstIndex(where: { $0.isActive }) {
+                slots[activeSlotIndex].balance = 0
+            }
+            errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
+            Log.cktap.error(
+                "[\(traceID)] Total time before failure: \(totalDurationString)s"
+            )
+            isLoading = false
         }
     }
 }

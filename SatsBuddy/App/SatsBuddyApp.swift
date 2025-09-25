@@ -9,15 +9,20 @@ import SwiftUI
 
 @main
 struct SatsBuddyApp: App {
+    private let viewModel: SatsCardViewModel
+
+    init() {
+        let bdkClient = BdkClient.live
+        self.viewModel = SatsCardViewModel(ckTapService: .live(bdk: bdkClient))
+
+        Task.detached(priority: .utility) {
+            await bdkClient.warmUp()
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView(
-                viewModel: .init(
-                    ckTapService: .live(
-                        bdk: .live
-                    )
-                )
-            )
+            ContentView(viewModel: viewModel)
         }
     }
 }
