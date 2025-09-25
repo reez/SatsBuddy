@@ -10,7 +10,7 @@ import SwiftUI
 struct FooterView: View {
     let updatedCard: SatsCardInfo
     var body: some View {
-        VStack {
+        VStack(spacing: 12) {
             Text("SATSCARD • Made in Canada • Version \(updatedCard.version)")
             Text("SATSBUDDY • Made in Nashville • Version 0")
         }
