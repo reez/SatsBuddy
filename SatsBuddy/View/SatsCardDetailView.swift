@@ -100,8 +100,8 @@ struct SatsCardDetailView: View {
             }
 
             VStack {
-                Text("SATSCARD • Version \(updatedCard.version)")
-                Text("SATSBUDDY • Made in Nashville.")
+                Text("SATSCARD • Made in Canada • Version \(updatedCard.version)")
+                Text("SATSBUDDY • Made in Nashville • Version 0")
             }
             .foregroundStyle(.secondary)
             .fontDesign(.monospaced)
