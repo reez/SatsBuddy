@@ -2,7 +2,7 @@
 //  CardsKeychainService.swift
 //  SatsBuddy
 //
-//  Created by Codex CLI on 9/9/25.
+//  Created by Matthew Ramsden on 9/9/25.
 //
 
 import Foundation

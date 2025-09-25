@@ -63,7 +63,9 @@ class SatsCardDetailViewModel {
             return
         }
 
-        Log.cktap.debug("[\(traceID)] Fetching balance for address: \(cardAddress, privacy: .public)")
+        Log.cktap.debug(
+            "[\(traceID)] Fetching balance for address: \(cardAddress, privacy: .public)"
+        )
 
         do {
             let networkStart = Date()

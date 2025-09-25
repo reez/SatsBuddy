@@ -157,7 +157,9 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         do {
             scannedCards = try cardsStore.loadCards()
         } catch {
-            Log.ui.error("Failed to load stored cards: \(error.localizedDescription, privacy: .public)")
+            Log.ui.error(
+                "Failed to load stored cards: \(error.localizedDescription, privacy: .public)"
+            )
         }
     }
 
