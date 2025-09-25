@@ -29,10 +29,10 @@ struct ActiveSlotView: View {
                     .fontWeight(.bold)
                     .fontDesign(.rounded)
 
-                    Text(card.dateScanned.formatted(date: .omitted, time: .standard))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .fontDesign(.monospaced)
+//                    Text(card.dateScanned.formatted(date: .omitted, time: .standard))
+//                        .font(.caption2)
+//                        .foregroundStyle(.tertiary)
+//                        .fontDesign(.monospaced)
                 }
             } else if isLoading {
                 HStack {
