@@ -102,10 +102,20 @@ struct ActiveSlotView: View {
 
                     Section {
                         // Slot row
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Slot")
-                                .foregroundStyle(.secondary)
-                            Text("\(activeSlot)/\(totalSlots)")
+                        NavigationLink {
+                            SlotsRowListView(
+                                totalSlots: totalSlots,
+                                slots: card.slots
+                            )
+                            .navigationTitle("All Slots")
+                            .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Slot")
+                                    .foregroundStyle(.secondary)
+                                Text("\(activeSlot)/\(totalSlots)")
+                                    .foregroundColor(.primary)
+                            }
                         }
                     }
                 }
