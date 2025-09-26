@@ -6,11 +6,15 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ActiveSlotView: View {
     let slot: SlotInfo
     let card: SatsCardInfo
     let isLoading: Bool
+    let viewModel: SatsCardDetailViewModel
+
+    @State private var copied = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -37,17 +41,91 @@ struct ActiveSlotView: View {
                 let totalSlots = card.totalSlots,
                 let pubkey = card.pubkey
             {
-                AddressView(
-                    address: address,
-                    activeSlot: activeSlot,
-                    totalSlots: totalSlots,
-                    pubkey: pubkey
-                )
-                .padding()
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(.secondary, lineWidth: 1)
-                )
+                List {
+                    Section {
+                        // Address row
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Address")
+                                .foregroundStyle(.secondary)
+                            Button {
+                                UIPasteboard.general.string = address
+                                copied = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                    copied = false
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(address)
+                                            .truncationMode(.middle)
+                                            .lineLimit(1)
+                                            .foregroundColor(.primary)
+
+                                        Spacer()
+
+                                        Image(
+                                            systemName: copied
+                                                ? "checkmark" : "document.on.document"
+                                        )
+                                        .font(.caption)
+                                        .foregroundColor(copied ? .green : .secondary)
+                                        .symbolEffect(.bounce, value: copied)
+                                    }
+                                }
+                            }
+                            .sensoryFeedback(.success, trigger: copied)
+                        }
+
+                        // Pubkey row
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Pubkey")
+                                .foregroundStyle(.secondary)
+                            Text(pubkey)
+                                .truncationMode(.middle)
+                                .lineLimit(1)
+                        }
+
+                        // Verify button row
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Explorer")
+                                .foregroundStyle(.secondary)
+                            Button {
+                                if let url = URL(string: "https://mempool.space/address/\(address)")
+                                {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("View on mempool.space")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    Section {
+                        // Slot row
+                        NavigationLink {
+                            SlotsRowListView(
+                                totalSlots: totalSlots,
+                                slots: viewModel.slots
+                            )
+                            .navigationTitle("All Slots")
+                            .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Slot")
+                                    .foregroundStyle(.secondary)
+                                Text("\(activeSlot)/\(totalSlots)")
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                    }
+                }
+                .listStyle(.insetGrouped)
+                .scrollDisabled(true)
             }
 
             Spacer()
@@ -77,7 +155,12 @@ struct ActiveSlotView: View {
             isActive: true
         )
 
-        return ActiveSlotView(slot: slot, card: card, isLoading: false)
-            .padding()
+        return ActiveSlotView(
+            slot: slot,
+            card: card,
+            isLoading: false,
+            viewModel: SatsCardDetailViewModel()
+        )
+        .padding()
     }
 #endif

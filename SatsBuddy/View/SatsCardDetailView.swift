@@ -26,7 +26,12 @@ struct SatsCardDetailView: View {
     var body: some View {
         VStack(spacing: 24) {
             if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
-                ActiveSlotView(slot: activeSlot, card: updatedCard, isLoading: viewModel.isLoading)
+                ActiveSlotView(
+                    slot: activeSlot,
+                    card: updatedCard,
+                    isLoading: viewModel.isLoading,
+                    viewModel: viewModel
+                )
             } else if viewModel.isLoading {
                 ProgressView("Loading slot details...")
                     .padding()
