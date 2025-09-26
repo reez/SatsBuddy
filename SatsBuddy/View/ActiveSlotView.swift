@@ -63,11 +63,10 @@ struct ActiveSlotView: View {
 
                                         Spacer()
 
-                                        if copied {
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(.green)
-                                                .symbolEffect(.bounce, value: copied)
-                                        }
+                                        Image(systemName: copied ? "checkmark" : "document.on.document")
+                                            .font(.caption)
+                                            .foregroundColor(copied ? .green : .secondary)
+                                            .symbolEffect(.bounce, value: copied)
                                     }
                                 }
                             }
@@ -110,7 +109,6 @@ struct ActiveSlotView: View {
                         }
                     }
                 }
-                .font(.caption)
                 .listStyle(.insetGrouped)
                 .scrollDisabled(true)
             }
