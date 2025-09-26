@@ -32,6 +32,11 @@ struct ActiveSlotView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
+
+                if isLoading && slot.balance == nil {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
             }
 
             Spacer()
