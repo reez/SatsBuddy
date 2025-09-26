@@ -33,6 +33,7 @@ struct ActiveSlotView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
+                .padding()
 
                 if isLoading && slot.balance == nil {
                     ProgressView()
