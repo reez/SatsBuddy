@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		AE2B3E6B2E85968F0046F873 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = AE2B3E6A2E85968F0046F873 /* KeychainAccess */; };
 		AE44A8672E7614EE00F00611 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AE44A8662E7614EE00F00611 /* README.md */; };
+		AE627CAD2E873F0000FB25C9 /* BitcoinUI in Frameworks */ = {isa = PBXBuildFile; productRef = AE627CAC2E873F0000FB25C9 /* BitcoinUI */; };
 		AE75A9BC2E43D13700A3A159 /* BitcoinDevKit in Frameworks */ = {isa = PBXBuildFile; productRef = AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */; };
 		AEA64EAB2E67604100108F53 /* CKTap in Frameworks */ = {isa = PBXBuildFile; productRef = AEA64EAA2E67604100108F53 /* CKTap */; };
 /* End PBXBuildFile section */
@@ -47,6 +48,7 @@
 				AEA64EAB2E67604100108F53 /* CKTap in Frameworks */,
 				AE75A9BC2E43D13700A3A159 /* BitcoinDevKit in Frameworks */,
 				AE2B3E6B2E85968F0046F873 /* KeychainAccess in Frameworks */,
+				AE627CAD2E873F0000FB25C9 /* BitcoinUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,6 +95,7 @@
 				AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */,
 				AEA64EAA2E67604100108F53 /* CKTap */,
 				AE2B3E6A2E85968F0046F873 /* KeychainAccess */,
+				AE627CAC2E873F0000FB25C9 /* BitcoinUI */,
 			);
 			productName = SatsBuddy;
 			productReference = AE2B975B2E43ADDF002051EC /* SatsBuddy.app */;
@@ -126,6 +129,7 @@
 				AE75A9BA2E43D13700A3A159 /* XCRemoteSwiftPackageReference "bdk-swift" */,
 				AEA64EA92E67604100108F53 /* XCLocalSwiftPackageReference "../rust-cktap/cktap-swift" */,
 				AE2B3E692E85968F0046F873 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+				AE627CAB2E873F0000FB25C9 /* XCRemoteSwiftPackageReference "BitcoinUI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AE2B975C2E43ADDF002051EC /* Products */;
@@ -387,6 +391,14 @@
 				version = 4.2.2;
 			};
 		};
+		AE627CAB2E873F0000FB25C9 /* XCRemoteSwiftPackageReference "BitcoinUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/reez/BitcoinUI";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.9;
+			};
+		};
 		AE75A9BA2E43D13700A3A159 /* XCRemoteSwiftPackageReference "bdk-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/bitcoindevkit/bdk-swift";
@@ -402,6 +414,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AE2B3E692E85968F0046F873 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
 			productName = KeychainAccess;
+		};
+		AE627CAC2E873F0000FB25C9 /* BitcoinUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AE627CAB2E873F0000FB25C9 /* XCRemoteSwiftPackageReference "BitcoinUI" */;
+			productName = BitcoinUI;
 		};
 		AE75A9BB2E43D13700A3A159 /* BitcoinDevKit */ = {
 			isa = XCSwiftPackageProductDependency;

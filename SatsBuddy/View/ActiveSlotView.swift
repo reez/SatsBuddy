@@ -7,6 +7,8 @@
 
 import SwiftUI
 import UIKit
+//import CoreImage
+//import CoreImage.CIFilterBuiltins
 
 struct ActiveSlotView: View {
     let slot: SlotInfo
@@ -15,6 +17,7 @@ struct ActiveSlotView: View {
     let viewModel: SatsCardDetailViewModel
 
     @State private var copied = false
+    @State private var showingReceiveSheet = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -50,39 +53,26 @@ struct ActiveSlotView: View {
             {
                 List {
                     Section {
-                        // Address row
-//
-//                        VStack(alignment: .leading, spacing: 4) {
-//                            Text("Address")
-//                                .foregroundStyle(.secondary)
-//                            Button {
-//                                UIPasteboard.general.string = address
-//                                copied = true
-//                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-//                                    copied = false
-//                                }
-//                            } label: {
-//                                VStack(alignment: .leading, spacing: 4) {
-//                                    HStack {
-//                                        Text(address)
-//                                            .truncationMode(.middle)
-//                                            .lineLimit(1)
-//                                            .foregroundColor(.primary)
-//
-//                                        Spacer()
-//
-//                                        Image(
-//                                            systemName: copied
-//                                                ? "checkmark" : "document.on.document"
-//                                        )
-//                                        .font(.caption)
-//                                        .foregroundColor(copied ? .green : .secondary)
-//                                        .symbolEffect(.bounce, value: copied)
-//                                    }
-//                                }
-//                            }
-//                            .sensoryFeedback(.success, trigger: copied)
-//                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Receive")
+                                .foregroundStyle(.secondary)
+                            Button {
+                                showingReceiveSheet = true
+                                print("tapped receive!")
+                            } label: {
+                                HStack {
+                                    Text("Show receive options")
+                                        .foregroundColor(.primary)
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
 
                         // Pubkey row
                         VStack(alignment: .leading, spacing: 4) {
@@ -133,6 +123,13 @@ struct ActiveSlotView: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollDisabled(true)
+                .sheet(isPresented: $showingReceiveSheet) {
+                    ReceiveView(//ReceiveOptionsSheet(
+                        address: address,
+//                        pubkey: pubkey,
+                        isCopied: $copied
+                    )
+                }
             }
 
             Spacer()
@@ -171,3 +168,137 @@ struct ActiveSlotView: View {
         .padding()
     }
 #endif
+
+//private struct ReceiveOptionsSheet: View {
+//    let address: String
+//    let pubkey: String
+//    @Binding var isCopied: Bool
+//
+//    @Environment(\.dismiss) private var dismiss
+////    private let context = CIContext()
+////    private let filter = CIFilter.qrCodeGenerator()
+//
+//    var body: some View {
+//        NavigationStack {
+//            ScrollView {
+//                VStack(spacing: 24) {
+//                    
+//                    // QR
+////                    qrCodeView
+//
+//                    VStack(alignment: .leading, spacing: 12) {
+//                        
+//                        // Address
+////                        section(title: "Address") {
+////                            copyButton(text: address)
+////                        }
+//
+//                        // Pubkey
+////                        section(title: "Pubkey") {
+////                            Text(pubkey)
+////                                .font(.system(.footnote, design: .monospaced))
+////                                .foregroundStyle(.primary)
+////                                .lineLimit(2)
+////                                .truncationMode(.middle)
+////                                .frame(maxWidth: .infinity, alignment: .leading)
+////                        }
+//
+//                        // Mempool button
+////                        Button {
+////                            if let url = URL(string: "https://mempool.space/address/\(address)") {
+////                                UIApplication.shared.open(url)
+////                            }
+////                        } label: {
+////                            HStack {
+////                                Text("View on mempool.space")
+////                                Spacer()
+////                                Image(systemName: "arrow.up.right")
+////                            }
+////                            .font(.body.weight(.medium))
+////                        }
+////                        .buttonStyle(.bordered)
+////                        .frame(maxWidth: .infinity, alignment: .leading)
+//                        
+//                        
+//                    }
+//                    .padding()
+//                }
+//                .padding()
+//            }
+//            .navigationTitle("Receive")
+//            .navigationBarTitleDisplayMode(.inline)
+//            .toolbar {
+//                ToolbarItem(placement: .confirmationAction) {
+//                    Button("Done", action: dismiss.callAsFunction)
+//                }
+//            }
+//        }
+//    }
+//
+//    private func section(title: String, @ViewBuilder content: () -> some View) -> some View {
+//        VStack(alignment: .leading, spacing: 6) {
+//            Text(title.uppercased())
+//                .font(.caption)
+//                .foregroundStyle(.secondary)
+//            content()
+//        }
+//        .frame(maxWidth: .infinity, alignment: .leading)
+//    }
+//
+//    private func copyButton(text: String) -> some View {
+//        Button {
+//            UIPasteboard.general.string = text
+//            isCopied = true
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+//                isCopied = false
+//            }
+//        } label: {
+//            HStack {
+//                Text(text)
+//                    .font(.system(.footnote, design: .monospaced))
+//                    .lineLimit(2)
+//                    .truncationMode(.middle)
+//                Spacer()
+//                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+//                    .foregroundColor(isCopied ? .green : .secondary)
+//                    .symbolEffect(.bounce, value: isCopied)
+//            }
+//            .padding()
+//            .background(
+//                RoundedRectangle(cornerRadius: 12, style: .continuous)
+//                    .fill(Color(.secondarySystemGroupedBackground))
+//            )
+//        }
+//        .buttonStyle(.plain)
+//    }
+//
+////    private var qrCodeView: some View {
+////        Group {
+////            if let image = qrImage(from: address) {
+////                Image(uiImage: image)
+////                    .interpolation(.none)
+////                    .resizable()
+////                    .scaledToFit()
+////                    .frame(width: 180, height: 180)
+////                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+////                    .padding(.top)
+////            } else {
+////                ProgressView()
+////                    .frame(width: 180, height: 180)
+////            }
+////        }
+////    }
+//
+////    private func qrImage(from string: String) -> UIImage? {
+////        let data = Data(string.utf8)
+////        filter.setValue(data, forKey: "inputMessage")
+////
+////        guard let outputImage = filter.outputImage,
+////            let cgImage = context.createCGImage(outputImage, from: outputImage.extent)
+////        else {
+////            return nil
+////        }
+////
+////        return UIImage(cgImage: cgImage)
+////    }
+//}
