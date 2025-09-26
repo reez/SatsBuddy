@@ -12,6 +12,7 @@ struct ActiveSlotView: View {
     let slot: SlotInfo
     let card: SatsCardInfo
     let isLoading: Bool
+    let viewModel: SatsCardDetailViewModel
 
     @State private var copied = false
 
@@ -105,7 +106,7 @@ struct ActiveSlotView: View {
                         NavigationLink {
                             SlotsRowListView(
                                 totalSlots: totalSlots,
-                                slots: card.slots
+                                slots: viewModel.slots
                             )
                             .navigationTitle("All Slots")
                             .navigationBarTitleDisplayMode(.inline)
@@ -150,7 +151,7 @@ struct ActiveSlotView: View {
             isActive: true
         )
 
-        return ActiveSlotView(slot: slot, card: card, isLoading: false)
+        return ActiveSlotView(slot: slot, card: card, isLoading: false, viewModel: SatsCardDetailViewModel())
             .padding()
     }
 #endif
