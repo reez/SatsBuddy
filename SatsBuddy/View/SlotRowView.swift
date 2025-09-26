@@ -160,7 +160,7 @@ struct SlotRowView: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 20)
                 .fill(.regularMaterial)
                 .stroke(.quaternary, lineWidth: 1)
         )

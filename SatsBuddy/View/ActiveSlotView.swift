@@ -16,42 +16,37 @@ struct ActiveSlotView: View {
         VStack(spacing: 16) {
             Spacer()
 
-            if let balance = slot.balance {
-                VStack(spacing: 32) {
-                    HStack {
-                        Image(systemName: "bitcoinsign")
-                            .font(.title)
-                            .fontWeight(.regular)
-                            .foregroundStyle(.secondary)
-                        Text("\(balance.formatted(.number.grouping(.automatic)))")
-                    }
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .fontDesign(.rounded)
-
-                    Text(card.dateScanned.formatted(date: .omitted, time: .standard))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .fontDesign(.monospaced)
-                }
-            } else if isLoading {
+            VStack(spacing: 32) {
                 HStack {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Text("Loading balance...")
-                        .font(.subheadline)
+                    Image(systemName: "bitcoinsign")
+                        .font(.title)
+                        .fontWeight(.regular)
                         .foregroundStyle(.secondary)
+                    Text(slot.balance?.formatted(.number.grouping(.automatic)) ?? "1,234")
+                        .redacted(reason: slot.balance == nil ? .placeholder : [])
                 }
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .fontDesign(.rounded)
             }
+
+            Spacer()
 
             if let address = slot.address,
                 let activeSlot = card.activeSlot,
-                let totalSlots = card.totalSlots
+                let totalSlots = card.totalSlots,
+                let pubkey = card.pubkey
             {
                 AddressView(
                     address: address,
                     activeSlot: activeSlot,
-                    totalSlots: totalSlots
+                    totalSlots: totalSlots,
+                    pubkey: pubkey
+                )
+                .padding()
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(.secondary, lineWidth: 1)
                 )
             }
 

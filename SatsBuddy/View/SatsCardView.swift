@@ -16,9 +16,13 @@ struct SatsCardView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: "square.grid.3x3.bottomleft.filled")
-                .symbolRenderingMode(.hierarchical)
-                .font(.title2)
+
+            Image("satscard.logo")
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 20)
+                .foregroundStyle(.orange)
 
             VStack(alignment: .leading, spacing: 2) {
                 if let customLabel = card.label?.trimmingCharacters(in: .whitespacesAndNewlines),

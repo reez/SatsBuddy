@@ -12,21 +12,38 @@ struct AddressView: View {
     let address: String
     let activeSlot: UInt8
     let totalSlots: UInt8
+    let pubkey: String
+
+    @State private var copied = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Slot \(activeSlot)/\(totalSlots)")
+
+            Text("\(pubkey)")
+                .truncationMode(.middle)
+                .lineLimit(1)
 
             Button {
                 UIPasteboard.general.string = address
+                copied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    copied = false
+                }
             } label: {
-                Text(address)
-                    .fontDesign(.monospaced)
-                    .truncationMode(.middle)
-                    .lineLimit(1)
-                    .foregroundStyle(.primary)
+                HStack {
+                    Text(address)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+
+                    if copied {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.green)
+                            .symbolEffect(.bounce, value: copied)
+                    }
+                }
             }
-            .buttonStyle(.plain)
+            .sensoryFeedback(.success, trigger: copied)
 
             Button {
                 if let url = URL(string: "https://mempool.space/address/\(address)") {
@@ -39,6 +56,7 @@ struct AddressView: View {
             .buttonStyle(.plain)
         }
         .font(.callout)
+
     }
 }
 
@@ -47,7 +65,8 @@ struct AddressView: View {
         AddressView(
             address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
             activeSlot: 1,
-            totalSlots: 10
+            totalSlots: 10,
+            pubkey: "pubkey"
         )
         .padding()
     }
