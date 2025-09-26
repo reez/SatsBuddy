@@ -6,53 +6,101 @@
 //
 
 import SwiftUI
-import BitcoinUI
+import UIKit
+import CoreImage
+import CoreImage.CIFilterBuiltins
 
 struct ReceiveView: View {
     let address: String
-    @Binding var isCopied: Bool //  should be isCopied
+    @Binding var isCopied: Bool
+    @Environment(\.dismiss) private var dismiss
+    @State private var qrImage: UIImage?
+    @State private var isGeneratingQR = false
 
     var body: some View {
-        VStack {
-            
-            // QR
-            QRCodeView(qrCodeType: .bitcoin(address))
-
-            // Address
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Address")
-                    .foregroundStyle(.secondary)
-                Button {
-                    UIPasteboard.general.string = address
-                    isCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        isCopied = false
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(address)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                            
-                            Image(
-                                systemName: isCopied
-                                ? "checkmark" : "document.on.document"
-                            )
-                            .font(.caption)
-                            .foregroundColor(isCopied ? .green : .secondary)
-                            .symbolEffect(.bounce, value: isCopied)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    
+                    Group {
+                        if let image = qrImage {
+                            Image(uiImage: image)
+                                .interpolation(.none)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 200, height: 200)
+                                .padding()
+            //                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        } else {
+                            Rectangle()//RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color(.secondarySystemGroupedBackground))
+                                .frame(width: 200, height: 200)
+                                .overlay { ProgressView() }
                         }
                     }
-                }
-                .sensoryFeedback(.success, trigger: isCopied)
-            }
-            
+                    .frame(maxWidth: .infinity)
+                    
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Address")
+                            .foregroundStyle(.secondary)
+                                     
+                        Button {
+                            UIPasteboard.general.string = address
+                            isCopied = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                isCopied = false
+                            }
+                        } label: {
+                            HStack {
+                                Text(address)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                Spacer()
+                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                                    .foregroundColor(isCopied ? .green : .secondary)
+                                    .font(.caption)
+                                    .symbolEffect(.bounce, value: isCopied)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .sensoryFeedback(.success, trigger: isCopied)
 
-            
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                }
+                .padding()
+            }
+            .navigationTitle("Receive")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+//                    Button("Done", action: dismiss.callAsFunction)
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .task {
+            guard !isGeneratingQR else { return }
+            isGeneratingQR = true
+            let image = await Task.detached(priority: .utility) {
+                QRGenerator.generate(from: address)
+            }.value
+            await MainActor.run {
+                qrImage = image
+                isGeneratingQR = false
+            }
         }
     }
 }
@@ -60,3 +108,20 @@ struct ReceiveView: View {
 #Preview {
     ReceiveView(address: "", isCopied: .constant(false))
 }
+
+private struct QRGenerator {
+    static let context = CIContext()
+    static func generate(from string: String) -> UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.setValue(Data(string.utf8), forKey: "inputMessage")
+
+        guard let outputImage = filter.outputImage,
+            let cgImage = context.createCGImage(outputImage, from: outputImage.extent)
+        else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
+    }
+}
+
