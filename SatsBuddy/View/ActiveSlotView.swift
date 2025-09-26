@@ -28,6 +28,7 @@ struct ActiveSlotView: View {
                         .foregroundStyle(.secondary)
                     Text(slot.balance?.formatted(.number.grouping(.automatic)) ?? "1,234")
                         .redacted(reason: slot.balance == nil ? .placeholder : [])
+                    Spacer()
                 }
                 .font(.largeTitle)
                 .fontWeight(.bold)
