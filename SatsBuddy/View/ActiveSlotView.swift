@@ -44,7 +44,7 @@ struct ActiveSlotView: View {
                 List {
                     Section {
                         // Address row
-                        
+
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Address")
                                 .foregroundStyle(.secondary)
@@ -64,10 +64,13 @@ struct ActiveSlotView: View {
 
                                         Spacer()
 
-                                        Image(systemName: copied ? "checkmark" : "document.on.document")
-                                            .font(.caption)
-                                            .foregroundColor(copied ? .green : .secondary)
-                                            .symbolEffect(.bounce, value: copied)
+                                        Image(
+                                            systemName: copied
+                                                ? "checkmark" : "document.on.document"
+                                        )
+                                        .font(.caption)
+                                        .foregroundColor(copied ? .green : .secondary)
+                                        .symbolEffect(.bounce, value: copied)
                                     }
                                 }
                             }
@@ -88,7 +91,8 @@ struct ActiveSlotView: View {
                             Text("Explorer")
                                 .foregroundStyle(.secondary)
                             Button {
-                                if let url = URL(string: "https://mempool.space/address/\(address)") {
+                                if let url = URL(string: "https://mempool.space/address/\(address)")
+                                {
                                     UIApplication.shared.open(url)
                                 }
                             } label: {
@@ -151,7 +155,12 @@ struct ActiveSlotView: View {
             isActive: true
         )
 
-        return ActiveSlotView(slot: slot, card: card, isLoading: false, viewModel: SatsCardDetailViewModel())
-            .padding()
+        return ActiveSlotView(
+            slot: slot,
+            card: card,
+            isLoading: false,
+            viewModel: SatsCardDetailViewModel()
+        )
+        .padding()
     }
 #endif
