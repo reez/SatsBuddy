@@ -29,13 +29,14 @@ struct ActiveSlotView: View {
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
             }
-            
+
             Spacer()
 
             if let address = slot.address,
-               let activeSlot = card.activeSlot,
-               let totalSlots = card.totalSlots,
-               let pubkey = card.pubkey {
+                let activeSlot = card.activeSlot,
+                let totalSlots = card.totalSlots,
+                let pubkey = card.pubkey
+            {
                 AddressView(
                     address: address,
                     activeSlot: activeSlot,
