@@ -5,10 +5,10 @@
 //  Created by Matthew Ramsden on 9/26/25.
 //
 
-import SwiftUI
-import UIKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import SwiftUI
+import UIKit
 
 struct ReceiveView: View {
     let address: String
@@ -21,7 +21,7 @@ struct ReceiveView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    
+
                     Group {
                         if let image = qrImage {
                             Image(uiImage: image)
@@ -30,21 +30,20 @@ struct ReceiveView: View {
                                 .scaledToFit()
                                 .frame(width: 200, height: 200)
                                 .padding()
-            //                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            //                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         } else {
-                            Rectangle()//RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            Rectangle()  //RoundedRectangle(cornerRadius: 20, style: .continuous)
                                 .fill(Color(.secondarySystemGroupedBackground))
                                 .frame(width: 200, height: 200)
                                 .overlay { ProgressView() }
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    
-                    
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Address")
                             .foregroundStyle(.secondary)
-                                     
+
                         Button {
                             UIPasteboard.general.string = address
                             isCopied = true
@@ -73,7 +72,7 @@ struct ReceiveView: View {
                             .fill(Color(.secondarySystemGroupedBackground))
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                 }
                 .padding()
             }
@@ -81,7 +80,6 @@ struct ReceiveView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-//                    Button("Done", action: dismiss.callAsFunction)
                     Button {
                         dismiss()
                     } label: {
@@ -124,4 +122,3 @@ private struct QRGenerator {
         return UIImage(cgImage: cgImage)
     }
 }
-

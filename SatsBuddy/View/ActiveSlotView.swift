@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+
 //import CoreImage
 //import CoreImage.CIFilterBuiltins
 
@@ -124,9 +125,9 @@ struct ActiveSlotView: View {
                 .listStyle(.insetGrouped)
                 .scrollDisabled(true)
                 .sheet(isPresented: $showingReceiveSheet) {
-                    ReceiveView(//ReceiveOptionsSheet(
+                    ReceiveView(  //ReceiveOptionsSheet(
                         address: address,
-//                        pubkey: pubkey,
+                        //                        pubkey: pubkey,
                         isCopied: $copied
                     )
                 }
@@ -182,12 +183,12 @@ struct ActiveSlotView: View {
 //        NavigationStack {
 //            ScrollView {
 //                VStack(spacing: 24) {
-//                    
+//
 //                    // QR
 ////                    qrCodeView
 //
 //                    VStack(alignment: .leading, spacing: 12) {
-//                        
+//
 //                        // Address
 ////                        section(title: "Address") {
 ////                            copyButton(text: address)
@@ -218,8 +219,8 @@ struct ActiveSlotView: View {
 ////                        }
 ////                        .buttonStyle(.bordered)
 ////                        .frame(maxWidth: .infinity, alignment: .leading)
-//                        
-//                        
+//
+//
 //                    }
 //                    .padding()
 //                }
