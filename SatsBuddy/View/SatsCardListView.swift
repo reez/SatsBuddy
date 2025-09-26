@@ -53,7 +53,7 @@ struct ContentView: View {
 
                 Spacer()
             }
-            .navigationTitle("SatsBuddy")
+            .navigationTitle("SatsBuddy".uppercased())
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItemGroup(placement: .bottomBar) {

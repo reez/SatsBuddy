@@ -28,10 +28,17 @@ struct ActiveSlotView: View {
                         .foregroundStyle(.secondary)
                     Text(slot.balance?.formatted(.number.grouping(.automatic)) ?? "1,234")
                         .redacted(reason: slot.balance == nil ? .placeholder : [])
+                    Spacer()
                 }
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
+                .padding()
+
+                if isLoading && slot.balance == nil {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
             }
 
             Spacer()
@@ -44,38 +51,38 @@ struct ActiveSlotView: View {
                 List {
                     Section {
                         // Address row
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Address")
-                                .foregroundStyle(.secondary)
-                            Button {
-                                UIPasteboard.general.string = address
-                                copied = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                    copied = false
-                                }
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(address)
-                                            .truncationMode(.middle)
-                                            .lineLimit(1)
-                                            .foregroundColor(.primary)
-
-                                        Spacer()
-
-                                        Image(
-                                            systemName: copied
-                                                ? "checkmark" : "document.on.document"
-                                        )
-                                        .font(.caption)
-                                        .foregroundColor(copied ? .green : .secondary)
-                                        .symbolEffect(.bounce, value: copied)
-                                    }
-                                }
-                            }
-                            .sensoryFeedback(.success, trigger: copied)
-                        }
+//
+//                        VStack(alignment: .leading, spacing: 4) {
+//                            Text("Address")
+//                                .foregroundStyle(.secondary)
+//                            Button {
+//                                UIPasteboard.general.string = address
+//                                copied = true
+//                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+//                                    copied = false
+//                                }
+//                            } label: {
+//                                VStack(alignment: .leading, spacing: 4) {
+//                                    HStack {
+//                                        Text(address)
+//                                            .truncationMode(.middle)
+//                                            .lineLimit(1)
+//                                            .foregroundColor(.primary)
+//
+//                                        Spacer()
+//
+//                                        Image(
+//                                            systemName: copied
+//                                                ? "checkmark" : "document.on.document"
+//                                        )
+//                                        .font(.caption)
+//                                        .foregroundColor(copied ? .green : .secondary)
+//                                        .symbolEffect(.bounce, value: copied)
+//                                    }
+//                                }
+//                            }
+//                            .sensoryFeedback(.success, trigger: copied)
+//                        }
 
                         // Pubkey row
                         VStack(alignment: .leading, spacing: 4) {
