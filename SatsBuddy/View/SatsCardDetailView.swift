@@ -59,20 +59,14 @@ struct SatsCardDetailView: View {
                 .disabled(cardViewModel.isScanning)
             }
         }
-        .onAppear {
+        .task(id: loadTaskID, priority: .userInitiated) {
             Log.ui.info(
-                "[\(traceID)] Detail onAppear for card: \(updatedCard.cardIdentifier, privacy: .public)"
+                "[\(traceID)] Detail task triggered for card: \(updatedCard.cardIdentifier, privacy: .public)"
             )
-            viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
-            DispatchQueue.main.async {
-                Log.ui.info("[\(traceID)] Main queue tick after loadSlotDetails return")
+            await MainActor.run {
+                viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
             }
-        }
-        .onChange(of: updatedCard.dateScanned) { newValue in
-            Log.ui.info(
-                "[\(traceID)] updatedCard.dateScanned changed -> \(newValue.formatted(date: .omitted, time: .standard))"
-            )
-            viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
+            Log.ui.info("[\(traceID)] Detail task completed loadSlotDetails")
         }
         .sheet(isPresented: $isRenaming, onDismiss: { prepareLabelForEditing() }) {
             RenameCardSheet(
@@ -187,6 +181,11 @@ extension SatsCardDetailView {
             return address
         }
         return nil
+    }
+
+    private var loadTaskID: String {
+        let timestamp = updatedCard.dateScanned.timeIntervalSinceReferenceDate
+        return "\(updatedCard.cardIdentifier)|\(timestamp)"
     }
 }
 
