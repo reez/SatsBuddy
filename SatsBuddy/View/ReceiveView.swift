@@ -9,6 +9,7 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 import UIKit
+import BitcoinUI
 
 struct ReceiveView: View {
     let address: String
@@ -16,29 +17,34 @@ struct ReceiveView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var qrImage: UIImage?
     @State private var isGeneratingQR = false
+    @State private var isQRLoading = true
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    
+                    ZStack {
+                        BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
+                            .opacity(isQRLoading ? 0 : 1)
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        isQRLoading = false
+                                    }
+                                }
+                            }
 
-                    Group {
-                        if let image = qrImage {
-                            Image(uiImage: image)
-                                .interpolation(.none)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 200, height: 200)
-                                .padding()
-                            //                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        } else {
-                            Rectangle()  //RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        if isQRLoading {
+                            Rectangle()
                                 .fill(Color(.secondarySystemGroupedBackground))
-                                .frame(width: 200, height: 200)
-                                .overlay { ProgressView() }
+                                .aspectRatio(1, contentMode: .fit)
+                                .overlay {
+                                    ProgressView()
+                                }
+                                .transition(.opacity)
                         }
                     }
-                    .frame(maxWidth: .infinity)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Address")
@@ -89,36 +95,10 @@ struct ReceiveView: View {
                 }
             }
         }
-        .task {
-            guard !isGeneratingQR else { return }
-            isGeneratingQR = true
-            let image = await Task.detached(priority: .utility) {
-                QRGenerator.generate(from: address)
-            }.value
-            await MainActor.run {
-                qrImage = image
-                isGeneratingQR = false
-            }
-        }
+
     }
 }
 
 #Preview {
     ReceiveView(address: "", isCopied: .constant(false))
-}
-
-private struct QRGenerator {
-    static let context = CIContext()
-    static func generate(from string: String) -> UIImage? {
-        let filter = CIFilter.qrCodeGenerator()
-        filter.setValue(Data(string.utf8), forKey: "inputMessage")
-
-        guard let outputImage = filter.outputImage,
-            let cgImage = context.createCGImage(outputImage, from: outputImage.extent)
-        else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage)
-    }
 }

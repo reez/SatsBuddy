@@ -19,6 +19,7 @@ struct ActiveSlotView: View {
 
     @State private var copied = false
     @State private var showingReceiveSheet = false
+    @State private var isPreparingReceiveSheet = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -58,7 +59,10 @@ struct ActiveSlotView: View {
                             Text("Receive")
                                 .foregroundStyle(.secondary)
                             Button {
-                                showingReceiveSheet = true
+                                isPreparingReceiveSheet = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    showingReceiveSheet = true
+                                }
                                 print("tapped receive!")
                             } label: {
                                 HStack {
@@ -67,9 +71,14 @@ struct ActiveSlotView: View {
 
                                     Spacer()
 
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    if isPreparingReceiveSheet {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
                             }
                             .buttonStyle(.plain)
@@ -124,7 +133,9 @@ struct ActiveSlotView: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollDisabled(true)
-                .sheet(isPresented: $showingReceiveSheet) {
+                .sheet(isPresented: $showingReceiveSheet, onDismiss: {
+                    isPreparingReceiveSheet = false
+                }) {
                     ReceiveView(  //ReceiveOptionsSheet(
                         address: address,
                         //                        pubkey: pubkey,
