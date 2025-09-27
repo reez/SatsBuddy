@@ -5,11 +5,11 @@
 //  Created by Matthew Ramsden on 9/26/25.
 //
 
+import BitcoinUI
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 import UIKit
-import BitcoinUI
 
 struct ReceiveView: View {
     let address: String
@@ -23,7 +23,7 @@ struct ReceiveView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    
+
                     ZStack {
                         BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
                             .opacity(isQRLoading ? 0 : 1)

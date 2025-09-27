@@ -133,9 +133,12 @@ struct ActiveSlotView: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollDisabled(true)
-                .sheet(isPresented: $showingReceiveSheet, onDismiss: {
-                    isPreparingReceiveSheet = false
-                }) {
+                .sheet(
+                    isPresented: $showingReceiveSheet,
+                    onDismiss: {
+                        isPreparingReceiveSheet = false
+                    }
+                ) {
                     ReceiveView(  //ReceiveOptionsSheet(
                         address: address,
                         //                        pubkey: pubkey,
