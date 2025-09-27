@@ -8,6 +8,8 @@ An iPhone app companion for SatsCard.
 
 - [bdk-swift](https://github.com/bitcoindevkit/bdk-swift)
 
+- [BitcoinUI](https://github.com/reez/BitcoinUI)
+
 - [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess)
 
 - [rust-cktap](https://github.com/notmandatory/rust-cktap)
