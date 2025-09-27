@@ -12,10 +12,10 @@ struct FooterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("SATSCARD • Made in ") + Text("Canada").foregroundColor(.red)
-                + Text(" • Version \(updatedCard.version)".uppercased())
-            Text("SATSBUDDY • Made in ") + Text("Nashville").foregroundColor(.blue)
-                + Text(" • Version 0".uppercased())
+            Text("SATSCARD • Version \(updatedCard.version) • Made in ".uppercased())
+                + Text("Canada".uppercased()).foregroundColor(.red)
+            Text("SATSBUDDY • Version 0 • Made in ".uppercased())
+                + Text("Nashville".uppercased()).foregroundColor(.blue)
         }
         .foregroundStyle(.secondary)
         .fontDesign(.monospaced)
