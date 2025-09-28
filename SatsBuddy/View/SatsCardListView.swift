@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct SatsCardListView: View {
     @State var viewModel: SatsCardViewModel
 
     var body: some View {
@@ -15,9 +15,11 @@ struct ContentView: View {
             VStack {
                 if viewModel.scannedCards.isEmpty {
                     ContentUnavailableView(
-                        "No Cards",
-                        systemImage: "creditcard",
-                        description: Text("Tap + to scan your first SatsCard")
+                        "Tap + to add your SATSCARD",
+                        systemImage: "wave.3.up",
+                        description: Text(
+                            "Purchase a SATSCARD at [satscard.com](https://satscard.com)"
+                        )
                     )
                 } else {
                     List {
@@ -108,6 +110,6 @@ struct ContentView: View {
                 isActive: true
             )
         ]
-        return ContentView(viewModel: vm)
+        return SatsCardListView(viewModel: vm)
     }
 #endif
