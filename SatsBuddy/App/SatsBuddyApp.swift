@@ -22,7 +22,7 @@ struct SatsBuddyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(viewModel: viewModel)
+            SatsCardListView(viewModel: viewModel)
         }
     }
 }
