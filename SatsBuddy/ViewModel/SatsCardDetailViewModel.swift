@@ -94,9 +94,6 @@ class SatsCardDetailViewModel {
             Log.cktap.error(
                 "[\(traceID)] Balance fetch failed: \(error.localizedDescription, privacy: .public)"
             )
-            if let activeSlotIndex = slots.firstIndex(where: { $0.isActive }) {
-                slots[activeSlotIndex].balance = 0
-            }
             errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
             Log.cktap.error(
                 "[\(traceID)] Total time before failure: \(totalDurationString)s"
