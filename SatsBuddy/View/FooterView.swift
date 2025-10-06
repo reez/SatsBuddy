@@ -24,5 +24,10 @@ struct FooterView: View {
 }
 
 #Preview {
-    FooterView(updatedCard: .init(version: "1.0.3"))
+    FooterView(
+        updatedCard: .init(
+            version: "1.0.3",
+            pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351"
+        )
+    )
 }

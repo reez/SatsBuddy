@@ -120,6 +120,7 @@ struct SatsCardDetailView: View {
         let sampleCard = SatsCardInfo(
             version: "1.0.3",
             address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+            pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351",
             activeSlot: 2,
             totalSlots: 10,
             slots: sampleSlots,
@@ -174,8 +175,8 @@ extension SatsCardDetailView {
         {
             return label
         }
-        if let pubkey = updatedCard.pubkey, !pubkey.isEmpty {
-            return pubkey
+        if !updatedCard.pubkey.isEmpty {
+            return updatedCard.pubkey
         }
         if let address = updatedCard.address, !address.isEmpty {
             return address

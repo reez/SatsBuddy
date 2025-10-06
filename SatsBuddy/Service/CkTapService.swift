@@ -62,6 +62,7 @@ extension CkTapClient {
                 version: "1.0.3",
                 birth: 1,
                 address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+                pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388",
                 activeSlot: 1,
                 totalSlots: 10,
                 slots: sampleSlots,
