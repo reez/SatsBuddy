@@ -40,6 +40,15 @@ struct ActiveSlotView: View {
                 .fontDesign(.rounded)
                 .padding()
 
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                }
+
                 if isLoading && slot.balance == nil {
                     ProgressView()
                         .scaleEffect(0.8)

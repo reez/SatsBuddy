@@ -16,6 +16,8 @@ class SatsCardDetailViewModel {
     var isLoading = false
     var errorMessage: String?
     private let bdkClient: BdkClient
+    private var currentFetchToken: UUID?
+    private var balanceFetchTask: Task<Void, Never>?
 
     init(bdkClient: BdkClient = .live) {
         self.bdkClient = bdkClient
@@ -38,13 +40,18 @@ class SatsCardDetailViewModel {
             "[\(traceID)] Slots copied to detail view (count: \(card.slots.count, privacy: .public))"
         )
 
+        balanceFetchTask?.cancel()
+        let fetchToken = UUID()
+        currentFetchToken = fetchToken
+
         // Kick off balance fetching on a background task so navigation isn't blocked.
-        Task(priority: .userInitiated) { [weak self] in
+        balanceFetchTask = Task(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             await self.fetchBalanceForActiveSlot(
                 card: card,
                 loadStartedAt: loadStart,
-                traceID: traceID
+                traceID: traceID,
+                fetchToken: fetchToken
             )
         }
 
@@ -54,9 +61,19 @@ class SatsCardDetailViewModel {
     }
 
     @MainActor
-    private func fetchBalanceForActiveSlot(card: SatsCardInfo, loadStartedAt: Date, traceID: String)
-        async
-    {
+    private func fetchBalanceForActiveSlot(
+        card: SatsCardInfo,
+        loadStartedAt: Date,
+        traceID: String,
+        fetchToken: UUID
+    ) async {
+        guard currentFetchToken == fetchToken else { return }
+        defer {
+            if currentFetchToken == fetchToken {
+                balanceFetchTask = nil
+            }
+        }
+
         guard let cardAddress = card.address else {
             Log.cktap.debug("[\(traceID)] Missing card address; skipping balance fetch")
             isLoading = false
@@ -74,6 +91,9 @@ class SatsCardDetailViewModel {
             let totalDuration = Date().timeIntervalSince(loadStartedAt)
             let networkDurationString = String(format: "%.3f", networkDuration)
             let totalDurationString = String(format: "%.3f", totalDuration)
+
+            if Task.isCancelled { return }
+            guard currentFetchToken == fetchToken else { return }
 
             guard let activeSlotIndex = slots.firstIndex(where: { $0.isActive }) else {
                 isLoading = false
@@ -94,9 +114,8 @@ class SatsCardDetailViewModel {
             Log.cktap.error(
                 "[\(traceID)] Balance fetch failed: \(error.localizedDescription, privacy: .public)"
             )
-            if let activeSlotIndex = slots.firstIndex(where: { $0.isActive }) {
-                slots[activeSlotIndex].balance = 0
-            }
+            if Task.isCancelled { return }
+            guard currentFetchToken == fetchToken else { return }
             errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
             Log.cktap.error(
                 "[\(traceID)] Total time before failure: \(totalDurationString)s"
