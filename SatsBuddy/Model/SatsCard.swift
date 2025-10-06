@@ -43,7 +43,7 @@ struct SatsCardInfo: Identifiable, Codable {
     let version: String
     let birth: UInt64?  // Card birth timestamp - unique identifier
     let address: String?
-    let pubkey: String?  // TODO: use this as the unique identifier
+    let pubkey: String
     let cardNonce: String?
     let activeSlot: UInt8?
     let totalSlots: UInt8?
@@ -52,17 +52,12 @@ struct SatsCardInfo: Identifiable, Codable {
     var label: String?
     let slots: [SlotInfo]
 
-    // Unique identifier for matching cards across scans
-    var cardIdentifier: String {
-        return "\(version)-\(birth ?? 0)-\(totalSlots ?? 0)"
-    }
-
     init(
         id: UUID = UUID(),
         version: String,
         birth: UInt64? = nil,
         address: String? = nil,
-        pubkey: String? = nil,
+        pubkey: String,
         cardNonce: String? = nil,
         activeSlot: UInt8? = nil,
         totalSlots: UInt8? = nil,
@@ -91,7 +86,7 @@ struct SatsCardInfo: Identifiable, Codable {
         {
             return trimmedLabel
         }
-        if let pubkey, !pubkey.isEmpty {
+        if !pubkey.isEmpty {
             return pubkey
         }
         if let address, !address.isEmpty {
@@ -99,4 +94,7 @@ struct SatsCardInfo: Identifiable, Codable {
         }
         return "SATSCARD"
     }
+
+    /// Stable hardware identifier exposed by CKTap, used to merge scans.
+    var cardIdentifier: String { pubkey }
 }

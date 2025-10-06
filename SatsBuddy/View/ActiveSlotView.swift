@@ -50,9 +50,9 @@ struct ActiveSlotView: View {
 
             if let address = slot.address,
                 let activeSlot = card.activeSlot,
-                let totalSlots = card.totalSlots,
-                let pubkey = card.pubkey
+                let totalSlots = card.totalSlots
             {
+                let pubkey = card.pubkey
                 List {
                     Section {
                         VStack(alignment: .leading, spacing: 4) {
@@ -168,6 +168,8 @@ struct ActiveSlotView: View {
         let card = SatsCardInfo(
             version: "1.0.3",
             address: slot.address,
+            pubkey: slot.pubkey
+                ?? "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
             activeSlot: 1,
             totalSlots: 10,
             slots: [slot],

@@ -33,8 +33,8 @@ struct SatsCardView: View {
                         .fontWeight(.semibold)
                         .truncationMode(.middle)
                         .lineLimit(1)
-                } else if let pubkey = card.pubkey, !pubkey.isEmpty {
-                    Text(pubkey)
+                } else if !card.pubkey.isEmpty {
+                    Text(card.pubkey)
                         .font(.body)
                         .fontWeight(.semibold)
                         .fontDesign(.monospaced)
