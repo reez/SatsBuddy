@@ -53,7 +53,7 @@ struct ReceiveView: View {
                             .padding(.bottom)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(Color(.secondarySystemGroupedBackground))
                     )
 
@@ -85,7 +85,7 @@ struct ReceiveView: View {
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(Color(.secondarySystemGroupedBackground))
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
