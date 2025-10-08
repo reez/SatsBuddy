@@ -20,6 +20,7 @@ struct ActiveSlotView: View {
     @State private var copied = false
     @State private var showingReceiveSheet = false
     @State private var isPreparingReceiveSheet = false
+    @State private var receiveAddress: String?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -33,6 +34,11 @@ struct ActiveSlotView: View {
                         .foregroundStyle(.secondary)
                     Text(slot.balance?.formatted(.number.grouping(.automatic)) ?? "1,234")
                         .redacted(reason: slot.balance == nil ? .placeholder : [])
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .frame(width: 20, height: 20)
+                        .opacity(isLoading ? 1 : 0)
+                        .accessibilityHidden(!isLoading)
                     Spacer()
                 }
                 .font(.largeTitle)
@@ -48,110 +54,109 @@ struct ActiveSlotView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                 }
-
-                if isLoading && slot.balance == nil {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
             }
 
             Spacer()
 
-            if let address = slot.address,
-                let activeSlot = card.activeSlot,
-                let totalSlots = card.totalSlots
-            {
-                let pubkey = card.pubkey
-                List {
-                    Section {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Receive")
-                                .foregroundStyle(.secondary)
-                            HStack {
-                                Text("Show receive options")
-                                    .foregroundColor(.primary)
+            List {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Receive")
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("Show receive options")
+                                .foregroundColor(.primary)
 
-                                Spacer()
+                            Spacer()
 
-                                if isPreparingReceiveSheet {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                            if isPreparingReceiveSheet {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            isPreparingReceiveSheet = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                showingReceiveSheet = true
-                            }
-                            print("tapped receive!")
-                        }
-
-                        // Pubkey row
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Pubkey")
-                                .foregroundStyle(.secondary)
-                            Text(pubkey)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-                        }
-
-                        // Verify button row
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Explorer")
-                                .foregroundStyle(.secondary)
-                            Button {
-                                if let url = URL(string: "https://mempool.space/address/\(address)")
-                                {
-                                    UIApplication.shared.open(url)
-                                }
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("View on mempool.space")
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                            .buttonStyle(.plain)
                         }
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard let address = displayAddress else { return }
 
-                    Section {
-                        // Slot row
-                        NavigationLink {
-                            SlotsRowListView(
-                                totalSlots: totalSlots,
-                                slots: viewModel.slots
-                            )
-                            .navigationTitle("All Slots")
-                            .navigationBarTitleDisplayMode(.inline)
+                        isPreparingReceiveSheet = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            receiveAddress = address
+                            showingReceiveSheet = true
+                        }
+                        print("tapped receive!")
+                    }
+
+                    // Pubkey row
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Pubkey")
+                            .foregroundStyle(.secondary)
+                        Text(displayPubkey)
+                            .truncationMode(.middle)
+                            .lineLimit(1)
+                    }
+
+                    // Verify button row
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Explorer")
+                            .foregroundStyle(.secondary)
+                        Button {
+                            guard let address = displayAddress else { return }
+                            if let url = URL(string: "https://mempool.space/address/\(address)") {
+                                UIApplication.shared.open(url)
+                            }
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Slot")
-                                    .foregroundStyle(.secondary)
-                                Text("\(activeSlot)/\(totalSlots)")
-                                    .foregroundColor(.primary)
+                                Text("View on mempool.space")
+                                    .foregroundStyle(.blue)
                             }
                         }
+                        .buttonStyle(.plain)
+                        .disabled(displayAddress == nil)
                     }
                 }
-                .listStyle(.insetGrouped)
-                .scrollDisabled(true)
-                .sheet(
-                    isPresented: $showingReceiveSheet,
-                    onDismiss: {
-                        isPreparingReceiveSheet = false
+
+                Section {
+                    // Slot row
+                    NavigationLink {
+                        SlotsRowListView(
+                            totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
+                            slots: viewModel.slots
+                        )
+                        .navigationTitle("All Slots")
+                        .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Slot")
+                                .foregroundStyle(.secondary)
+                            Text(slotPositionText)
+                                .foregroundColor(.primary)
+                        }
                     }
-                ) {
-                    ReceiveView(  //ReceiveOptionsSheet(
-                        address: address,
-                        //                        pubkey: pubkey,
+                    .disabled(card.totalSlots == nil)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollDisabled(true)
+            .animation(.smooth, value: isLoading)
+            .sheet(
+                isPresented: $showingReceiveSheet,
+                onDismiss: {
+                    isPreparingReceiveSheet = false
+                    receiveAddress = nil
+                }
+            ) {
+                if let receiveAddress {
+                    ReceiveView(
+                        address: receiveAddress,
                         isCopied: $copied
                     )
+                } else {
+                    EmptyView()
                 }
             }
 
@@ -194,10 +199,30 @@ struct ActiveSlotView: View {
     }
 #endif
 
-//private struct ReceiveOptionsSheet: View {
-//    let address: String
-//    let pubkey: String
-//    @Binding var isCopied: Bool
+extension ActiveSlotView {
+    fileprivate var displayAddress: String? {
+        slot.address ?? card.address
+    }
+
+    fileprivate var displayPubkey: String {
+        slot.pubkey ?? card.pubkey
+    }
+
+    fileprivate var slotPositionText: String {
+        if let activeSlot = card.activeSlot,
+            let totalSlots = card.totalSlots
+        {
+            return "\(activeSlot)/\(totalSlots)"
+        }
+
+        if let totalSlots = card.totalSlots {
+            return "\(slot.slotNumber)/\(totalSlots)"
+        }
+
+        return "--/--"
+    }
+}
+
 //
 //    @Environment(\.dismiss) private var dismiss
 ////    private let context = CIContext()
