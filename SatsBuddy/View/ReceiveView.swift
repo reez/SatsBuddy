@@ -29,7 +29,7 @@ struct ReceiveView: View {
                             BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
                                 .opacity(isQRLoading ? 0 : 1)
                                 .onAppear {
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    DispatchQueue.main.async {
                                         withAnimation(.easeInOut(duration: 0.3)) {
                                             isQRLoading = false
                                         }
