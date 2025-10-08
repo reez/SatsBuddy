@@ -25,17 +25,12 @@ struct SatsCardDetailView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            if let activeSlot = viewModel.slots.first(where: { $0.isActive }) {
-                ActiveSlotView(
-                    slot: activeSlot,
-                    card: updatedCard,
-                    isLoading: viewModel.isLoading,
-                    viewModel: viewModel
-                )
-            } else if viewModel.isLoading {
-                ProgressView("Loading slot details...")
-                    .padding()
-            }
+            ActiveSlotView(
+                slot: slotForDisplay,
+                card: updatedCard,
+                isLoading: viewModel.isLoading || isShowingPlaceholderSlot,
+                viewModel: viewModel
+            )
 
             FooterView(updatedCard: updatedCard)
                 .padding(.top, 40)
@@ -136,6 +131,30 @@ struct SatsCardDetailView: View {
 #endif
 
 extension SatsCardDetailView {
+    private var activeSlot: SlotInfo? {
+        viewModel.slots.first(where: { $0.isActive })
+    }
+
+    private var slotForDisplay: SlotInfo {
+        activeSlot ?? placeholderSlot(for: updatedCard)
+    }
+
+    private var isShowingPlaceholderSlot: Bool {
+        activeSlot == nil
+    }
+
+    private func placeholderSlot(for card: SatsCardInfo) -> SlotInfo {
+        SlotInfo(
+            slotNumber: card.activeSlot ?? 0,
+            isActive: true,
+            isUsed: card.isActive,
+            pubkey: card.pubkey,
+            pubkeyDescriptor: nil,
+            address: card.address,
+            balance: nil
+        )
+    }
+
     private func prepareLabelForEditing() {
         if let label = updatedCard.label,
             !label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
