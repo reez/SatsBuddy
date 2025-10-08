@@ -21,6 +21,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
     let ckTapClient: CkTapClient
     private let cardsStore: CardsKeychainClient
+    private var currentNFCReadTask: Task<Void, Never>?
+    private var currentNFCReadTaskToken: UUID?
 
     override init() {
         let bdkClient = BdkClient.live
@@ -48,6 +50,9 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Swift.Error)
     {
         Log.nfc.info("Session invalidated: \(error.localizedDescription, privacy: .public)")
+        currentNFCReadTask?.cancel()
+        currentNFCReadTask = nil
+        currentNFCReadTaskToken = nil
         Task { @MainActor in
             if let nfcError = error as? NFCReaderError,
                 nfcError.code == .readerSessionInvalidationErrorUserCanceled
@@ -77,6 +82,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         session.connect(to: firstTag) { [weak self] (error: Swift.Error?) in
             guard let self = self else { return }
 
+            self.currentNFCReadTask?.cancel()
+            self.currentNFCReadTask = nil
+            self.currentNFCReadTaskToken = nil
+
             if let error = error {
                 Log.nfc.error("Tag connect error: \(error.localizedDescription, privacy: .public)")
                 session.invalidate(errorMessage: "Connection failed.")
@@ -85,19 +94,46 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             }
 
             Log.nfc.info("Connected to tag")
-            Task {
+            let taskToken = UUID()
+            self.currentNFCReadTaskToken = taskToken
+            let task = Task {
+                defer {
+                    Task { @MainActor [weak self] in
+                        guard
+                            let self,
+                            self.currentNFCReadTaskToken == taskToken
+                        else { return }
+                        self.currentNFCReadTaskToken = nil
+                        self.currentNFCReadTask = nil
+                    }
+                }
+
+                if Task.isCancelled { return }
+
                 guard case .iso7816(let iso7816Tag) = firstTag else {
                     Log.nfc.error("Tag is not ISO7816 compatible")
-                    await MainActor.run { self.lastStatusMessage = "Card not compatible." }
-                    session.invalidate(errorMessage: "Card not compatible.")
+                    await MainActor.run { [weak self] in
+                        self?.lastStatusMessage = "Card not compatible."
+                    }
+                    if !Task.isCancelled {
+                        session.invalidate(errorMessage: "Card not compatible.")
+                    }
                     return
                 }
 
-                await MainActor.run { self.lastStatusMessage = "Card connected, getting status..." }
+                if Task.isCancelled { return }
+
+                await MainActor.run { [weak self] in
+                    self?.lastStatusMessage = "Card connected, getting status..."
+                }
 
                 do {
+                    if Task.isCancelled { return }
                     let transport = NFCTransport(tag: iso7816Tag)
+                    if Task.isCancelled { return }
                     let cardInfo = try await self.ckTapClient.readCardInfo(transport)
+                    if Task.isCancelled { return }
+
                     await MainActor.run {
                         let mergedCard = self.mergeCardInfo(with: cardInfo)
                         let updated = CardsStore.upsert(&self.scannedCards, with: mergedCard)
@@ -106,9 +142,14 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                         self.isScanning = false
                         self.persistCards()
                     }
-                    session.invalidate()
+
+                    if !Task.isCancelled {
+                        session.invalidate()
+                    }
 
                 } catch {
+                    if Task.isCancelled { return }
+
                     Log.cktap.error(
                         "CKTap error: \(String(describing: error), privacy: .public)"
                     )
@@ -120,12 +161,15 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     } else {
                         message = "Error: \(error.localizedDescription)"
                     }
-                    await MainActor.run {
-                        self.lastStatusMessage = message
+                    await MainActor.run { [weak self] in
+                        self?.lastStatusMessage = message
                     }
-                    session.invalidate(errorMessage: message)
+                    if !Task.isCancelled {
+                        session.invalidate(errorMessage: message)
+                    }
                 }
             }
+            self.currentNFCReadTask = task
         }
     }
 
@@ -136,6 +180,9 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             return
         }
 
+        currentNFCReadTask?.cancel()
+        currentNFCReadTask = nil
+        currentNFCReadTaskToken = nil
         tagSession?.invalidate()
 
         tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
