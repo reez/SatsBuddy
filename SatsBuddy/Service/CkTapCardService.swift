@@ -90,10 +90,10 @@ final class CkTapCardService {
             let isUsed = slotNumber <= status.activeSlot
 
             var slotPubkey: String?
-            var slotAddress: String?
+            var slotAddress: String? = currentAddress
             var slotDescriptor: String?
 
-            if isUsed {
+            if !isActive, isUsed {
                 // `dump(slot:)`
                 //  - For used, unsealed slots (historical slots), this returns `pubkey` and
                 //    `pubkeyDescriptor` which we can use to derive the exact on-chain address
@@ -125,9 +125,10 @@ final class CkTapCardService {
                     Log.cktap.error(
                         "dump(slot:) failed for slot \(slotNumber): \(error, privacy: .public)"
                     )
-                    // Sealed active slot fallback: use `card.address()` value if dump fails.
-                    if isActive { slotAddress = currentAddress }
                 }
+            } else if isActive {
+                slotPubkey = status.pubkey
+                slotAddress = currentAddress
             }
 
             let slotInfo = SlotInfo(

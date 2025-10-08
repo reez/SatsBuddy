@@ -44,9 +44,12 @@ struct SatsCardListView: View {
                                 .buttonStyle(PlainButtonStyle())
                             }
                             .onDelete { indexSet in
-                                for index in indexSet {
-                                    viewModel.removeCard(viewModel.scannedCards[index])
+                                let cardsToRemove = indexSet.compactMap { index in
+                                    viewModel.scannedCards.indices.contains(index)
+                                        ? viewModel.scannedCards[index]
+                                        : nil
                                 }
+                                cardsToRemove.forEach { viewModel.removeCard($0) }
                             }
                         }
                     }
