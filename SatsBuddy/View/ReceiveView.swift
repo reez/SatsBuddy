@@ -24,27 +24,38 @@ struct ReceiveView: View {
             ScrollView {
                 VStack(spacing: 24) {
 
-                    ZStack {
-                        BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
-                            .opacity(isQRLoading ? 0 : 1)
-                            .onAppear {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        isQRLoading = false
+                    VStack {
+                        ZStack {
+                            BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
+                                .opacity(isQRLoading ? 0 : 1)
+                                .onAppear {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            isQRLoading = false
+                                        }
                                     }
                                 }
-                            }
 
-                        if isQRLoading {
-                            Rectangle()
-                                .fill(Color(.secondarySystemGroupedBackground))
-                                .aspectRatio(1, contentMode: .fit)
-                                .overlay {
-                                    ProgressView()
-                                }
-                                .transition(.opacity)
+                            if isQRLoading {
+                                Rectangle()
+                                    .fill(Color(.secondarySystemGroupedBackground))
+                                    .aspectRatio(1, contentMode: .fit)
+                                    .overlay {
+                                        ProgressView()
+                                    }
+                                    .transition(.opacity)
+                            }
                         }
+                        .padding()
+
+                        BitcoinUI.AddressFormattedView(address: address, columns: 4)
+                            .padding(.bottom)
+                            .padding(.bottom)
                     }
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                    )
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Address")
@@ -74,7 +85,7 @@ struct ReceiveView: View {
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(Color(.secondarySystemGroupedBackground))
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
