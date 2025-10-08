@@ -63,8 +63,10 @@ struct ActiveSlotView: View {
                         Text("Receive")
                             .foregroundStyle(.secondary)
                         HStack {
-                            Text("Show receive options")
+                            Text(displayAddress ?? "No address")
                                 .foregroundColor(.primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
 
                             Spacer()
 
