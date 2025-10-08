@@ -67,30 +67,29 @@ struct ActiveSlotView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Receive")
                                 .foregroundStyle(.secondary)
-                            Button {
-                                isPreparingReceiveSheet = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    showingReceiveSheet = true
-                                }
-                                print("tapped receive!")
-                            } label: {
-                                HStack {
-                                    Text("Show receive options")
-                                        .foregroundColor(.primary)
+                            HStack {
+                                Text("Show receive options")
+                                    .foregroundColor(.primary)
 
-                                    Spacer()
+                                Spacer()
 
-                                    if isPreparingReceiveSheet {
-                                        ProgressView()
-                                            .scaleEffect(0.8)
-                                    } else {
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
+                                if isPreparingReceiveSheet {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
                             }
-                            .buttonStyle(.plain)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isPreparingReceiveSheet = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingReceiveSheet = true
+                            }
+                            print("tapped receive!")
                         }
 
                         // Pubkey row
