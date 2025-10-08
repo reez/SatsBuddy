@@ -18,9 +18,8 @@ struct ActiveSlotView: View {
     let viewModel: SatsCardDetailViewModel
 
     @State private var copied = false
-    @State private var showingReceiveSheet = false
+    @State private var receiveSheetState: ReceiveSheetState?
     @State private var isPreparingReceiveSheet = false
-    @State private var receiveAddress: String?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -84,10 +83,7 @@ struct ActiveSlotView: View {
                         guard let address = displayAddress else { return }
 
                         isPreparingReceiveSheet = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            receiveAddress = address
-                            showingReceiveSheet = true
-                        }
+                        receiveSheetState = ReceiveSheetState(address: address)
                         print("tapped receive!")
                     }
 
@@ -144,19 +140,17 @@ struct ActiveSlotView: View {
             .scrollDisabled(true)
             .animation(.smooth, value: isLoading)
             .sheet(
-                isPresented: $showingReceiveSheet,
+                item: $receiveSheetState,
                 onDismiss: {
                     isPreparingReceiveSheet = false
-                    receiveAddress = nil
                 }
-            ) {
-                if let receiveAddress {
-                    ReceiveView(
-                        address: receiveAddress,
-                        isCopied: $copied
-                    )
-                } else {
-                    EmptyView()
+            ) { sheetState in
+                ReceiveView(
+                    address: sheetState.address,
+                    isCopied: $copied
+                )
+                .onAppear {
+                    isPreparingReceiveSheet = false
                 }
             }
 
@@ -198,6 +192,11 @@ struct ActiveSlotView: View {
         .padding()
     }
 #endif
+
+private struct ReceiveSheetState: Identifiable {
+    let id = UUID()
+    let address: String
+}
 
 extension ActiveSlotView {
     fileprivate var displayAddress: String? {
