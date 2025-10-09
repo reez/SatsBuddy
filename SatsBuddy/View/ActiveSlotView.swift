@@ -95,9 +95,13 @@ struct ActiveSlotView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Pubkey")
                             .foregroundStyle(.secondary)
-                        Text(displayPubkey)
-                            .truncationMode(.middle)
-                            .lineLimit(1)
+                        HStack {
+                            Text(displayPubkey)
+                                .truncationMode(.middle)
+                                .lineLimit(1)
+
+                            Spacer(minLength: 80)
+                        }
                     }
 
                     Button {
