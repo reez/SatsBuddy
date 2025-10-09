@@ -12,19 +12,26 @@ struct SlotsRowListView: View {
     let slots: [SlotInfo]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Slots (\(totalSlots) total)")
-                    .font(.headline)
-
-                LazyVStack(spacing: 8) {
-                    ForEach(slots) { slot in
-                        SlotRowView(slot: slot)
-                    }
+        List {
+            Section {
+                ForEach(slots) { slot in
+                    SlotRowView(slot: slot)
+                        .listRowInsets(
+                            EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+                        )
+                        .listRowBackground(Color.clear)
                 }
+            } header: {
+                Text("Slots")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 4)
             }
-            .padding()
+            .textCase(nil)
         }
+        .listStyle(.plain)
+        .scrollIndicators(.hidden)
+        .scrollContentBackground(.hidden)
     }
 }
 

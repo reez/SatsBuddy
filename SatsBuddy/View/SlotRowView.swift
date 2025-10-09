@@ -13,157 +13,32 @@ struct SlotRowView: View {
     @State private var addressCopied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Slot \(slot.slotNumber)")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-
-                Spacer()
-
-                if slot.isActive {
-                    Text("ACTIVE")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(.green.opacity(0.2))
-                        .foregroundColor(.green)
-                        .cornerRadius(4)
-                }
-
-                if !slot.isUsed {
-                    Text("UNUSED")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(.gray.opacity(0.2))
-                        .foregroundColor(.gray)
-                        .cornerRadius(4)
-                }
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            slotSummary
 
             if slot.isUsed {
-                if let address = slot.address {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Address:")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Text(address)
-                                .font(.caption)
-                                .fontDesign(.monospaced)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
+                Divider().padding(.vertical, 4)
+                addressRow
 
-                            if slot.isActive {
-                                if let balance = slot.balance {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack(spacing: 2) {
-                                            Image(systemName: "bitcoinsign")
-                                                .font(.caption2)
-                                                .foregroundStyle(.primary)
-                                            Text("\(balance)")
-                                                .font(.caption2)
-                                                .foregroundStyle(.primary)
-                                                .fontWeight(.medium)
-                                        }
-
-                                        Button {
-                                            if let url = URL(
-                                                string: "https://mempool.space/address/\(address)"
-                                            ) {
-                                                UIApplication.shared.open(url)
-                                            }
-                                        } label: {
-                                            Text("Verify on Mempool.space")
-                                                .font(.caption2)
-                                                .foregroundStyle(.blue)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                } else {
-                                    Text("Balance: Loading...")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .fontWeight(.medium)
-                                }
-                            }
-                        }
-
-                        Spacer()
-
-                        HStack(spacing: 8) {
-                            Button {
-                                if let url = URL(string: "https://mempool.space/address/\(address)")
-                                {
-                                    UIApplication.shared.open(url)
-                                }
-                            } label: {
-                                Image(systemName: "link")
-                                    .font(.caption)
-                            }
-                            .buttonStyle(.plain)
-
-                            Button {
-                                UIPasteboard.general.string = address
-                                addressCopied = true
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                    addressCopied = false
-                                }
-                            } label: {
-                                Image(systemName: addressCopied ? "doc.on.doc.fill" : "doc.on.doc")
-                                    .font(.caption)
-                                    .contentTransition(.symbolEffect(.replace))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                if slot.isActive {
+                    Divider().padding(.vertical, 4)
+                    balanceRow
                 }
 
-                if let pubkey = slot.pubkey {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Pubkey:")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            Text(pubkey)
-                                .font(.caption)
-                                .fontDesign(.monospaced)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-                        }
+                Divider().padding(.vertical, 4)
+                explorerRow
 
-                        Spacer()
-
-                        Button {
-                            UIPasteboard.general.string = pubkey
-                            pubkeyCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                pubkeyCopied = false
-                            }
-                        } label: {
-                            Image(systemName: pubkeyCopied ? "doc.on.doc.fill" : "doc.on.doc")
-                                .font(.caption)
-                                .contentTransition(.symbolEffect(.replace))
-                        }
-                        .buttonStyle(.plain)
-                    }
+                if slot.pubkey != nil {
+                    Divider().padding(.vertical, 4)
+                    pubkeyRow
                 }
             } else {
-                Text("This slot has not been used yet")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .italic()
+                Divider().padding(.vertical, 4)
+                unusedRow
             }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(.regularMaterial)
-                .stroke(.quaternary, lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 12)
     }
 }
 
@@ -172,11 +47,212 @@ struct SlotRowView: View {
         slot: .init(
             slotNumber: UInt8(1),
             isActive: true,
-            isUsed: false,
-            pubkey: "pubkey",
-            pubkeyDescriptor: "pubkeyDescriptor",
-            address: "address",
-            balance: 21000
+            isUsed: true,
+            pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
+            pubkeyDescriptor: nil,
+            address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
+            balance: 21_000
         )
     )
+    .padding()
+}
+
+extension SlotRowView {
+    fileprivate var slotSummary: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text("Slot \(slot.slotNumber)")
+                .font(.body)
+                .fontWeight(.medium)
+
+            statusBadges
+            Spacer()
+        }
+    }
+
+    fileprivate var addressRow: some View {
+        Group {
+            if let address = slot.address, !address.isEmpty {
+                Button {
+                    UIPasteboard.general.string = address
+                    addressCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        addressCopied = false
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        label("Address")
+
+                        HStack(spacing: 12) {
+                            Text(address)
+                                .font(.body)
+                                .fontDesign(.monospaced)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+
+                            Spacer(minLength: trailingAccessoryMinWidth)
+
+                            Image(systemName: addressCopied ? "checkmark" : "doc.on.doc")
+                                .font(.caption)
+                                .foregroundStyle(addressCopied ? .green : .blue)
+                                .symbolEffect(.bounce, value: addressCopied)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            } else {
+                fallbackRow(title: "Address", value: "No address available")
+            }
+        }
+    }
+
+    fileprivate var balanceRow: some View {
+        Group {
+            if let balance = slot.balance {
+                VStack(alignment: .leading, spacing: 4) {
+                    label("Balance")
+                    HStack(spacing: 8) {
+                        Image(systemName: "bitcoinsign")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(balance.formatted(.number.grouping(.automatic)))
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                }
+            } else {
+                fallbackRow(title: "Balance", value: "Loading…", italic: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    fileprivate var explorerRow: some View {
+        if let address = slot.address, !address.isEmpty,
+            let url = URL(string: "https://mempool.space/address/\(address)")
+        {
+            Button {
+                UIApplication.shared.open(url)
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    label("Explorer")
+                    HStack {
+                        Text("Verify on mempool.space")
+                            .font(.body)
+                        Spacer(minLength: trailingAccessoryMinWidth)
+                        Image(systemName: "globe")
+                            .foregroundStyle(.tint)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            fallbackRow(title: "Explorer", value: "Explorer unavailable")
+        }
+    }
+
+    fileprivate var pubkeyRow: some View {
+        Group {
+            if let pubkey = slot.pubkey, !pubkey.isEmpty {
+                Button {
+                    UIPasteboard.general.string = pubkey
+                    pubkeyCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        pubkeyCopied = false
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        label("Pubkey")
+
+                        HStack(spacing: 12) {
+                            Text(pubkey)
+                                .font(.body)
+                                .fontDesign(.monospaced)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+
+                            Spacer(minLength: trailingAccessoryMinWidth)
+
+                            Image(systemName: pubkeyCopied ? "checkmark" : "doc.on.doc")
+                                .font(.caption)
+                                .foregroundStyle(pubkeyCopied ? .green : .blue)
+                                .symbolEffect(.bounce, value: pubkeyCopied)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            } else {
+                fallbackRow(title: "Pubkey", value: "No pubkey available")
+            }
+        }
+    }
+
+    fileprivate var unusedRow: some View {
+        fallbackRow(
+            title: "Status",
+            value: "This slot has not been used yet",
+            italic: true
+        )
+    }
+
+    @ViewBuilder
+    fileprivate var statusBadges: some View {
+        HStack(spacing: 8) {
+            if slot.isActive {
+                StatusBadge(text: "Active", tint: .green)
+            }
+
+            if !slot.isUsed {
+                StatusBadge(text: "Unused", tint: .secondary)
+            }
+        }
+    }
+
+    fileprivate func label(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    fileprivate var trailingAccessoryMinWidth: CGFloat { 80 }
+
+    fileprivate func fallbackRow(
+        title: String,
+        value: String,
+        italic: Bool = false
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            label(title)
+            Text(value)
+                .font(.body)
+                .foregroundStyle(.tertiary)
+                .italic(italic)
+        }
+    }
+}
+
+extension Text {
+    fileprivate func italic(_ apply: Bool) -> Text {
+        apply ? self.italic() : self
+    }
+}
+
+extension SlotRowView {
+    fileprivate struct StatusBadge: View {
+        let text: String
+        let tint: Color
+
+        var body: some View {
+            Text(text.uppercased())
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(tint.opacity(0.15))
+                .foregroundStyle(tint)
+                .clipShape(Capsule())
+        }
+    }
 }
