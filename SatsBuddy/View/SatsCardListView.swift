@@ -71,9 +71,10 @@ struct SatsCardListView: View {
                     }
                 }
             }
-            .toolbarBackground(.hidden, for: .bottomBar)
-            .toolbarBackground(.clear, for: .bottomBar)
+            //            .toolbarBackground(.clear, for: .bottomBar)
+            //            .toolbarBackgroundVisibility(.hidden, for: .bottomBar)
         }
+
     }
 }
 
