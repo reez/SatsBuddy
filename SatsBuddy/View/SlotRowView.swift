@@ -13,32 +13,29 @@ struct SlotRowView: View {
     @State private var addressCopied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 18) {
             slotSummary
 
             if slot.isUsed {
-                Divider().padding(.vertical, 4)
-                addressRow
-
                 if slot.isActive {
-                    Divider().padding(.vertical, 4)
                     balanceRow
                 }
 
-                Divider().padding(.vertical, 4)
+                addressRow
                 explorerRow
 
                 if slot.pubkey != nil {
-                    Divider().padding(.vertical, 4)
                     pubkeyRow
                 }
             } else {
-                Divider().padding(.vertical, 4)
                 unusedRow
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 12)
+        .padding(20)
+        .background(cardBackground)
+        .overlay(cardBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
@@ -217,6 +214,16 @@ extension SlotRowView {
     }
 
     fileprivate var trailingAccessoryMinWidth: CGFloat { 80 }
+
+    fileprivate var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 20)
+            .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
+    }
+
+    fileprivate var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 20)
+            .stroke(Color.white.opacity(0.06), lineWidth: 1)
+    }
 
     fileprivate func fallbackRow(
         title: String,

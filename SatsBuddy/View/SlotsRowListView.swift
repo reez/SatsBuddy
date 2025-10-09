@@ -17,9 +17,11 @@ struct SlotsRowListView: View {
                 ForEach(slots) { slot in
                     SlotRowView(slot: slot)
                         .listRowInsets(
-                            EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+                            EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
                         )
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .padding(.horizontal, 4)
                 }
             } header: {
                 Text("Slots")
