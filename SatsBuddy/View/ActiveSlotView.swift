@@ -138,7 +138,7 @@ struct ActiveSlotView: View {
                             Spacer()
 
                             Image(systemName: "globe")
-                                .foregroundStyle(.tint)
+                                .foregroundStyle(.blue)
                         }
                         .padding(.vertical, 6)
                     }
@@ -181,7 +181,7 @@ struct ActiveSlotView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "wave.3.up")
-                                    .foregroundStyle(.tint)
+                                    .foregroundStyle(.blue)
                             }
                         }
                         .padding(.vertical, 6)

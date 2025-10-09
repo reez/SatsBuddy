@@ -7,10 +7,16 @@
 
 import SwiftUI
 
-struct SlotRowView: View {
+struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
     @State private var pubkeyCopied = false
     @State private var addressCopied = false
+    private let footer: Footer
+
+    init(slot: SlotInfo, @ViewBuilder footer: () -> Footer) {
+        self.slot = slot
+        self.footer = footer()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -27,6 +33,8 @@ struct SlotRowView: View {
                 if slot.pubkey != nil {
                     pubkeyRow
                 }
+
+                footer
             } else {
                 unusedRow
             }
@@ -52,6 +60,12 @@ struct SlotRowView: View {
         )
     )
     .padding()
+}
+
+extension SlotRowView where Footer == EmptyView {
+    init(slot: SlotInfo) {
+        self.init(slot: slot) { EmptyView() }
+    }
 }
 
 extension SlotRowView {
@@ -138,7 +152,7 @@ extension SlotRowView {
                             .font(.body)
                         Spacer(minLength: trailingAccessoryMinWidth)
                         Image(systemName: "globe")
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.blue)
                     }
                 }
                 .contentShape(Rectangle())
