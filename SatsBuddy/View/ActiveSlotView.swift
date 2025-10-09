@@ -100,24 +100,29 @@ struct ActiveSlotView: View {
                             .lineLimit(1)
                     }
 
-                    // Verify button row
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Explorer")
-                            .foregroundStyle(.secondary)
-                        Button {
-                            guard let address = displayAddress else { return }
-                            if let url = URL(string: "https://mempool.space/address/\(address)") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("View on mempool.space")
-                                    .foregroundStyle(.blue)
-                            }
+                    Button {
+                        guard let address = displayAddress else { return }
+                        if let url = URL(string: "https://mempool.space/address/\(address)") {
+                            UIApplication.shared.open(url)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(displayAddress == nil)
+                    } label: {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Explorer")
+                                Text("Verify on mempool.space")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "globe")
+                                .foregroundStyle(.tint)
+                        }
+                        .padding(.vertical, 6)
                     }
+                    .buttonStyle(.plain)
+                    .disabled(displayAddress == nil)
                 }
 
                 Section {
@@ -156,7 +161,7 @@ struct ActiveSlotView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "wave.3.up")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.tint)
                             }
                         }
                         .padding(.vertical, 6)
@@ -294,7 +299,7 @@ extension ActiveSlotView {
 ////                            }
 ////                        } label: {
 ////                            HStack {
-////                                Text("View on mempool.space")
+////                                Text("Verify on mempool.space")
 ////                                Spacer()
 ////                                Image(systemName: "arrow.up.right")
 ////                            }
