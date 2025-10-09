@@ -6,6 +6,26 @@
     {
       "layers" : [
         {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "display-p3:0.00000,0.00000,0.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "srgb:0.00000,0.58980,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "srgb:0.00000,0.58980,1.00000,1.00000"
+              }
+            }
+          ],
+          "glass" : false,
           "image-name" : "Regular-S 2.svg",
           "name" : "Regular-S 2"
         }
