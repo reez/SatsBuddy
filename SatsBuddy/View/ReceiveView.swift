@@ -80,7 +80,7 @@ struct ReceiveView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .sensoryFeedback(.success, trigger: isCopied)
+                        .sensoryFeedback(.success, trigger: isCopied) { _, newValue in newValue }
 
                     }
                     .padding()

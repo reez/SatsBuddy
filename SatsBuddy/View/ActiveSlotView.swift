@@ -118,6 +118,9 @@ struct ActiveSlotView: View {
                             .padding(.vertical, 6)
                         }
                         .buttonStyle(.plain)
+                        .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
+                            newValue
+                        }
                         .disabled(displayPubkey.isEmpty)
                     }
 

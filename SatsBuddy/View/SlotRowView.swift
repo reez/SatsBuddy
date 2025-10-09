@@ -111,6 +111,7 @@ extension SlotRowView {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .sensoryFeedback(.success, trigger: addressCopied) { _, newValue in newValue }
             } else {
                 fallbackRow(title: "Address", value: "No address available")
             }
@@ -200,6 +201,7 @@ extension SlotRowView {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .sensoryFeedback(.success, trigger: pubkeyCopied) { _, newValue in newValue }
             } else {
                 fallbackRow(title: "Pubkey", value: "No pubkey available")
             }
