@@ -2,7 +2,7 @@
 
 *Experimental*
 
-An iPhone app companion for SatsCard.
+An iPhone app companion for SATSCARD.
 
 ## Dependencies
 
