@@ -138,7 +138,7 @@ struct ActiveSlotView: View {
                     .disabled(card.totalSlots == nil)
                 }
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.plain)
             .scrollDisabled(true)
             .animation(.smooth, value: isLoading)
             .sheet(
