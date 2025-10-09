@@ -16,6 +16,7 @@ final class SlotHistoryViewModel {
     private var currentTaskID: UUID?
 
     var transactions: [SlotTransaction] = []
+    var slotBalance: UInt64?
     var isLoading = false
     var errorMessage: String?
 
@@ -25,6 +26,8 @@ final class SlotHistoryViewModel {
 
     @MainActor
     func loadHistory(for slot: SlotInfo, network: Network = .bitcoin) async {
+        slotBalance = slot.balance
+
         guard let address = slot.address, !address.isEmpty else {
             errorMessage = "No address available for this slot."
             transactions = []
@@ -37,7 +40,7 @@ final class SlotHistoryViewModel {
         errorMessage = nil
 
         let traceID = String(UUID().uuidString.prefix(6))
-        Log.cktap.info("[\(traceID)] Loading transactions for address \(address, privacy: .public)")
+        Log.cktap.info("[\(traceID)] Loading history for address \(address, privacy: .public)")
 
         do {
             let fetched = try await bdkClient.getTransactionsForAddress(
@@ -49,10 +52,24 @@ final class SlotHistoryViewModel {
             guard currentTaskID == taskID else { return }
 
             transactions = fetched
-            isLoading = false
             Log.cktap.info(
                 "[\(traceID)] Loaded \(fetched.count, privacy: .public) transactions for address \(address, privacy: .public)"
             )
+
+            do {
+                let balance = try await bdkClient.getBalanceFromAddress(address, network)
+                guard currentTaskID == taskID else { return }
+                slotBalance = balance.total.toSat()
+                Log.cktap.info(
+                    "[\(traceID)] Loaded balance \(balance.total.toSat(), privacy: .public) sats for address \(address, privacy: .public)"
+                )
+            } catch {
+                Log.cktap.error(
+                    "[\(traceID)] Failed to fetch balance: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+
+            isLoading = false
         } catch {
             guard currentTaskID == taskID else { return }
 
@@ -60,6 +77,18 @@ final class SlotHistoryViewModel {
                 "[\(traceID)] Failed to fetch transactions: \(error.localizedDescription, privacy: .public)"
             )
             errorMessage = "Unable to load transactions."
+            do {
+                let balance = try await bdkClient.getBalanceFromAddress(address, network)
+                guard currentTaskID == taskID else { return }
+                slotBalance = balance.total.toSat()
+                Log.cktap.info(
+                    "[\(traceID)] Loaded balance \(balance.total.toSat(), privacy: .public) sats for address \(address, privacy: .public) despite transaction error"
+                )
+            } catch {
+                Log.cktap.error(
+                    "[\(traceID)] Failed to fetch balance after transaction error: \(error.localizedDescription, privacy: .public)"
+                )
+            }
             isLoading = false
         }
     }
@@ -76,6 +105,7 @@ final class SlotHistoryViewModel {
         {
             let viewModel = SlotHistoryViewModel(bdkClient: .mock)
             viewModel.transactions = transactions
+            viewModel.slotBalance = 125_000
             return viewModel
         }
 

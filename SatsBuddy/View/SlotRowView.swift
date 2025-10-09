@@ -7,6 +7,15 @@
 
 import SwiftUI
 
+struct SlotSummaryRowView: View {
+    let slot: SlotInfo
+
+    var body: some View {
+        SlotSummaryHeader(slot: slot, showsChevron: false)
+            .padding(.vertical, 10)
+    }
+}
+
 struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
     @State private var pubkeyCopied = false
@@ -19,31 +28,28 @@ struct SlotRowView<Footer: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            slotSummary
+        SlotCard {
+            VStack(alignment: .leading, spacing: 18) {
+                SlotSummaryHeader(slot: slot, showsChevron: false)
 
-            if slot.isUsed {
-                if slot.isActive {
+                if slot.isActive || slot.balance != nil {
                     balanceRow
                 }
 
-                addressRow
-                explorerRow
+                if slot.isUsed {
+                    addressRow
+                    explorerRow
 
-                if slot.pubkey != nil {
-                    pubkeyRow
+                    if slot.pubkey != nil {
+                        pubkeyRow
+                    }
+
+                    footer
+                } else {
+                    unusedRow
                 }
-
-                footer
-            } else {
-                unusedRow
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(cardBackground)
-        .overlay(cardBorder)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
@@ -69,17 +75,6 @@ extension SlotRowView where Footer == EmptyView {
 }
 
 extension SlotRowView {
-    fileprivate var slotSummary: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Text("Slot \(slot.slotNumber)")
-                .font(.body)
-                .fontWeight(.medium)
-
-            statusBadges
-            Spacer()
-        }
-    }
-
     fileprivate var addressRow: some View {
         Group {
             if let address = slot.address, !address.isEmpty {
@@ -132,6 +127,8 @@ extension SlotRowView {
                             .fontWeight(.medium)
                     }
                 }
+            } else if !slot.isUsed {
+                fallbackRow(title: "Balance", value: "No balance yet")
             } else {
                 fallbackRow(title: "Balance", value: "Loading…", italic: true)
             }
@@ -216,19 +213,6 @@ extension SlotRowView {
         )
     }
 
-    @ViewBuilder
-    fileprivate var statusBadges: some View {
-        HStack(spacing: 8) {
-            if slot.isActive {
-                StatusBadge(text: "Active", tint: .green)
-            }
-
-            if !slot.isUsed {
-                StatusBadge(text: "Unused", tint: .secondary)
-            }
-        }
-    }
-
     fileprivate func label(_ text: String) -> some View {
         Text(text)
             .font(.caption)
@@ -236,16 +220,6 @@ extension SlotRowView {
     }
 
     fileprivate var trailingAccessoryMinWidth: CGFloat { 80 }
-
-    fileprivate var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
-    }
-
-    fileprivate var cardBorder: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .stroke(Color.white.opacity(0.06), lineWidth: 1)
-    }
 
     fileprivate func fallbackRow(
         title: String,
@@ -268,20 +242,82 @@ extension Text {
     }
 }
 
-extension SlotRowView {
-    fileprivate struct StatusBadge: View {
-        let text: String
-        let tint: Color
+private struct SlotCard<Content: View>: View {
+    private let content: Content
 
-        var body: some View {
-            Text(text.uppercased())
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(tint.opacity(0.15))
-                .foregroundStyle(tint)
-                .clipShape(Capsule())
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
+            .background(
+                shape
+                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
+            )
+            .overlay(
+                shape
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+            .clipShape(shape)
+    }
+}
+
+private struct SlotSummaryHeader: View {
+    let slot: SlotInfo
+    let showsChevron: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text("Slot \(slot.slotNumber)")
+                .font(.body)
+                .fontWeight(.medium)
+
+            SlotStatusBadges(slot: slot)
+
+            Spacer()
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+}
+
+private struct SlotStatusBadges: View {
+    let slot: SlotInfo
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if slot.isActive {
+                SlotBadge(text: "Active", tint: .green)
+            } else if !slot.isUsed {
+                SlotBadge(text: "Unused", tint: .secondary)
+            } else {
+                SlotBadge(text: "Inactive", tint: .secondary)
+            }
+        }
+    }
+}
+
+private struct SlotBadge: View {
+    let text: String
+    let tint: Color
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(tint.opacity(0.15))
+            .foregroundStyle(tint)
+            .clipShape(Capsule())
     }
 }
