@@ -131,14 +131,20 @@ struct ActiveSlotView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Explorer")
                                     .foregroundStyle(.secondary)
-                                Text("Verify on mempool.space")
-                                    .foregroundColor(.primary)
+                                HStack {
+                                    Image(systemName: "square.bottomhalf.filled")
+                                        .foregroundStyle(.blue)
+                                        .font(.body)
+                                    Text("Verify on mempool.space")
+                                        .foregroundColor(.primary)
+                                }
                             }
 
                             Spacer()
 
-                            Image(systemName: "globe")
-                                .foregroundStyle(.tint)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 6)
                     }
@@ -181,7 +187,7 @@ struct ActiveSlotView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "wave.3.up")
-                                    .foregroundStyle(.tint)
+                                    .foregroundStyle(.blue)
                             }
                         }
                         .padding(.vertical, 6)

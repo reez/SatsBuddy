@@ -15,13 +15,39 @@ struct SlotsRowListView: View {
         List {
             Section {
                 ForEach(slots) { slot in
-                    SlotRowView(slot: slot)
-                        .listRowInsets(
-                            EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .padding(.horizontal, 4)
+                    Group {
+                        if slot.isUsed, slot.address?.isEmpty == false {
+                            SlotRowView(slot: slot) {
+                                NavigationLink {
+                                    SlotHistoryView(slot: slot)
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Text("See Transactions")
+                                            .font(.body)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+
+                                        //                                        Image(systemName: "chevron.right")
+                                        //                                            .font(.caption)
+                                        //                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        } else {
+                            SlotRowView(slot: slot)
+                        }
+                    }
+                    .listRowInsets(
+                        EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
+                    )
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .padding(.horizontal, 4)
                 }
             } header: {
                 Text("Slots")
@@ -63,9 +89,10 @@ struct SlotsRowListView: View {
         ),
     ]
 
-    SlotsRowListView(
-        totalSlots: 10,
-        slots: sampleSlots
-    )
-    .padding()
+    NavigationStack {
+        SlotsRowListView(
+            totalSlots: 10,
+            slots: sampleSlots
+        )
+    }
 }

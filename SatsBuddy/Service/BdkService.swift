@@ -43,7 +43,8 @@ private struct BdkService {
         )
 
         // Use Mempool.space API to get real balance
-        let urlString = "https://mempool.space/api/address/\(address)"
+        let baseURL = mempoolBaseURL(for: network)
+        let urlString = "\(baseURL)/api/address/\(address)"
         guard let url = URL(string: urlString) else {
             throw NSError(
                 domain: "BdkService",
@@ -97,8 +98,91 @@ private struct BdkService {
         )
     }
 
+    func fetchTransactions(
+        address: String,
+        network: Network,
+        limit: Int = 25
+    ) async throws -> [SlotTransaction] {
+        Log.cktap.debug(
+            "BdkService.fetchTransactions called with address: \(address, privacy: .public)"
+        )
+
+        let baseURL = mempoolBaseURL(for: network)
+        let urlString = "\(baseURL)/api/address/\(address)/txs"
+
+        guard let url = URL(string: urlString) else {
+            throw NSError(
+                domain: "BdkService",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid transactions URL"]
+            )
+        }
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let decoder = JSONDecoder()
+
+        let transactions = try decoder.decode([MempoolTransaction].self, from: data)
+        let targetAddress = address.lowercased()
+
+        let mapped = transactions.map { tx -> SlotTransaction in
+            let received = tx.vout
+                .filter { $0.scriptpubkey_address?.lowercased() == targetAddress }
+                .reduce(UInt64(0)) { $0 + $1.value }
+
+            let spent = tx.vin
+                .compactMap { $0.prevout }
+                .filter { $0.scriptpubkey_address?.lowercased() == targetAddress }
+                .reduce(UInt64(0)) { total, prevout in
+                    total + (prevout.value ?? 0)
+                }
+
+            let netAmount = Int64(received) - Int64(spent)
+
+            let direction: SlotTransaction.Direction = netAmount >= 0 ? .incoming : .outgoing
+
+            let timestamp: Date?
+            if let blockTime = tx.status.block_time {
+                timestamp = Date(timeIntervalSince1970: TimeInterval(blockTime))
+            } else {
+                timestamp = nil
+            }
+
+            return SlotTransaction(
+                txid: tx.txid,
+                amount: netAmount,
+                fee: tx.fee,
+                timestamp: timestamp,
+                confirmed: tx.status.confirmed,
+                direction: direction
+            )
+        }
+
+        if limit > 0 {
+            return Array(mapped.prefix(limit))
+        }
+
+        return mapped
+    }
+
     func warmUpIfNeeded() async {
         await BdkWarmUp.shared.run()
+    }
+
+    private func mempoolBaseURL(for network: Network) -> String {
+        switch network {
+        case .bitcoin:
+            return "https://mempool.space"
+        case .testnet:
+            return "https://mempool.space/testnet"
+        case .testnet4:
+            return "https://mempool.space/testnet4"
+        case .signet:
+            return "https://mempool.space/signet"
+        case .regtest:
+            return "http://localhost:3000"
+        @unknown default:
+            return "https://mempool.space"
+        }
     }
 }
 
@@ -106,15 +190,20 @@ struct BdkClient {
     let deriveAddress: @Sendable (String, Network) throws -> String
     let getBalanceFromAddress: @Sendable (String, Network) async throws -> Balance
     let warmUp: @Sendable () async -> Void
+    let getTransactionsForAddress:
+        @Sendable (String, Network, Int) async throws -> [SlotTransaction]
 
     private init(
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
         getBalanceFromAddress: @escaping @Sendable (String, Network) async throws -> Balance,
-        warmUp: @escaping @Sendable () async -> Void
+        warmUp: @escaping @Sendable () async -> Void,
+        getTransactionsForAddress: @escaping @Sendable (String, Network, Int) async throws ->
+            [SlotTransaction]
     ) {
         self.deriveAddress = deriveAddress
         self.getBalanceFromAddress = getBalanceFromAddress
         self.warmUp = warmUp
+        self.getTransactionsForAddress = getTransactionsForAddress
     }
 }
 
@@ -128,6 +217,13 @@ extension BdkClient {
         },
         warmUp: {
             await BdkService().warmUpIfNeeded()
+        },
+        getTransactionsForAddress: { address, network, limit in
+            try await BdkService().fetchTransactions(
+                address: address,
+                network: network,
+                limit: limit
+            )
         }
     )
 }
@@ -165,7 +261,25 @@ extension BdkClient {
                     total: amount
                 )
             },
-            warmUp: {}
+            warmUp: {},
+            getTransactionsForAddress: { address, _, limit in
+                let baseSeed = abs(address.hashValue)
+                let count = min(max(limit, 1), 10)
+                return (0..<count).map { index in
+                    let valueSeed = baseSeed &+ index
+                    let isIncoming = valueSeed % 2 == 0
+                    let amount = Int64((valueSeed % 50_000) + 1_000) * (isIncoming ? 1 : -1)
+                    let timestamp = Date().addingTimeInterval(Double(-index * 86_400))
+                    return SlotTransaction(
+                        txid: String(format: "mock-tx-%08x-%02d", baseSeed, index),
+                        amount: amount,
+                        fee: UInt64((valueSeed % 500) + 100),
+                        timestamp: timestamp,
+                        confirmed: index != 0,
+                        direction: isIncoming ? .incoming : .outgoing
+                    )
+                }
+            }
         )
     }
 #endif
