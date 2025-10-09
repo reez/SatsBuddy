@@ -50,8 +50,13 @@ struct AddressView: View {
                     UIApplication.shared.open(url)
                 }
             } label: {
-                Text("Verify on mempool.space")
-                    .foregroundStyle(.blue)
+                HStack {
+                    Image(systemName: "square.bottomhalf.filled")
+                        .foregroundStyle(.blue)
+                        .font(.body)
+                    Text("mempool.space")
+                    //                        .foregroundStyle(.blue)
+                }
             }
             .buttonStyle(.plain)
         }

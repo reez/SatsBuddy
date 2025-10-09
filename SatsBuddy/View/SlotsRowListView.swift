@@ -28,9 +28,9 @@ struct SlotsRowListView: View {
 
                                         Spacer()
 
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        //                                        Image(systemName: "chevron.right")
+                                        //                                            .font(.caption)
+                                        //                                            .foregroundStyle(.secondary)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.vertical, 8)

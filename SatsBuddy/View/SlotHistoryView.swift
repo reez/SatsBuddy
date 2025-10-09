@@ -186,10 +186,10 @@ private struct TransactionRowView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     HStack(spacing: 6) {
-                        Image(systemName: "globe")
+                        Image(systemName: "square.bottomhalf.filled")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.blue)
-                        Text("Verify on mempool.space")
+                        Text("mempool.space")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Image(systemName: "chevron.right")

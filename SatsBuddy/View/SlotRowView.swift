@@ -148,11 +148,17 @@ extension SlotRowView {
                 VStack(alignment: .leading, spacing: 4) {
                     label("Explorer")
                     HStack {
-                        Text("Verify on mempool.space")
+                        Image(systemName: "square.bottomhalf.filled")
+                            .foregroundStyle(.blue)
+                            .font(.body)
+                        Text("mempool.space")
                             .font(.body)
                         Spacer(minLength: trailingAccessoryMinWidth)
-                        Image(systemName: "globe")
-                            .foregroundStyle(.blue)
+                        //                        Image(systemName: "square.bottomhalf.filled")
+                        //                            .foregroundStyle(.blue)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .contentShape(Rectangle())
