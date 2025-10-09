@@ -109,8 +109,8 @@ struct ActiveSlotView: View {
                         HStack(alignment: .center, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Explorer")
-                                Text("Verify on mempool.space")
                                     .foregroundStyle(.secondary)
+                                Text("Verify on mempool.space")
                                     .foregroundColor(.primary)
                             }
 
