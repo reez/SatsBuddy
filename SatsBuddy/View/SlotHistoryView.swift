@@ -17,6 +17,7 @@ struct SlotHistoryView: View {
     let slot: SlotInfo
     let network: Network
     @State private var viewModel: SlotHistoryViewModel
+    @State private var slotDetails: SlotInfo
 
     init(
         slot: SlotInfo,
@@ -25,33 +26,17 @@ struct SlotHistoryView: View {
     ) {
         self.slot = slot
         self.network = network
+        _slotDetails = State(initialValue: slot)
         _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Slot \(slot.slotNumber)")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-
-                    if let address = slot.address, !address.isEmpty {
-                        HStack(spacing: 12) {
-                            Text(address)
-                                .font(.callout)
-                                .fontDesign(.monospaced)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-
-                            Spacer(minLength: 80)
-                        }
-                    }
-                }
+                SlotRowView(slot: slotDetails)
 
                 TransactionsSectionView(
-                    slot: slot,
+                    slot: slotDetails,
                     network: network,
                     viewModel: viewModel,
                     onOpenMempool: { openOnMempool(txid: $0) }
@@ -60,17 +45,22 @@ struct SlotHistoryView: View {
             .padding(.horizontal)
             .padding(.vertical, 24)
         }
-        .navigationTitle("History")
-        .navigationBarTitleDisplayMode(.inline)
         .scrollIndicators(.hidden)
-        .task(id: slot.id) {
-            await viewModel.loadHistory(for: slot, network: network)
-        }
         .refreshable {
-            await viewModel.loadHistory(for: slot, network: network)
+            await viewModel.loadHistory(for: slotDetails, network: network)
+        }
+        .navigationTitle("Slot \(slot.slotNumber)")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: slot.id) {
+            await viewModel.loadHistory(for: slotDetails, network: network)
         }
         .onDisappear {
             viewModel.cancel()
+        }
+        .onChange(of: viewModel.slotBalance) { newValue in
+            if slotDetails.balance != newValue {
+                slotDetails.balance = newValue
+            }
         }
     }
 }

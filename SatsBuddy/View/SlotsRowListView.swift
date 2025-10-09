@@ -15,33 +15,12 @@ struct SlotsRowListView: View {
         List {
             Section {
                 ForEach(slots) { slot in
-                    Group {
-                        if slot.isUsed, slot.address?.isEmpty == false {
-                            SlotRowView(slot: slot) {
-                                NavigationLink {
-                                    SlotHistoryView(slot: slot)
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        Text("See Transactions")
-                                            .font(.body)
-                                            .foregroundStyle(.primary)
-
-                                        Spacer()
-
-                                        //                                        Image(systemName: "chevron.right")
-                                        //                                            .font(.caption)
-                                        //                                            .foregroundStyle(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 8)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        } else {
-                            SlotRowView(slot: slot)
-                        }
+                    NavigationLink {
+                        SlotHistoryView(slot: slot)
+                    } label: {
+                        SlotSummaryRowView(slot: slot)
                     }
+                    .buttonStyle(.plain)
                     .listRowInsets(
                         EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
                     )
@@ -53,15 +32,14 @@ struct SlotsRowListView: View {
                 Text("Slots")
                     .font(.headline)
                     .foregroundStyle(.secondary)
-                    .padding(.bottom, 4)
             }
             .textCase(nil)
         }
         .listStyle(.plain)
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
-        .padding(.horizontal, 12)
-        .padding(.top, 8)
+        .padding(.horizontal, 24)
+        .padding(.top, 16)
     }
 }
 
