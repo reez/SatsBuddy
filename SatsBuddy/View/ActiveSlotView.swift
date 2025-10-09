@@ -23,6 +23,8 @@ struct ActiveSlotView: View {
     @State private var isPubkeyCopied = false
     @State private var receiveSheetState: ReceiveSheetState?
     @State private var isPreparingReceiveSheet = false
+    @State private var displayedBalance: UInt64 = 0
+    @State private var showBalance = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -34,8 +36,12 @@ struct ActiveSlotView: View {
                         .font(.title)
                         .fontWeight(.regular)
                         .foregroundStyle(.secondary)
-                    Text(slot.balance?.formatted(.number.grouping(.automatic)) ?? "1,234")
-                        .redacted(reason: slot.balance == nil ? .placeholder : [])
+                    Text(displayedBalance.formatted(.number.grouping(.automatic)))
+                        .contentTransition(.numericText(value: Double(displayedBalance)))
+                        .animation(.smooth(duration: 0.8), value: displayedBalance)
+                        .opacity(showBalance ? 1 : 0.3)
+                        .scaleEffect(showBalance ? 1 : 0.95)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.7), value: showBalance)
                     ProgressView()
                         .scaleEffect(0.6)
                         .frame(width: 20, height: 20)
@@ -47,6 +53,21 @@ struct ActiveSlotView: View {
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
                 .padding()
+                .onChange(of: slot.balance) { oldValue, newValue in
+                    if let newBalance = newValue {
+                        showBalance = true
+                        displayedBalance = newBalance
+                    } else {
+                        showBalance = false
+                        displayedBalance = 0
+                    }
+                }
+                .onAppear {
+                    if let balance = slot.balance {
+                        displayedBalance = balance
+                        showBalance = true
+                    }
+                }
 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
