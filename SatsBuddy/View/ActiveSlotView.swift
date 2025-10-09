@@ -70,7 +70,7 @@ struct ActiveSlotView: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
 
-                            Spacer()
+                            Spacer(minLength: 80)
 
                             if isPreparingReceiveSheet {
                                 ProgressView()
