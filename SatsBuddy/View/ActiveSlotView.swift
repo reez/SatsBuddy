@@ -16,8 +16,11 @@ struct ActiveSlotView: View {
     let card: SatsCardInfo
     let isLoading: Bool
     let viewModel: SatsCardDetailViewModel
+    let isScanning: Bool
+    let onRefresh: () -> Void
 
     @State private var copied = false
+    @State private var isPubkeyCopied = false
     @State private var receiveSheetState: ReceiveSheetState?
     @State private var isPreparingReceiveSheet = false
 
@@ -68,7 +71,7 @@ struct ActiveSlotView: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
 
-                            Spacer()
+                            Spacer(minLength: 80)
 
                             if isPreparingReceiveSheet {
                                 ProgressView()
@@ -93,29 +96,54 @@ struct ActiveSlotView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Pubkey")
                             .foregroundStyle(.secondary)
-                        Text(displayPubkey)
-                            .truncationMode(.middle)
-                            .lineLimit(1)
-                    }
-
-                    // Verify button row
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Explorer")
-                            .foregroundStyle(.secondary)
                         Button {
-                            guard let address = displayAddress else { return }
-                            if let url = URL(string: "https://mempool.space/address/\(address)") {
-                                UIApplication.shared.open(url)
+                            UIPasteboard.general.string = displayPubkey
+                            isPubkeyCopied = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                isPubkeyCopied = false
                             }
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("View on mempool.space")
-                                    .foregroundStyle(.blue)
+                            HStack {
+                                Text(displayPubkey)
+                                    .truncationMode(.middle)
+                                    .lineLimit(1)
+
+                                Spacer(minLength: 80)
+
+                                Image(systemName: isPubkeyCopied ? "checkmark" : "doc.on.doc")
+                                    .font(.caption)
+                                    .foregroundStyle(isPubkeyCopied ? .green : .blue)
+                                    .symbolEffect(.bounce, value: isPubkeyCopied)
                             }
+                            .padding(.vertical, 6)
                         }
                         .buttonStyle(.plain)
-                        .disabled(displayAddress == nil)
+                        .disabled(displayPubkey.isEmpty)
                     }
+
+                    Button {
+                        guard let address = displayAddress else { return }
+                        if let url = URL(string: "https://mempool.space/address/\(address)") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Explorer")
+                                    .foregroundStyle(.secondary)
+                                Text("Verify on mempool.space")
+                                    .foregroundColor(.primary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "globe")
+                                .foregroundStyle(.tint)
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(displayAddress == nil)
                 }
 
                 Section {
@@ -136,9 +164,33 @@ struct ActiveSlotView: View {
                         }
                     }
                     .disabled(card.totalSlots == nil)
+
+                    Button(action: onRefresh) {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Card Refresh")
+                                    .foregroundStyle(.secondary)
+                                Text(refreshTimestampText)
+                                    .foregroundColor(.primary)
+                            }
+
+                            Spacer()
+
+                            if isScanning {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "wave.3.up")
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isScanning)
                 }
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.plain)
             .scrollDisabled(true)
             .animation(.smooth, value: isLoading)
             .sheet(
@@ -189,7 +241,9 @@ struct ActiveSlotView: View {
             slot: slot,
             card: card,
             isLoading: false,
-            viewModel: SatsCardDetailViewModel()
+            viewModel: SatsCardDetailViewModel(),
+            isScanning: false,
+            onRefresh: {}
         )
         .padding()
     }
@@ -221,6 +275,10 @@ extension ActiveSlotView {
         }
 
         return "--/--"
+    }
+
+    fileprivate var refreshTimestampText: String {
+        card.dateScanned.formatted(date: .abbreviated, time: .shortened)
     }
 }
 
@@ -261,7 +319,7 @@ extension ActiveSlotView {
 ////                            }
 ////                        } label: {
 ////                            HStack {
-////                                Text("View on mempool.space")
+////                                Text("Verify on mempool.space")
 ////                                Spacer()
 ////                                Image(systemName: "arrow.up.right")
 ////                            }

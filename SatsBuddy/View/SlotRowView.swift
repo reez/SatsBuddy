@@ -77,7 +77,7 @@ struct SlotRowView: View {
                                                 UIApplication.shared.open(url)
                                             }
                                         } label: {
-                                            Text("View on Mempool.space")
+                                            Text("Verify on Mempool.space")
                                                 .font(.caption2)
                                                 .foregroundStyle(.blue)
                                         }
