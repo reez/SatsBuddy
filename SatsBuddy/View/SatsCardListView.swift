@@ -23,7 +23,7 @@ struct SatsCardListView: View {
                     )
                 } else {
                     List {
-                        Section("SATSCARDs") {
+                        Section("SATSCARD") {
                             ForEach(viewModel.scannedCards) { card in
                                 NavigationLink {
                                     SatsCardDetailView(
@@ -71,8 +71,7 @@ struct SatsCardListView: View {
                     }
                 }
             }
-            .toolbarBackground(.visible, for: .bottomBar)
-            .toolbarBackground(.ultraThinMaterial, for: .bottomBar)
+            .toolbarBackground(.hidden, for: .bottomBar)
         }
     }
 }
