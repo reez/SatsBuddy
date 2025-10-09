@@ -110,8 +110,8 @@ struct ActiveSlotView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Explorer")
                                 Text("Verify on mempool.space")
-                                    .font(.footnote)
                                     .foregroundStyle(.secondary)
+                                    .foregroundColor(.primary)
                             }
 
                             Spacer()
@@ -148,10 +148,9 @@ struct ActiveSlotView: View {
                         HStack(alignment: .center, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Card Refresh")
-                                    .foregroundColor(.primary)
-                                Text(refreshTimestampText)
-                                    .font(.footnote)
                                     .foregroundStyle(.secondary)
+                                Text(refreshTimestampText)
+                                    .foregroundColor(.primary)
                             }
 
                             Spacer()
