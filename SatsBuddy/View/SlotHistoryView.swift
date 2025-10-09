@@ -142,10 +142,15 @@ private struct TransactionsSectionView: View {
             } else {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.transactions) { transaction in
-                        TransactionRowView(
-                            transaction: transaction,
-                            onOpenMempool: onOpenMempool
-                        )
+                        Button {
+                            onOpenMempool(transaction.txid)
+                        } label: {
+                            TransactionRowView(
+                                transaction: transaction,
+                                onOpenMempool: onOpenMempool
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -180,20 +185,17 @@ private struct TransactionRowView: View {
                     Text(timestampLabel)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-
-                    Button {
-                        onOpenMempool(transaction.txid)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "globe")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.blue)
-                            Text("Verify on mempool.space")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                    HStack(spacing: 6) {
+                        Image(systemName: "globe")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.blue)
+                        Text("Verify on mempool.space")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary.opacity(0.7))
                     }
-                    .buttonStyle(.plain)
                 }
 
                 Spacer()
@@ -208,7 +210,7 @@ private struct TransactionRowView: View {
     }
 
     private var iconColor: Color {
-        transaction.direction == .incoming ? .green : .red
+        .primary
     }
 
     private var timestampLabel: String {
