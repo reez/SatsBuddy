@@ -67,7 +67,7 @@ struct ReceiveView: View {
                         Button {
                             UIPasteboard.general.string = address
                             isCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                                 isCopied = false
                             }
                         } label: {

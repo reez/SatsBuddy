@@ -81,7 +81,7 @@ extension SlotRowView {
                 Button {
                     UIPasteboard.general.string = address
                     addressCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         addressCopied = false
                     }
                 } label: {
@@ -174,7 +174,7 @@ extension SlotRowView {
                 Button {
                     UIPasteboard.general.string = pubkey
                     pubkeyCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         pubkeyCopied = false
                     }
                 } label: {

@@ -102,7 +102,7 @@ struct ActiveSlotView: View {
                         Button {
                             UIPasteboard.general.string = displayPubkey
                             isPubkeyCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                                 isPubkeyCopied = false
                             }
                         } label: {
@@ -371,7 +371,7 @@ extension ActiveSlotView {
 //        Button {
 //            UIPasteboard.general.string = text
 //            isCopied = true
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
 //                isCopied = false
 //            }
 //        } label: {
