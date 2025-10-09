@@ -48,8 +48,11 @@ struct ReceiveView: View {
                         }
                         .padding()
 
+                        Divider()
+                            .padding(.horizontal)
+
                         BitcoinUI.AddressFormattedView(address: address, columns: 4)
-                            .padding(.bottom)
+                            .padding(.vertical)
                             .padding(.bottom)
                     }
                     .background(
@@ -72,9 +75,9 @@ struct ReceiveView: View {
                                 Text(address)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                Spacer()
+                                Spacer(minLength: 80)
                                 Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                                    .foregroundColor(isCopied ? .green : .secondary)
+                                    .foregroundColor(isCopied ? .green : .blue)
                                     .font(.caption)
                                     .symbolEffect(.bounce, value: isCopied)
                             }
