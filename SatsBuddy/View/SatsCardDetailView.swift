@@ -29,7 +29,11 @@ struct SatsCardDetailView: View {
                 slot: slotForDisplay,
                 card: updatedCard,
                 isLoading: viewModel.isLoading || isShowingPlaceholderSlot,
-                viewModel: viewModel
+                viewModel: viewModel,
+                isScanning: cardViewModel.isScanning,
+                onRefresh: {
+                    cardViewModel.refreshCard(updatedCard)
+                }
             )
 
             FooterView(updatedCard: updatedCard)
@@ -42,16 +46,6 @@ struct SatsCardDetailView: View {
             Button("Rename Card") {
                 prepareLabelForEditing()
                 isRenaming = true
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    cardViewModel.refreshCard(card)
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .disabled(cardViewModel.isScanning)
             }
         }
         .task(id: loadTaskID, priority: .userInitiated) {

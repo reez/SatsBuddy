@@ -16,6 +16,8 @@ struct ActiveSlotView: View {
     let card: SatsCardInfo
     let isLoading: Bool
     let viewModel: SatsCardDetailViewModel
+    let isScanning: Bool
+    let onRefresh: () -> Void
 
     @State private var copied = false
     @State private var receiveSheetState: ReceiveSheetState?
@@ -136,6 +138,31 @@ struct ActiveSlotView: View {
                         }
                     }
                     .disabled(card.totalSlots == nil)
+
+                    Button(action: onRefresh) {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Card Refresh")
+                                    .foregroundColor(.primary)
+                                Text(refreshTimestampText)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if isScanning {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "wave.3.up")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isScanning)
                 }
             }
             .listStyle(.plain)
@@ -189,7 +216,9 @@ struct ActiveSlotView: View {
             slot: slot,
             card: card,
             isLoading: false,
-            viewModel: SatsCardDetailViewModel()
+            viewModel: SatsCardDetailViewModel(),
+            isScanning: false,
+            onRefresh: {}
         )
         .padding()
     }
@@ -221,6 +250,10 @@ extension ActiveSlotView {
         }
 
         return "--/--"
+    }
+
+    fileprivate var refreshTimestampText: String {
+        card.dateScanned.formatted(date: .abbreviated, time: .shortened)
     }
 }
 
