@@ -78,8 +78,9 @@ struct ActiveSlotView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.tertiary)
                             }
                         }
                     }
@@ -146,8 +147,9 @@ struct ActiveSlotView: View {
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.tertiary)
                         }
                         .padding(.vertical, 6)
                     }

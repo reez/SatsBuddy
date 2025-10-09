@@ -155,8 +155,9 @@ extension SlotRowView {
                         //                        Image(systemName: "square.bottomhalf.filled")
                         //                            .foregroundStyle(.blue)
                         Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.tertiary)
                     }
                 }
                 .contentShape(Rectangle())
@@ -283,8 +284,9 @@ private struct SlotSummaryHeader: View {
 
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.tertiary)
             }
         }
     }

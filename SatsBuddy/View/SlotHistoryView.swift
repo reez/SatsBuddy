@@ -183,8 +183,9 @@ private struct TransactionRowView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Image(systemName: "chevron.right")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary.opacity(0.7))
+                            .font(.footnote)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.tertiary)
                     }
                 }
 
