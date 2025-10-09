@@ -34,10 +34,10 @@ class SatsCardDetailViewModel {
         let traceID = traceID ?? String(UUID().uuidString.prefix(6))
         let loadStart = Date()
         Log.cktap.info(
-            "[\(traceID)] loadSlotDetails started for card: \(card.cardIdentifier, privacy: .public)"
+            "[\(traceID)] loadSlotDetails started for card \(card.cardIdentifier, privacy: .private(mask: .hash))"
         )
         Log.cktap.debug(
-            "[\(traceID)] Slots copied to detail view (count: \(card.slots.count, privacy: .public))"
+            "[\(traceID)] Slots copied to detail view (count: \(card.slots.count))"
         )
 
         balanceFetchTask?.cancel()
@@ -81,7 +81,7 @@ class SatsCardDetailViewModel {
         }
 
         Log.cktap.debug(
-            "[\(traceID)] Fetching balance for address: \(cardAddress, privacy: .public)"
+            "[\(traceID)] Fetching balance for address \(cardAddress, privacy: .private(mask: .hash))"
         )
 
         do {
@@ -105,7 +105,7 @@ class SatsCardDetailViewModel {
             isLoading = false
 
             Log.cktap.debug(
-                "[\(traceID)] Balance fetched: \(balance.total.toSat(), privacy: .public) sats (network: \(networkDurationString)s, total: \(totalDurationString)s)"
+                "[\(traceID)] Balance fetched successfully: \(balance.total.toSat(), privacy: .private) sats (network: \(networkDurationString)s, total: \(totalDurationString)s)"
             )
         } catch {
             let totalDuration = Date().timeIntervalSince(loadStartedAt)

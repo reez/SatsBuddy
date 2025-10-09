@@ -50,7 +50,7 @@ struct SatsCardDetailView: View {
         }
         .task(id: loadTaskID, priority: .userInitiated) {
             Log.ui.info(
-                "[\(traceID)] Detail task triggered for card: \(updatedCard.cardIdentifier, privacy: .public)"
+                "[\(traceID)] Detail task triggered for card \(updatedCard.cardIdentifier, privacy: .private(mask: .hash))"
             )
             await MainActor.run {
                 viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
