@@ -32,6 +32,8 @@ struct SlotsRowListView: View {
         .listStyle(.plain)
         .scrollIndicators(.hidden)
         .scrollContentBackground(.hidden)
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
     }
 }
 
