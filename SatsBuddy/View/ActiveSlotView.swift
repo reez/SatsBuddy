@@ -20,6 +20,7 @@ struct ActiveSlotView: View {
     let onRefresh: () -> Void
 
     @State private var copied = false
+    @State private var isPubkeyCopied = false
     @State private var receiveSheetState: ReceiveSheetState?
     @State private var isPreparingReceiveSheet = false
 
@@ -95,13 +96,29 @@ struct ActiveSlotView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Pubkey")
                             .foregroundStyle(.secondary)
-                        HStack {
-                            Text(displayPubkey)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
+                        Button {
+                            UIPasteboard.general.string = displayPubkey
+                            isPubkeyCopied = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                isPubkeyCopied = false
+                            }
+                        } label: {
+                            HStack {
+                                Text(displayPubkey)
+                                    .truncationMode(.middle)
+                                    .lineLimit(1)
 
-                            Spacer(minLength: 80)
+                                Spacer(minLength: 80)
+
+                                Image(systemName: isPubkeyCopied ? "checkmark" : "doc.on.doc")
+                                    .font(.caption)
+                                    .foregroundStyle(isPubkeyCopied ? .green : .blue)
+                                    .symbolEffect(.bounce, value: isPubkeyCopied)
+                            }
+                            .padding(.vertical, 6)
                         }
+                        .buttonStyle(.plain)
+                        .disabled(displayPubkey.isEmpty)
                     }
 
                     Button {

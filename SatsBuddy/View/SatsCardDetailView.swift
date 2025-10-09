@@ -24,7 +24,7 @@ struct SatsCardDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 24) {
             ActiveSlotView(
                 slot: slotForDisplay,
                 card: updatedCard,
@@ -37,7 +37,7 @@ struct SatsCardDetailView: View {
             )
 
             FooterView(updatedCard: updatedCard)
-                .padding(.top, 40)
+                .padding()
         }
         .padding()
         .navigationTitle(updatedCard.displayName)

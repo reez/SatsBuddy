@@ -20,6 +20,7 @@ struct FooterView: View {
         .foregroundStyle(.secondary)
         .fontDesign(.monospaced)
         .font(.caption)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
