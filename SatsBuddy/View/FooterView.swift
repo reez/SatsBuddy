@@ -10,11 +10,23 @@ import SwiftUI
 struct FooterView: View {
     let updatedCard: SatsCardInfo
 
+    private var appVersion: String {
+        if let shortVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            return shortVersion
+        }
+
+        if let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+            return buildNumber
+        }
+
+        return "N/A"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("SATSCARD • Version \(updatedCard.version) • Made in ".uppercased())
                 + Text("Canada".uppercased()).foregroundColor(.red)
-            Text("SATSBUDDY • Version 0 • Made in ".uppercased())
+            Text("SATSBUDDY • Version \(appVersion) • Made in ".uppercased())
                 + Text("Nashville".uppercased()).foregroundColor(.blue)
         }
         .foregroundStyle(.secondary)
