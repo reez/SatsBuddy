@@ -43,7 +43,7 @@ struct AddressView: View {
                     }
                 }
             }
-            .sensoryFeedback(.success, trigger: copied)
+            .sensoryFeedback(.success, trigger: copied) { _, newValue in newValue }
 
             Button {
                 if let url = URL(string: "https://mempool.space/address/\(address)") {
