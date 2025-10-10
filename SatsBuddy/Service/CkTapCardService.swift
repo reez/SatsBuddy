@@ -127,7 +127,7 @@ final class CkTapCardService {
                     }
                 } catch {
                     Log.cktap.error(
-                        "dump(slot:) failed for slot \(slotNumber): \(error, privacy: .public)"
+                        "dump(slot:) failed for slot \(slotNumber): \(error.localizedDescription, privacy: .private(mask: .hash))"
                     )
                 }
             } else if isActive {

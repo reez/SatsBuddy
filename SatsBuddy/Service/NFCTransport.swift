@@ -36,7 +36,7 @@ final class NFCTransport: NSObject, CkTransport {
     func transmitApdu(commandApdu: Data) throws -> Data {
         let start = Date()
         Log.nfc.debug(
-            "APDU -> (len: \(commandApdu.count)) \(commandApdu.hexEncodedString(), privacy: .public)"
+            "APDU -> (len: \(commandApdu.count)) \(commandApdu.hexEncodedString(), privacy: .private(mask: .hash))"
         )
 
         guard let iso7816Apdu = NFCISO7816APDU(data: commandApdu) else {
@@ -59,7 +59,7 @@ final class NFCTransport: NSObject, CkTransport {
                 response.append(sw1)
                 response.append(sw2)
                 Log.nfc.debug(
-                    "APDU <- (len: \(response.count)) \(response.hexEncodedString(), privacy: .public)"
+                    "APDU <- (len: \(response.count)) \(response.hexEncodedString(), privacy: .private(mask: .hash))"
                 )
                 responseData = response
             }
@@ -78,7 +78,9 @@ final class NFCTransport: NSObject, CkTransport {
 
         let sw = data.suffix(2)
         if sw != Data([0x90, 0x00]) {
-            Log.nfc.warning("APDU SW not OK: \(sw.hexEncodedString(), privacy: .public)")
+            Log.nfc.warning(
+                "APDU SW not OK: \(sw.hexEncodedString(), privacy: .private(mask: .hash))"
+            )
         }
 
         let elapsed = Date().timeIntervalSince(start)
