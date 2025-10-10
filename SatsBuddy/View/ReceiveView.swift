@@ -26,7 +26,7 @@ struct ReceiveView: View {
 
                     VStack {
                         ZStack {
-                            BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
+                            BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address), cornerRadius: 20)
                                 .opacity(isQRLoading ? 0 : 1)
                                 .onAppear {
                                     DispatchQueue.main.async {
