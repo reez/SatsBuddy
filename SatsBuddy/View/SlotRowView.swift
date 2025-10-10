@@ -11,8 +11,7 @@ struct SlotSummaryRowView: View {
     let slot: SlotInfo
 
     var body: some View {
-        SlotSummaryHeader(slot: slot, showsChevron: false)
-            .padding(.vertical, 10)
+        SlotSummaryHeader(slot: slot, showsChevron: true)
     }
 }
 
