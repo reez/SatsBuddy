@@ -141,7 +141,7 @@ struct ActiveSlotView: View {
                                     Image(systemName: "square.bottomhalf.filled")
                                         .foregroundStyle(.blue)
                                         .font(.body)
-                                    Text("Verify on mempool.space")
+                                    Text("mempool.space")
                                         .foregroundColor(.primary)
                                 }
                             }
