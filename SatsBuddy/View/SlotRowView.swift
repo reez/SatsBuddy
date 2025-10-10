@@ -30,7 +30,7 @@ struct SlotRowView<Footer: View>: View {
     var body: some View {
         SlotCard {
             VStack(alignment: .leading, spacing: 18) {
-                SlotSummaryHeader(slot: slot, showsChevron: false)
+                SlotSummaryHeader(slot: slot, showsChevron: false, showsSlotTitle: false)
 
                 if slot.isActive || slot.balance != nil {
                     balanceRow
@@ -271,12 +271,21 @@ private struct SlotCard<Content: View>: View {
 private struct SlotSummaryHeader: View {
     let slot: SlotInfo
     let showsChevron: Bool
+    let showsSlotTitle: Bool
+
+    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true) {
+        self.slot = slot
+        self.showsChevron = showsChevron
+        self.showsSlotTitle = showsSlotTitle
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text("Slot \(slot.slotNumber)")
-                .font(.body)
-                .fontWeight(.medium)
+            if showsSlotTitle {
+                Text("Slot \(slot.slotNumber)")
+                    .font(.body)
+                    .fontWeight(.medium)
+            }
 
             SlotStatusBadges(slot: slot)
 
