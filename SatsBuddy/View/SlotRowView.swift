@@ -11,8 +11,7 @@ struct SlotSummaryRowView: View {
     let slot: SlotInfo
 
     var body: some View {
-        SlotSummaryHeader(slot: slot, showsChevron: false)
-            .padding(.vertical, 10)
+        SlotSummaryHeader(slot: slot, showsChevron: true)
     }
 }
 
@@ -30,7 +29,7 @@ struct SlotRowView<Footer: View>: View {
     var body: some View {
         SlotCard {
             VStack(alignment: .leading, spacing: 18) {
-                SlotSummaryHeader(slot: slot, showsChevron: false)
+                SlotSummaryHeader(slot: slot, showsChevron: false, showsSlotTitle: false)
 
                 if slot.isActive || slot.balance != nil {
                     balanceRow
@@ -81,7 +80,7 @@ extension SlotRowView {
                 Button {
                     UIPasteboard.general.string = address
                     addressCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         addressCopied = false
                     }
                 } label: {
@@ -155,8 +154,9 @@ extension SlotRowView {
                         //                        Image(systemName: "square.bottomhalf.filled")
                         //                            .foregroundStyle(.blue)
                         Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.tertiary)
                     }
                 }
                 .contentShape(Rectangle())
@@ -173,7 +173,7 @@ extension SlotRowView {
                 Button {
                     UIPasteboard.general.string = pubkey
                     pubkeyCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         pubkeyCopied = false
                     }
                 } label: {
@@ -270,12 +270,21 @@ private struct SlotCard<Content: View>: View {
 private struct SlotSummaryHeader: View {
     let slot: SlotInfo
     let showsChevron: Bool
+    let showsSlotTitle: Bool
+
+    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true) {
+        self.slot = slot
+        self.showsChevron = showsChevron
+        self.showsSlotTitle = showsSlotTitle
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text("Slot \(slot.slotNumber)")
-                .font(.body)
-                .fontWeight(.medium)
+            if showsSlotTitle {
+                Text("Slot \(slot.slotNumber)")
+                    .font(.body)
+                    .fontWeight(.medium)
+            }
 
             SlotStatusBadges(slot: slot)
 
@@ -283,8 +292,9 @@ private struct SlotSummaryHeader: View {
 
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.footnote)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.tertiary)
             }
         }
     }

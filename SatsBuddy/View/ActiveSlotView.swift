@@ -34,8 +34,9 @@ struct ActiveSlotView: View {
                         .font(.title)
                         .fontWeight(.regular)
                         .foregroundStyle(.secondary)
-                    Text(slot.balance?.formatted(.number.grouping(.automatic)) ?? "1,234")
-                        .redacted(reason: slot.balance == nil ? .placeholder : [])
+                    Text((slot.balance ?? 0).formatted(.number.grouping(.automatic)))
+                        .contentTransition(.numericText())
+                        .opacity(slot.balance == nil ? 0.3 : 1)
                     ProgressView()
                         .scaleEffect(0.6)
                         .frame(width: 20, height: 20)
@@ -47,6 +48,7 @@ struct ActiveSlotView: View {
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
                 .padding()
+                .animation(.smooth, value: slot.balance)
 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -78,8 +80,9 @@ struct ActiveSlotView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.tertiary)
                             }
                         }
                     }
@@ -99,7 +102,7 @@ struct ActiveSlotView: View {
                         Button {
                             UIPasteboard.general.string = displayPubkey
                             isPubkeyCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                                 isPubkeyCopied = false
                             }
                         } label: {
@@ -138,7 +141,7 @@ struct ActiveSlotView: View {
                                     Image(systemName: "square.bottomhalf.filled")
                                         .foregroundStyle(.blue)
                                         .font(.body)
-                                    Text("Verify on mempool.space")
+                                    Text("mempool.space")
                                         .foregroundColor(.primary)
                                 }
                             }
@@ -146,8 +149,9 @@ struct ActiveSlotView: View {
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.tertiary)
                         }
                         .padding(.vertical, 6)
                     }
@@ -367,7 +371,7 @@ extension ActiveSlotView {
 //        Button {
 //            UIPasteboard.general.string = text
 //            isCopied = true
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
 //                isCopied = false
 //            }
 //        } label: {

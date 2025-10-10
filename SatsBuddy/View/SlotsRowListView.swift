@@ -12,34 +12,65 @@ struct SlotsRowListView: View {
     let slots: [SlotInfo]
 
     var body: some View {
-        List {
-            Section {
-                ForEach(slots) { slot in
-                    NavigationLink {
-                        SlotHistoryView(slot: slot)
-                    } label: {
-                        SlotSummaryRowView(slot: slot)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(
-                        EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
-                    )
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .padding(.horizontal, 4)
-                }
-            } header: {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Slots")
                     .font(.headline)
                     .foregroundStyle(.secondary)
+
+                SlotsCard(contentPadding: 16) {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
+                            NavigationLink {
+                                SlotHistoryView(slot: slot)
+                            } label: {
+                                SlotSummaryRowView(slot: slot)
+                                    .padding(.vertical, 32)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                            if index < slots.count - 1 {
+                                Divider()
+                                    .overlay(Color.white.opacity(0.06))
+                            }
+                        }
+                    }
+                }
             }
-            .textCase(nil)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
         }
-        .listStyle(.plain)
         .scrollIndicators(.hidden)
-        .scrollContentBackground(.hidden)
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
+    }
+}
+
+private struct SlotsCard<Content: View>: View {
+    private let content: Content
+    private let contentPadding: CGFloat
+
+    init(contentPadding: CGFloat = 20, @ViewBuilder content: () -> Content) {
+        self.content = content()
+        self.contentPadding = contentPadding
+    }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(contentPadding)
+            .background(
+                shape
+                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
+            )
+            .overlay(
+                shape
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+            .clipShape(shape)
     }
 }
 

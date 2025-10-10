@@ -26,7 +26,7 @@ struct ReceiveView: View {
 
                     VStack {
                         ZStack {
-                            BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address))
+                            BitcoinUI.QRCodeView(qrCodeType: .bitcoin(address), cornerRadius: 20)
                                 .opacity(isQRLoading ? 0 : 1)
                                 .onAppear {
                                     DispatchQueue.main.async {
@@ -48,8 +48,11 @@ struct ReceiveView: View {
                         }
                         .padding()
 
+                        Divider()
+                            .padding(.horizontal)
+
                         BitcoinUI.AddressFormattedView(address: address, columns: 4)
-                            .padding(.bottom)
+                            .padding(.vertical)
                             .padding(.bottom)
                     }
                     .background(
@@ -64,7 +67,7 @@ struct ReceiveView: View {
                         Button {
                             UIPasteboard.general.string = address
                             isCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                                 isCopied = false
                             }
                         } label: {
@@ -72,9 +75,9 @@ struct ReceiveView: View {
                                 Text(address)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                Spacer()
+                                Spacer(minLength: 80)
                                 Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                                    .foregroundColor(isCopied ? .green : .secondary)
+                                    .foregroundColor(isCopied ? .green : .blue)
                                     .font(.caption)
                                     .symbolEffect(.bounce, value: isCopied)
                             }

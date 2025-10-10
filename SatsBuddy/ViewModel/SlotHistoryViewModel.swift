@@ -27,6 +27,7 @@ final class SlotHistoryViewModel {
     @MainActor
     func loadHistory(for slot: SlotInfo, network: Network = .bitcoin) async {
         slotBalance = slot.balance
+        let slotNumber = slot.slotNumber
 
         guard let address = slot.address, !address.isEmpty else {
             errorMessage = "No address available for this slot."
@@ -40,7 +41,9 @@ final class SlotHistoryViewModel {
         errorMessage = nil
 
         let traceID = String(UUID().uuidString.prefix(6))
-        Log.cktap.info("[\(traceID)] Loading history for address \(address, privacy: .public)")
+        Log.cktap.info(
+            "[\(traceID)] Loading history for slot \(slotNumber) address \(address, privacy: .private(mask: .hash))"
+        )
 
         do {
             let fetched = try await bdkClient.getTransactionsForAddress(
@@ -53,7 +56,7 @@ final class SlotHistoryViewModel {
 
             transactions = fetched
             Log.cktap.info(
-                "[\(traceID)] Loaded \(fetched.count, privacy: .public) transactions for address \(address, privacy: .public)"
+                "[\(traceID)] Loaded \(fetched.count) transactions for slot \(slotNumber) address \(address, privacy: .private(mask: .hash))"
             )
 
             do {
@@ -61,7 +64,7 @@ final class SlotHistoryViewModel {
                 guard currentTaskID == taskID else { return }
                 slotBalance = balance.total.toSat()
                 Log.cktap.info(
-                    "[\(traceID)] Loaded balance \(balance.total.toSat(), privacy: .public) sats for address \(address, privacy: .public)"
+                    "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
                 )
             } catch {
                 Log.cktap.error(
@@ -82,7 +85,7 @@ final class SlotHistoryViewModel {
                 guard currentTaskID == taskID else { return }
                 slotBalance = balance.total.toSat()
                 Log.cktap.info(
-                    "[\(traceID)] Loaded balance \(balance.total.toSat(), privacy: .public) sats for address \(address, privacy: .public) despite transaction error"
+                    "[\(traceID)] Loaded balance for slot \(slotNumber) despite transaction error: \(balance.total.toSat(), privacy: .private) sats"
                 )
             } catch {
                 Log.cktap.error(

@@ -33,13 +33,15 @@ private struct BdkService {
         // We only need the first external address to display to the user.
         let addressInfo = wallet.peekAddress(keychain: .external, index: 0)
         let address = String(describing: addressInfo.address)
-        Log.cktap.debug("Derived address from descriptor: \(address, privacy: .public)")
+        Log.cktap.debug(
+            "Derived first external address from descriptor: \(address, privacy: .private(mask: .hash))"
+        )
         return address
     }
 
     func fetchBalance(address: String, network: Network) async throws -> Balance {
         Log.cktap.debug(
-            "BdkService.getBalanceFromAddress called with address: \(address, privacy: .public)"
+            "Fetching on-chain balance for address \(address, privacy: .private(mask: .hash))"
         )
 
         // Use Mempool.space API to get real balance
@@ -80,7 +82,7 @@ private struct BdkService {
         let totalBalance = confirmedBalance + mempoolBalance
 
         Log.cktap.debug(
-            "Retrieved real balance from Mempool.space: \(totalBalance, privacy: .public) sats"
+            "Retrieved on-chain balance from Mempool.space: \(totalBalance, privacy: .private) sats"
         )
 
         let confirmedAmount = Amount.fromSat(satoshi: confirmedBalance)
@@ -104,7 +106,7 @@ private struct BdkService {
         limit: Int = 25
     ) async throws -> [SlotTransaction] {
         Log.cktap.debug(
-            "BdkService.fetchTransactions called with address: \(address, privacy: .public)"
+            "Fetching transactions for address \(address, privacy: .private(mask: .hash))"
         )
 
         let baseURL = mempoolBaseURL(for: network)

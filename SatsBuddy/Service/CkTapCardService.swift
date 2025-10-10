@@ -68,7 +68,9 @@ final class CkTapCardService {
     private func readSatsCard(_ card: CKTap.SatsCard) async throws -> SatsCardInfo {
         let status = await card.status()
         Log.cktap.debug("status.ver -> \(status.ver, privacy: .public)")
-        Log.cktap.debug("status.pubkey -> \(status.pubkey, privacy: .public)")
+        Log.cktap.debug(
+            "status.pubkey -> \(status.pubkey, privacy: .private(mask: .hash))"
+        )
         Log.cktap.debug("status slots -> active: \(status.activeSlot), total: \(status.numSlots)")
 
         // Active slot address:
@@ -77,10 +79,12 @@ final class CkTapCardService {
         var currentAddress: String?
         do {
             currentAddress = try await card.address()
-            Log.cktap.debug("card.address() -> \(currentAddress ?? "nil", privacy: .public)")
+            Log.cktap.debug(
+                "card.address() -> \(currentAddress ?? "nil", privacy: .private(mask: .hash))"
+            )
         } catch {
             Log.cktap.error(
-                "card.address() failed: \(error.localizedDescription, privacy: .public)"
+                "card.address() failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
         }
 
@@ -113,7 +117,7 @@ final class CkTapCardService {
                                 network
                             )
                             Log.cktap.debug(
-                                "Derived address for slot \(slotNumber): \(slotAddress!, privacy: .public)"
+                                "Derived address for slot \(slotNumber): \(slotAddress ?? "nil", privacy: .private(mask: .hash))"
                             )
                         } catch {
                             Log.cktap.error(
@@ -123,7 +127,7 @@ final class CkTapCardService {
                     }
                 } catch {
                     Log.cktap.error(
-                        "dump(slot:) failed for slot \(slotNumber): \(error, privacy: .public)"
+                        "dump(slot:) failed for slot \(slotNumber): \(error.localizedDescription, privacy: .private(mask: .hash))"
                     )
                 }
             } else if isActive {

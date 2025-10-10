@@ -151,7 +151,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     if Task.isCancelled { return }
 
                     Log.cktap.error(
-                        "CKTap error: \(String(describing: error), privacy: .public)"
+                        "CKTap error: \(error.localizedDescription, privacy: .private(mask: .hash))"
                     )
                     let message: String
                     if let localizedError = error as? LocalizedError,
