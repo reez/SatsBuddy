@@ -18,6 +18,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     var lastStatusMessage: String = "Tap + to scan card"
     var isScanning: Bool = false
     var scannedCards: [SatsCardInfo] = []
+    var detailLoadingCardIdentifier: String?
 
     let ckTapClient: CkTapClient
     private let cardsStore: CardsKeychainClient

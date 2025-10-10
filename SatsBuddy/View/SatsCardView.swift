@@ -11,6 +11,7 @@ struct SatsCardView: View {
     let card: SatsCardInfo
     let onRemove: () -> Void
     let cardViewModel: SatsCardViewModel
+    let isDetailLoading: Bool
 
     @State private var showingDetail = false
 
@@ -54,6 +55,12 @@ struct SatsCardView: View {
             }
 
             Spacer()
+
+            if isDetailLoading {
+                ProgressView()
+                    .scaleEffect(0.7)
+                    .tint(.secondary)
+            }
         }
         .contentShape(Rectangle())
     }
@@ -76,7 +83,8 @@ struct SatsCardView: View {
             onRemove: {
                 print("Remove card")
             },
-            cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
+            cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock),
+            isDetailLoading: false
         )
         .padding()
     }
