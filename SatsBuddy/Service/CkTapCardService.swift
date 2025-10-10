@@ -84,7 +84,7 @@ final class CkTapCardService {
             )
         } catch {
             Log.cktap.error(
-                "card.address() failed: \(error.localizedDescription, privacy: .public)"
+                "card.address() failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
         }
 
