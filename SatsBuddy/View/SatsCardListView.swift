@@ -37,7 +37,10 @@ struct SatsCardListView: View {
                                         onRemove: {
                                             viewModel.removeCard(card)
                                         },
-                                        cardViewModel: viewModel
+                                        cardViewModel: viewModel,
+                                        isDetailLoading:
+                                            viewModel.detailLoadingCardIdentifier
+                                            == card.cardIdentifier
                                     )
                                 }
                                 .listRowBackground(Color.clear)

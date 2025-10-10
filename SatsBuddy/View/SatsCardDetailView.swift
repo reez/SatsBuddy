@@ -52,7 +52,9 @@ struct SatsCardDetailView: View {
             Log.ui.info(
                 "[\(traceID)] Detail task triggered for card \(updatedCard.cardIdentifier, privacy: .private(mask: .hash))"
             )
+            let identifier = updatedCard.cardIdentifier
             await MainActor.run {
+                cardViewModel.detailLoadingCardIdentifier = identifier
                 viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
             }
             Log.ui.info("[\(traceID)] Detail task completed loadSlotDetails")
@@ -67,6 +69,22 @@ struct SatsCardDetailView: View {
                     isRenaming = false
                 }
             )
+        }
+        .onAppear {
+            cardViewModel.detailLoadingCardIdentifier = updatedCard.cardIdentifier
+        }
+        .onChange(of: viewModel.isLoading) { isLoading in
+            let identifier = updatedCard.cardIdentifier
+            if isLoading {
+                cardViewModel.detailLoadingCardIdentifier = identifier
+            } else if cardViewModel.detailLoadingCardIdentifier == identifier {
+                cardViewModel.detailLoadingCardIdentifier = nil
+            }
+        }
+        .onDisappear {
+            if cardViewModel.detailLoadingCardIdentifier == updatedCard.cardIdentifier {
+                cardViewModel.detailLoadingCardIdentifier = nil
+            }
         }
     }
 }
