@@ -52,6 +52,15 @@ struct SatsCardView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+
+                if let cardIdent = card.cardIdent, !cardIdent.isEmpty {
+                    Text(cardIdent)
+                        .font(.caption)
+                        .fontDesign(.monospaced)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
             }
 
             Spacer()
@@ -73,6 +82,7 @@ struct SatsCardView: View {
             birth: 1,
             address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
             pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388",
+            cardIdent: "ABCDE-FGHJK-LMNOP-QRSTU",
             activeSlot: 2,
             totalSlots: 10,
             isActive: true

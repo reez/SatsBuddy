@@ -253,6 +253,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             birth: newCard.birth,
             address: newCard.address,
             pubkey: newCard.pubkey,
+            cardIdent: newCard.cardIdent,
             cardNonce: newCard.cardNonce,
             activeSlot: newCard.activeSlot,
             totalSlots: newCard.totalSlots,
