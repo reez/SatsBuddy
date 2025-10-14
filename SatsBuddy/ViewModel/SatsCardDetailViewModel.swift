@@ -60,23 +60,31 @@ class SatsCardDetailViewModel {
         )
     }
 
-    @MainActor
     private func fetchBalanceForActiveSlot(
         card: SatsCardInfo,
         loadStartedAt: Date,
         traceID: String,
         fetchToken: UUID
     ) async {
-        guard currentFetchToken == fetchToken else { return }
+        let shouldStart = await MainActor.run { () -> Bool in
+            self.currentFetchToken == fetchToken
+        }
+        guard shouldStart else { return }
         defer {
-            if currentFetchToken == fetchToken {
-                balanceFetchTask = nil
+            Task { @MainActor in
+                if self.currentFetchToken == fetchToken {
+                    self.balanceFetchTask = nil
+                }
             }
         }
 
         guard let cardAddress = card.address else {
             Log.cktap.debug("[\(traceID)] Missing card address; skipping balance fetch")
-            isLoading = false
+            await MainActor.run {
+                if self.currentFetchToken == fetchToken {
+                    self.isLoading = false
+                }
+            }
             return
         }
 
@@ -93,16 +101,24 @@ class SatsCardDetailViewModel {
             let totalDurationString = String(format: "%.3f", totalDuration)
 
             if Task.isCancelled { return }
-            guard currentFetchToken == fetchToken else { return }
+            let didUpdate = await MainActor.run { () -> Bool in
+                guard
+                    self.currentFetchToken == fetchToken,
+                    let activeSlotIndex = self.slots.firstIndex(where: { $0.isActive })
+                else {
+                    self.isLoading = false
+                    return false
+                }
 
-            guard let activeSlotIndex = slots.firstIndex(where: { $0.isActive }) else {
-                isLoading = false
+                self.slots[activeSlotIndex].balance = balance.total.toSat()
+                self.isLoading = false
+                return true
+            }
+
+            guard didUpdate else {
                 Log.cktap.debug("[\(traceID)] Active slot missing after network fetch")
                 return
             }
-
-            slots[activeSlotIndex].balance = balance.total.toSat()
-            isLoading = false
 
             Log.cktap.debug(
                 "[\(traceID)] Balance fetched successfully: \(balance.total.toSat(), privacy: .private) sats (network: \(networkDurationString)s, total: \(totalDurationString)s)"
@@ -115,12 +131,14 @@ class SatsCardDetailViewModel {
                 "[\(traceID)] Balance fetch failed: \(error.localizedDescription, privacy: .public)"
             )
             if Task.isCancelled { return }
-            guard currentFetchToken == fetchToken else { return }
-            errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
+            await MainActor.run {
+                guard self.currentFetchToken == fetchToken else { return }
+                self.errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
+                self.isLoading = false
+            }
             Log.cktap.error(
                 "[\(traceID)] Total time before failure: \(totalDurationString)s"
             )
-            isLoading = false
         }
     }
 }
