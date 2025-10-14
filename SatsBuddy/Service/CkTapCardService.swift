@@ -152,6 +152,7 @@ final class CkTapCardService {
             birth: status.birth,
             address: currentAddress,
             pubkey: status.pubkey,
+            cardIdent: status.cardIdent,
             activeSlot: status.activeSlot,
             totalSlots: status.numSlots,
             slots: slots,
