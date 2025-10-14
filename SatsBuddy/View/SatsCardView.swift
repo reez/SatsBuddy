@@ -55,8 +55,7 @@ struct SatsCardView: View {
 
                 if let cardIdent = card.cardIdent, !cardIdent.isEmpty {
                     Text(cardIdent)
-                        .font(.caption)
-                        .fontDesign(.monospaced)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
