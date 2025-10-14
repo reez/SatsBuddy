@@ -57,6 +57,7 @@ struct SatsCardView: View {
                     Text(cardIdent)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .fontDesign(.monospaced)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
