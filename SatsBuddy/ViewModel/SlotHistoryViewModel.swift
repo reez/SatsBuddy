@@ -24,23 +24,27 @@ final class SlotHistoryViewModel {
         self.bdkClient = bdkClient
     }
 
-    @MainActor
     func loadHistory(for slot: SlotInfo, network: Network = .bitcoin) async {
-        slotBalance = slot.balance
-        let slotNumber = slot.slotNumber
-
         guard let address = slot.address, !address.isEmpty else {
-            errorMessage = "No address available for this slot."
-            transactions = []
+            await MainActor.run {
+                self.errorMessage = "No address available for this slot."
+                self.transactions = []
+                self.slotBalance = slot.balance
+            }
             return
         }
 
+        let slotNumber = slot.slotNumber
         let taskID = UUID()
-        currentTaskID = taskID
-        isLoading = true
-        errorMessage = nil
-
         let traceID = String(UUID().uuidString.prefix(6))
+
+        await MainActor.run {
+            self.slotBalance = slot.balance
+            self.currentTaskID = taskID
+            self.isLoading = true
+            self.errorMessage = nil
+        }
+
         Log.cktap.info(
             "[\(traceID)] Loading history for slot \(slotNumber) address \(address, privacy: .private(mask: .hash))"
         )
@@ -52,47 +56,71 @@ final class SlotHistoryViewModel {
                 25
             )
 
-            guard currentTaskID == taskID else { return }
+            let shouldContinue = await MainActor.run { () -> Bool in
+                guard self.currentTaskID == taskID else { return false }
+                self.transactions = fetched
+                return true
+            }
 
-            transactions = fetched
+            guard shouldContinue else { return }
+
             Log.cktap.info(
                 "[\(traceID)] Loaded \(fetched.count) transactions for slot \(slotNumber) address \(address, privacy: .private(mask: .hash))"
             )
 
             do {
                 let balance = try await bdkClient.getBalanceFromAddress(address, network)
-                guard currentTaskID == taskID else { return }
-                slotBalance = balance.total.toSat()
-                Log.cktap.info(
-                    "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
-                )
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.slotBalance = balance.total.toSat()
+                    Log.cktap.info(
+                        "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
+                    )
+                }
             } catch {
                 Log.cktap.error(
                     "[\(traceID)] Failed to fetch balance: \(error.localizedDescription, privacy: .public)"
                 )
             }
 
-            isLoading = false
+            await MainActor.run {
+                if self.currentTaskID == taskID {
+                    self.isLoading = false
+                }
+            }
         } catch {
-            guard currentTaskID == taskID else { return }
+            let didSetError = await MainActor.run { () -> Bool in
+                guard self.currentTaskID == taskID else { return false }
+                self.errorMessage = "Unable to load transactions."
+                return true
+            }
+
+            guard didSetError else { return }
 
             Log.cktap.error(
                 "[\(traceID)] Failed to fetch transactions: \(error.localizedDescription, privacy: .public)"
             )
-            errorMessage = "Unable to load transactions."
+
             do {
                 let balance = try await bdkClient.getBalanceFromAddress(address, network)
-                guard currentTaskID == taskID else { return }
-                slotBalance = balance.total.toSat()
-                Log.cktap.info(
-                    "[\(traceID)] Loaded balance for slot \(slotNumber) despite transaction error: \(balance.total.toSat(), privacy: .private) sats"
-                )
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.slotBalance = balance.total.toSat()
+                    Log.cktap.info(
+                        "[\(traceID)] Loaded balance for slot \(slotNumber) despite transaction error: \(balance.total.toSat(), privacy: .private) sats"
+                    )
+                }
             } catch {
                 Log.cktap.error(
                     "[\(traceID)] Failed to fetch balance after transaction error: \(error.localizedDescription, privacy: .public)"
                 )
             }
-            isLoading = false
+
+            await MainActor.run {
+                if self.currentTaskID == taskID {
+                    self.isLoading = false
+                }
+            }
         }
     }
 
