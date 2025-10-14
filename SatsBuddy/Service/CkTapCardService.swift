@@ -94,7 +94,7 @@ final class CkTapCardService {
             let isUsed = slotNumber <= status.activeSlot
 
             var slotPubkey: String?
-            var slotAddress: String? = currentAddress
+            var slotAddress: String?
             var slotDescriptor: String?
 
             if !isActive, isUsed {
