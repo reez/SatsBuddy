@@ -64,6 +64,7 @@ struct ActiveSlotView: View {
 
             List {
                 Section {
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Receive")
                             .foregroundStyle(.secondary)
@@ -92,7 +93,6 @@ struct ActiveSlotView: View {
 
                         isPreparingReceiveSheet = true
                         receiveSheetState = ReceiveSheetState(address: address)
-                        print("tapped receive!")
                     }
 
                     // Pubkey row

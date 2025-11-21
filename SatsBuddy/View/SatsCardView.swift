@@ -91,7 +91,6 @@ struct SatsCardView: View {
         SatsCardView(
             card: sampleCard,
             onRemove: {
-                print("Remove card")
             },
             cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock),
             isDetailLoading: false
