@@ -143,7 +143,7 @@ struct ActiveSlotView: View {
                             HStack(alignment: .center) {
                                 HStack {
                                     Image(systemName: "square.bottomhalf.filled")
-                                        .foregroundStyle(.blue)
+                                        //                                        .foregroundStyle(.blue)
                                         .font(.body)
                                     Text("mempool.space")
                                         .foregroundColor(.primary)
