@@ -24,6 +24,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     private let cardsStore: CardsKeychainClient
     private var currentNFCReadTask: Task<Void, Never>?
     private var currentNFCReadTaskToken: UUID?
+    private var currentOperation: Operation = .scan
 
     override init() {
         let bdkClient = BdkClient.live
@@ -40,6 +41,11 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         loadPersistedCards()
     }
 
+    enum Operation {
+        case scan
+        case setupNextSlot(card: SatsCardInfo, cvc: String)
+    }
+
     func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
         Log.nfc.info("NFC session became active")
         DispatchQueue.main.async {
@@ -54,6 +60,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         currentNFCReadTask?.cancel()
         currentNFCReadTask = nil
         currentNFCReadTaskToken = nil
+        currentOperation = .scan
         Task { @MainActor in
             if let nfcError = error as? NFCReaderError,
                 nfcError.code == .readerSessionInvalidationErrorUserCanceled
@@ -132,16 +139,31 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     if Task.isCancelled { return }
                     let transport = NFCTransport(tag: iso7816Tag)
                     if Task.isCancelled { return }
-                    let cardInfo = try await self.ckTapClient.readCardInfo(transport)
+                    let cardInfo: SatsCardInfo
+                    switch self.currentOperation {
+                    case .scan:
+                        cardInfo = try await self.ckTapClient.readCardInfo(transport)
+                    case .setupNextSlot(let target, let cvc):
+                        Log.cktap.info(
+                            "Starting new slot setup for card \(target.cardIdentifier, privacy: .private(mask: .hash))"
+                        )
+                        cardInfo = try await self.ckTapClient.setupNextSlot(transport, cvc)
+                    }
                     if Task.isCancelled { return }
 
                     await MainActor.run {
                         let mergedCard = self.mergeCardInfo(with: cardInfo)
                         let updated = CardsStore.upsert(&self.scannedCards, with: mergedCard)
-                        self.lastStatusMessage =
-                            updated ? "Card updated with latest data 🔄" : "New card added ✅"
+                        switch self.currentOperation {
+                        case .scan:
+                            self.lastStatusMessage =
+                                updated ? "Card updated with latest data 🔄" : "New card added ✅"
+                        case .setupNextSlot:
+                            self.lastStatusMessage = "Next slot ready ✅"
+                        }
                         self.isScanning = false
                         self.persistCards()
+                        self.currentOperation = .scan
                     }
 
                     if !Task.isCancelled {
@@ -186,11 +208,38 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         currentNFCReadTaskToken = nil
         tagSession?.invalidate()
 
+        currentOperation = .scan
         tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         tagSession?.alertMessage = "Hold your iPhone near the SatsCard."
         tagSession?.begin()
 
         Log.nfc.info("NFC session started")
+    }
+
+    func startSetupNextSlot(for card: SatsCardInfo, cvc: String) {
+        let trimmed = cvc.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            lastStatusMessage = "Enter CVC to set up next slot."
+            return
+        }
+
+        guard NFCTagReaderSession.readingAvailable else {
+            Log.nfc.error("NFC reading not available on this device")
+            lastStatusMessage = "NFC not available on this device"
+            return
+        }
+
+        currentNFCReadTask?.cancel()
+        currentNFCReadTask = nil
+        currentNFCReadTaskToken = nil
+        tagSession?.invalidate()
+
+        currentOperation = .setupNextSlot(card: card, cvc: trimmed)
+        tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
+        tagSession?.alertMessage = "Hold your iPhone near the SatsCard to set up next slot."
+        tagSession?.begin()
+
+        Log.nfc.info("NFC session started (setup next slot)")
     }
 
     func removeCard(_ card: SatsCardInfo) {
