@@ -16,6 +16,7 @@ struct SatsCardDetailView: View {
     @State private var traceID = String(UUID().uuidString.prefix(6))
     @State private var labelText: String = ""
     @State private var isRenaming = false
+    @State private var isShowingSend = false
 
     // Get the updated card from the cardViewModel's scannedCards array
     private var updatedCard: SatsCardInfo {
@@ -35,6 +36,17 @@ struct SatsCardDetailView: View {
                     cardViewModel.refreshCard(updatedCard)
                 }
             )
+            // Uncomment when opening up send flow
+            //            .toolbar {
+            //                ToolbarItem(placement: .confirmationAction) {
+            //                    Button {
+            //                        isShowingSend = true
+            //                    } label: {
+            //                        Label("Send", systemImage: "paperplane")
+            //                            .labelStyle(.titleAndIcon)
+            //                    }
+            //                }
+            //            }
 
             FooterView(updatedCard: updatedCard)
                 .padding()
@@ -42,6 +54,15 @@ struct SatsCardDetailView: View {
         .padding()
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .background(
+            NavigationLink(
+                destination: SendFlowView(slot: slotForDisplay, card: updatedCard),
+                isActive: $isShowingSend
+            ) {
+                EmptyView()
+            }
+            .hidden()
+        )
         .toolbarTitleMenu {
             Button("Rename Card") {
                 prepareLabelForEditing()

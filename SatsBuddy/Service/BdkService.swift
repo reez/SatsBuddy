@@ -12,20 +12,12 @@ private struct BdkService {
         // Parse the target descriptor from CKTap.
         let descriptor = try Descriptor(descriptor: descriptor, network: network)
 
-        // BDK Wallet requires both receive and change descriptors; we only need
-        // the first external address, so use a static valid change descriptor.
-        let changeDescriptor = try Descriptor(
-            descriptor: "wpkh(0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798)",
-            network: network
-        )
-
         // Use an in-memory persister so nothing touches disk.
         let persister = try Persister.newInMemory()
 
-        // Create a temporary wallet to derive an address conforming to descriptor rules.
-        let wallet = try Wallet(
+        // Create a temporary wallet from a single descriptor to derive an address.
+        let wallet = try Wallet.createSingle(
             descriptor: descriptor,
-            changeDescriptor: changeDescriptor,
             network: network,
             persister: persister
         )
@@ -170,6 +162,67 @@ private struct BdkService {
         await BdkWarmUp.shared.run()
     }
 
+    func buildPsbt(
+        sourcePubkey: String?,
+        sourceDescriptor: String?,
+        destinationAddress: String,
+        feeRate: UInt64,
+        network: Network
+    ) async throws -> Psbt {
+        let descriptorString: String
+        if let sourceDescriptor, !sourceDescriptor.isEmpty {
+            descriptorString = sourceDescriptor
+        } else if let sourcePubkey {
+            descriptorString = "wpkh(\(sourcePubkey))"
+        } else {
+            throw NSError(
+                domain: "BdkService",
+                code: 100,
+                userInfo: [NSLocalizedDescriptionKey: "Missing source key/descriptor"]
+            )
+        }
+
+        let descriptor = try Descriptor(
+            descriptor: descriptorString,
+            network: network
+        )
+        let persister = try Persister.newInMemory()
+        let wallet = try Wallet.createSingle(
+            descriptor: descriptor,
+            network: network,
+            persister: persister
+        )
+
+        let revealed = wallet.revealNextAddress(keychain: .external).address
+        Log.cktap.debug(
+            "Syncing for revealed address: \(revealed, privacy: .private(mask: .hash)) descriptor=\(descriptorString, privacy: .public)"
+        )
+
+        let base = "\(mempoolBaseURL(for: network))/api"
+        let esplora = EsploraClient(url: base)
+
+        let syncRequest = try wallet.startSyncWithRevealedSpks().build()
+        let update = try esplora.sync(request: syncRequest, parallelRequests: 4)
+        try wallet.applyUpdate(update: update)
+
+        let utxos = wallet.listUnspent()
+        let total = utxos.reduce(UInt64(0)) { $0 + $1.txout.value.toSat() }
+        Log.cktap.debug(
+            "Post-sync UTXOs: count=\(utxos.count) total=\(total, privacy: .private) sats"
+        )
+
+        let destScript = try Address(address: destinationAddress, network: network)
+            .scriptPubkey()
+
+        let psbt = try TxBuilder()
+            .drainWallet()
+            .drainTo(script: destScript)
+            .feeRate(feeRate: FeeRate.fromSatPerVb(satVb: feeRate))
+            .finish(wallet: wallet)
+
+        return psbt
+    }
+
     private func mempoolBaseURL(for network: Network) -> String {
         switch network {
         case .bitcoin:
@@ -194,18 +247,22 @@ struct BdkClient {
     let warmUp: @Sendable () async -> Void
     let getTransactionsForAddress:
         @Sendable (String, Network, Int) async throws -> [SlotTransaction]
+    let buildPsbt: @Sendable (String?, String?, String, UInt64, Network) async throws -> Psbt
 
     private init(
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
         getBalanceFromAddress: @escaping @Sendable (String, Network) async throws -> Balance,
         warmUp: @escaping @Sendable () async -> Void,
         getTransactionsForAddress: @escaping @Sendable (String, Network, Int) async throws ->
-            [SlotTransaction]
+            [SlotTransaction],
+        buildPsbt: @escaping @Sendable (String?, String?, String, UInt64, Network) async throws ->
+            Psbt
     ) {
         self.deriveAddress = deriveAddress
         self.getBalanceFromAddress = getBalanceFromAddress
         self.warmUp = warmUp
         self.getTransactionsForAddress = getTransactionsForAddress
+        self.buildPsbt = buildPsbt
     }
 }
 
@@ -225,6 +282,15 @@ extension BdkClient {
                 address: address,
                 network: network,
                 limit: limit
+            )
+        },
+        buildPsbt: { sourcePubkey, sourceDescriptor, destination, feeRate, network in
+            try await BdkService().buildPsbt(
+                sourcePubkey: sourcePubkey,
+                sourceDescriptor: sourceDescriptor,
+                destinationAddress: destination,
+                feeRate: feeRate,
+                network: network
             )
         }
     )
@@ -281,6 +347,13 @@ extension BdkClient {
                         direction: isIncoming ? .incoming : .outgoing
                     )
                 }
+            },
+            buildPsbt: { _, _, _, _, _ in
+                throw NSError(
+                    domain: "BdkClient.mock",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "buildPsbt not implemented in mock"]
+                )
             }
         )
     }

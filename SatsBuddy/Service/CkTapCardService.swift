@@ -131,8 +131,37 @@ final class CkTapCardService {
                     )
                 }
             } else if isActive {
-                slotPubkey = status.pubkey
                 slotAddress = currentAddress
+                // Try to read the active slot descriptor (no CVC) so we can build watch-only wallets.
+                if let descriptor = try? await card.read(), !descriptor.isEmpty {
+                    slotDescriptor = descriptor
+                    let derived = try? addressDeriver.deriveAddress(descriptor, network)
+                    if slotAddress == nil {
+                        slotAddress = derived
+                    }
+                    Log.cktap.debug(
+                        "Active slot read descriptor=\(descriptor, privacy: .public) derivedAddr=\(derived ?? "nil", privacy: .private(mask: .hash))"
+                    )
+                } else {
+                    // For unsealed/used slots, dump without CVC should include pubkeyDescriptor.
+                    if let dump = try? await card.dump(slot: slotNumber, cvc: nil) {
+                        slotPubkey = dump.pubkey
+                        slotDescriptor = dump.pubkeyDescriptor
+                        if let descriptor = slotDescriptor,
+                            let derived = try? addressDeriver.deriveAddress(descriptor, network)
+                        {
+                            slotAddress = slotAddress ?? derived
+                            Log.cktap.debug(
+                                "Active slot dump descriptor=\(descriptor, privacy: .public) derivedAddr=\(derived, privacy: .private(mask: .hash))"
+                            )
+                        }
+                    }
+                }
+
+                // Ensure we still have a pubkey for display/logging even if read/dump fail.
+                if slotPubkey == nil {
+                    slotPubkey = status.pubkey
+                }
             }
 
             let slotInfo = SlotInfo(
