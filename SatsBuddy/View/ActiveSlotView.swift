@@ -115,7 +115,8 @@ struct ActiveSlotView: View {
                                 Spacer(minLength: 80)
 
                                 Image(systemName: isPubkeyCopied ? "checkmark" : "doc.on.doc")
-                                    .font(.caption)
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
                                     .foregroundStyle(isPubkeyCopied ? .green : .blue)
                                     .symbolEffect(.bounce, value: isPubkeyCopied)
                             }
@@ -196,6 +197,8 @@ struct ActiveSlotView: View {
                                     .scaleEffect(0.8)
                             } else {
                                 Image(systemName: "wave.3.up")
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
                                     .foregroundStyle(.blue)
                             }
                         }
