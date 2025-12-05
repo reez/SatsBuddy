@@ -38,6 +38,24 @@ final class CkTapCardService {
         CkTapCardService(addressDeriver: .live, network: .testnet)
     }
 
+    /// Advance a SATSCARD to the next slot (CVC required) and return updated card info.
+    func setupNextSlot(transport: CkTransport, cvc: String) async throws -> SatsCardInfo {
+        let cardType = try await CKTap.toCktap(transport: transport)
+
+        switch cardType {
+        case .satsCard(let card):
+            let next = try await card.newSlot(cvc: cvc)
+            Log.cktap.info("newSlot completed -> next active slot \(next)")
+            return try await readSatsCard(card)
+
+        case .tapSigner(_):
+            throw CkTapCardError.unsupportedCard("TAPSIGNER not supported")
+
+        case .satsChip(_):
+            throw CkTapCardError.unsupportedCard("SATSCHIP not supported")
+        }
+    }
+
     /// Reads a card via CKTap and returns the aggregated `SatsCardInfo` that the UI consumes.
     ///
     /// High level:
@@ -71,7 +89,9 @@ final class CkTapCardService {
         Log.cktap.debug(
             "status.pubkey -> \(status.pubkey, privacy: .private(mask: .hash))"
         )
-        Log.cktap.debug("status slots -> active: \(status.activeSlot), total: \(status.numSlots)")
+        Log.cktap.debug(
+            "status slots -> active: \(status.activeSlot), total: \(status.numSlots)"
+        )
 
         // Active slot address:
         // The active slot is sealed and `dump(slot:)` will usually fail without a CVC.
@@ -84,7 +104,7 @@ final class CkTapCardService {
             )
         } catch {
             Log.cktap.error(
-                "card.address() failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
+                "card.address() failed (activeSlot=\(status.activeSlot)): \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
         }
 
@@ -162,6 +182,10 @@ final class CkTapCardService {
                 if slotPubkey == nil {
                     slotPubkey = status.pubkey
                 }
+
+                Log.cktap.debug(
+                    "Active slot \(slotNumber) summary -> addr=\(slotAddress ?? "nil", privacy: .private(mask: .hash)) desc=\(slotDescriptor ?? "nil", privacy: .public) pubkey=\(slotPubkey ?? "nil", privacy: .private(mask: .hash))"
+                )
             }
 
             let slotInfo = SlotInfo(

@@ -17,6 +17,8 @@ struct SatsCardDetailView: View {
     @State private var labelText: String = ""
     @State private var isRenaming = false
     @State private var isShowingSend = false
+    @State private var isShowingSetupSheet = false
+    @State private var setupCvc: String = ""
 
     // Get the updated card from the cardViewModel's scannedCards array
     private var updatedCard: SatsCardInfo {
@@ -36,6 +38,21 @@ struct SatsCardDetailView: View {
                     cardViewModel.refreshCard(updatedCard)
                 }
             )
+            if needsNextSlotSetup {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(
+                        "Active slot has no address. Set up the next slot to get a new sealed address."
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    Button {
+                        isShowingSetupSheet = true
+                    } label: {
+                        Label("Set up next slot", systemImage: "arrow.triangle.2.circlepath")
+                            .labelStyle(.titleAndIcon)
+                    }
+                }
+            }
             // Uncomment when opening up send flow
             //            .toolbar {
             //                ToolbarItem(placement: .confirmationAction) {
@@ -90,6 +107,27 @@ struct SatsCardDetailView: View {
                     isRenaming = false
                 }
             )
+        }
+        .sheet(isPresented: $isShowingSetupSheet, onDismiss: { setupCvc = "" }) {
+            NavigationStack {
+                Form {
+                    Section("Set up next slot") {
+                        SecureField("Card CVC", text: $setupCvc)
+                            .keyboardType(.numberPad)
+                    }
+                    Section {
+                        Button("Continue") {
+                            isShowingSetupSheet = false
+                            cardViewModel.startSetupNextSlot(for: updatedCard, cvc: setupCvc)
+                        }
+                        .disabled(setupCvc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        Button("Cancel", role: .cancel) {
+                            isShowingSetupSheet = false
+                        }
+                    }
+                }
+                .navigationTitle("Next Slot")
+            }
         }
         .onAppear {
             cardViewModel.detailLoadingCardIdentifier = updatedCard.cardIdentifier
@@ -174,6 +212,10 @@ extension SatsCardDetailView {
 
     private var isShowingPlaceholderSlot: Bool {
         activeSlot == nil
+    }
+
+    private var needsNextSlotSetup: Bool {
+        slotForDisplay.isActive && slotForDisplay.isUsed && slotForDisplay.address == nil
     }
 
     private func placeholderSlot(for card: SatsCardInfo) -> SlotInfo {
