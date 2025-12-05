@@ -149,7 +149,7 @@ struct ActiveSlotView: View {
 
                             Spacer()
 
-                            Image(systemName: "chevron.right")
+                            Image(systemName: "arrow.up.right")
                                 .font(.footnote)
                                 .fontWeight(.bold)
                                 .foregroundStyle(.tertiary)
