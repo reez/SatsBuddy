@@ -71,26 +71,26 @@ struct ActiveSlotView: View {
                         isPreparingReceiveSheet = true
                         receiveSheetState = ReceiveSheetState(address: address)
                     } label: {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Receive")
-                                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Receive")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 Text(displayAddress ?? "No address")
                                     .foregroundColor(.primary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                            }
 
-                            Spacer()
+                                Spacer(minLength: 80)
 
-                            if isPreparingReceiveSheet {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.tertiary)
+                                if isPreparingReceiveSheet {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "qrcode")
+                                        .foregroundColor(.blue)
+                                        .font(.footnote)
+                                        .fontWeight(.bold)
+                                }
                             }
                         }
                     }
