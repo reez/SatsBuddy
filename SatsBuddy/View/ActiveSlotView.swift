@@ -87,6 +87,7 @@ struct ActiveSlotView: View {
                             }
                         }
                     }
+                    .padding(.vertical, 8)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         guard let address = displayAddress else { return }
@@ -118,7 +119,6 @@ struct ActiveSlotView: View {
                                     .foregroundStyle(isPubkeyCopied ? .green : .blue)
                                     .symbolEffect(.bounce, value: isPubkeyCopied)
                             }
-                            .padding(.vertical, 6)
                         }
                         .buttonStyle(.plain)
                         .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
@@ -126,6 +126,7 @@ struct ActiveSlotView: View {
                         }
                         .disabled(displayPubkey.isEmpty)
                     }
+                    .padding(.vertical, 8)
 
                     Button {
                         guard let address = displayAddress else { return }
@@ -153,8 +154,8 @@ struct ActiveSlotView: View {
                                 .fontWeight(.bold)
                                 .foregroundStyle(.tertiary)
                         }
-                        .padding(.vertical, 6)
                     }
+                    .padding(.vertical, 8)
                     .buttonStyle(.plain)
                     .disabled(displayAddress == nil)
                 }
@@ -176,6 +177,7 @@ struct ActiveSlotView: View {
                                 .foregroundColor(.primary)
                         }
                     }
+                    .padding(.vertical, 8)
                     .disabled(card.totalSlots == nil)
 
                     Button(action: onRefresh) {
@@ -197,8 +199,8 @@ struct ActiveSlotView: View {
                                     .foregroundStyle(.blue)
                             }
                         }
-                        .padding(.vertical, 6)
                     }
+                    .padding(.vertical, 8)
                     .buttonStyle(.plain)
                     .disabled(isScanning)
                 }
