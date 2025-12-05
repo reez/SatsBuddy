@@ -65,16 +65,23 @@ struct ActiveSlotView: View {
             List {
                 Section {
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Receive")
-                            .foregroundStyle(.secondary)
-                        HStack {
-                            Text(displayAddress ?? "No address")
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
+                    Button {
+                        guard let address = displayAddress else { return }
 
-                            Spacer(minLength: 80)
+                        isPreparingReceiveSheet = true
+                        receiveSheetState = ReceiveSheetState(address: address)
+                    } label: {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Receive")
+                                    .foregroundStyle(.secondary)
+                                Text(displayAddress ?? "No address")
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+
+                            Spacer()
 
                             if isPreparingReceiveSheet {
                                 ProgressView()
@@ -88,26 +95,21 @@ struct ActiveSlotView: View {
                         }
                     }
                     .padding(.vertical, 8)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        guard let address = displayAddress else { return }
-
-                        isPreparingReceiveSheet = true
-                        receiveSheetState = ReceiveSheetState(address: address)
-                    }
+                    .buttonStyle(.plain)
+                    .disabled(displayAddress == nil)
 
                     // Pubkey row
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Pubkey")
-                            .foregroundStyle(.secondary)
-                        Button {
-                            UIPasteboard.general.string = displayPubkey
-                            isPubkeyCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                isPubkeyCopied = false
-                            }
-                        } label: {
-                            HStack {
+                    Button {
+                        UIPasteboard.general.string = displayPubkey
+                        isPubkeyCopied = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            isPubkeyCopied = false
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Pubkey")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 Text(displayPubkey)
                                     .truncationMode(.middle)
                                     .lineLimit(1)
@@ -121,13 +123,13 @@ struct ActiveSlotView: View {
                                     .symbolEffect(.bounce, value: isPubkeyCopied)
                             }
                         }
-                        .buttonStyle(.plain)
-                        .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
-                            newValue
-                        }
-                        .disabled(displayPubkey.isEmpty)
                     }
                     .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
+                        newValue
+                    }
+                    .disabled(displayPubkey.isEmpty)
 
                     Button {
                         guard let address = displayAddress else { return }
@@ -135,10 +137,10 @@ struct ActiveSlotView: View {
                             UIApplication.shared.open(url)
                         }
                     } label: {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Explorer")
-                                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Explorer")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 HStack {
                                     Image(systemName: "square.bottomhalf.filled")
                                         .foregroundStyle(.blue)
@@ -146,14 +148,14 @@ struct ActiveSlotView: View {
                                     Text("mempool.space")
                                         .foregroundColor(.primary)
                                 }
+
+                                Spacer(minLength: 80)
+
+                                Image(systemName: "arrow.up.right")
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.tertiary)
                             }
-
-                            Spacer()
-
-                            Image(systemName: "arrow.up.right")
-                                .font(.footnote)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.tertiary)
                         }
                     }
                     .padding(.vertical, 8)
@@ -182,24 +184,24 @@ struct ActiveSlotView: View {
                     .disabled(card.totalSlots == nil)
 
                     Button(action: onRefresh) {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Card Refresh")
-                                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Card Refresh")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 Text(refreshTimestampText)
                                     .foregroundColor(.primary)
-                            }
 
-                            Spacer()
+                                Spacer(minLength: 80)
 
-                            if isScanning {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "wave.3.up")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.blue)
+                                if isScanning {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "wave.3.up")
+                                        .font(.footnote)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.blue)
+                                }
                             }
                         }
                     }
