@@ -59,7 +59,7 @@ struct SatsCardListView: View {
                     .listStyle(.insetGrouped)
                 }
 
-                Spacer()
+                //                Spacer()
             }
             .navigationTitle("SatsBuddy".uppercased())
             .navigationBarTitleDisplayMode(.large)

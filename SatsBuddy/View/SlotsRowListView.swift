@@ -18,26 +18,25 @@ struct SlotsRowListView: View {
                     .font(.headline)
                     .foregroundStyle(.secondary)
 
-                SlotsCard(contentPadding: 16) {
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
-                            NavigationLink {
-                                SlotHistoryView(slot: slot)
-                            } label: {
-                                SlotSummaryRowView(slot: slot)
-                                    .padding(.vertical, 32)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
+                        NavigationLink {
+                            SlotHistoryView(slot: slot)
+                        } label: {
+                            SlotSummaryRowView(slot: slot)
+                                .padding(.vertical, 32)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                            if index < slots.count - 1 {
-                                Divider()
-                                    .overlay(Color.white.opacity(0.06))
-                            }
+                        if index < slots.count - 1 {
+                            Divider()
+                                .overlay(Color.white.opacity(0.06))
                         }
                     }
                 }
+                .padding(16)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)

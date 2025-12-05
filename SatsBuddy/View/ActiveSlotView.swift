@@ -65,48 +65,51 @@ struct ActiveSlotView: View {
             List {
                 Section {
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Receive")
-                            .foregroundStyle(.secondary)
-                        HStack {
-                            Text(displayAddress ?? "No address")
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-
-                            Spacer(minLength: 80)
-
-                            if isPreparingReceiveSheet {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         guard let address = displayAddress else { return }
 
                         isPreparingReceiveSheet = true
                         receiveSheetState = ReceiveSheetState(address: address)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Receive")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
+                                Text(displayAddress ?? "No address")
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+
+                                Spacer(minLength: 80)
+
+                                if isPreparingReceiveSheet {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "qrcode")
+                                        .foregroundColor(.blue)
+                                        .font(.footnote)
+                                        .fontWeight(.bold)
+                                }
+                            }
+                        }
                     }
+                    .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                    .disabled(displayAddress == nil)
 
                     // Pubkey row
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Pubkey")
-                            .foregroundStyle(.secondary)
-                        Button {
-                            UIPasteboard.general.string = displayPubkey
-                            isPubkeyCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                isPubkeyCopied = false
-                            }
-                        } label: {
-                            HStack {
+                    Button {
+                        UIPasteboard.general.string = displayPubkey
+                        isPubkeyCopied = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            isPubkeyCopied = false
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Pubkey")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 Text(displayPubkey)
                                     .truncationMode(.middle)
                                     .lineLimit(1)
@@ -114,18 +117,19 @@ struct ActiveSlotView: View {
                                 Spacer(minLength: 80)
 
                                 Image(systemName: isPubkeyCopied ? "checkmark" : "doc.on.doc")
-                                    .font(.caption)
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
                                     .foregroundStyle(isPubkeyCopied ? .green : .blue)
                                     .symbolEffect(.bounce, value: isPubkeyCopied)
                             }
-                            .padding(.vertical, 6)
                         }
-                        .buttonStyle(.plain)
-                        .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
-                            newValue
-                        }
-                        .disabled(displayPubkey.isEmpty)
                     }
+                    .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
+                        newValue
+                    }
+                    .disabled(displayPubkey.isEmpty)
 
                     Button {
                         guard let address = displayAddress else { return }
@@ -133,28 +137,30 @@ struct ActiveSlotView: View {
                             UIApplication.shared.open(url)
                         }
                     } label: {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Explorer")
-                                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Explorer")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 HStack {
                                     Image(systemName: "square.bottomhalf.filled")
-                                        .foregroundStyle(.blue)
+                                        //                                        .foregroundStyle(.blue)
                                         .font(.body)
                                     Text("mempool.space")
                                         .foregroundColor(.primary)
                                 }
+
+                                Spacer(minLength: 80)
+
+                                Image(systemName: "arrow.up.right")
+                                    .font(.footnote)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.tertiary)
                             }
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.footnote)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.tertiary)
                         }
-                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
+                    .padding(.vertical, 8)
                     .buttonStyle(.plain)
                     .disabled(displayAddress == nil)
                 }
@@ -176,29 +182,34 @@ struct ActiveSlotView: View {
                                 .foregroundColor(.primary)
                         }
                     }
+                    .padding(.vertical, 8)
                     .disabled(card.totalSlots == nil)
 
                     Button(action: onRefresh) {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Card Refresh")
-                                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Card Refresh")
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .center) {
                                 Text(refreshTimestampText)
                                     .foregroundColor(.primary)
-                            }
 
-                            Spacer()
+                                Spacer(minLength: 80)
 
-                            if isScanning {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "wave.3.up")
-                                    .foregroundStyle(.blue)
+                                if isScanning {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "wave.3.up")
+                                        .font(.footnote)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.blue)
+                                }
                             }
                         }
-                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
+                    .padding(.vertical, 8)
                     .buttonStyle(.plain)
                     .disabled(isScanning)
                 }
