@@ -157,6 +157,8 @@ struct ActiveSlotView: View {
                                     .foregroundStyle(.tertiary)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
                     .padding(.vertical, 8)
                     .buttonStyle(.plain)
@@ -204,6 +206,8 @@ struct ActiveSlotView: View {
                                 }
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
                     .padding(.vertical, 8)
                     .buttonStyle(.plain)
