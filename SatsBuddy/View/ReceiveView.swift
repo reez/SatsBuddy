@@ -52,13 +52,17 @@ struct ReceiveView: View {
                             .padding(.horizontal)
 
                         BitcoinUI.AddressFormattedView(address: address, columns: 4)
-                            .padding(.vertical)
-                            .padding(.bottom)
+                            //                            .padding(.vertical)
+                            .padding(.top)
+                        //                            .padding(.bottom)
                     }
                     //                    .background(
                     //                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                     //                            .fill(Color(.secondarySystemGroupedBackground))
                     //                    )
+
+                    Divider()
+                        .padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Address")
@@ -86,11 +90,11 @@ struct ReceiveView: View {
                         .sensoryFeedback(.success, trigger: isCopied) { _, newValue in newValue }
 
                     }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                    )
+                    .padding(.horizontal)
+                    //                    .background(
+                    //                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    //                            .fill(Color(.secondarySystemGroupedBackground))
+                    //                    )
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 }
