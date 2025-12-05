@@ -17,8 +17,7 @@ struct SlotSummaryRowView: View {
 
 struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
-    @State private var pubkeyCopied = false
-    @State private var addressCopied = false
+    //    @State private var addressCopied = false
     private let footer: Footer
 
     init(slot: SlotInfo, @ViewBuilder footer: () -> Footer) {
@@ -27,27 +26,70 @@ struct SlotRowView<Footer: View>: View {
     }
 
     var body: some View {
-        SlotCard {
-            VStack(alignment: .leading, spacing: 18) {
-                SlotSummaryHeader(slot: slot, showsChevron: false, showsSlotTitle: false)
+        VStack(alignment: .leading, spacing: 16) {
+            //            if slot.isActive {
+            //                Text("Active")
+            //                    .font(.headline)
+            //                    .foregroundStyle(.secondary)
+            //            }
 
-                if slot.isActive || slot.balance != nil {
-                    balanceRow
-                }
+            if slot.isActive || slot.balance != nil, let balance = slot.balance {
+                HStack(spacing: 8) {
+                    Image(systemName: "bitcoinsign")
+                        //                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .font(.title3)
+                        .fontWeight(.semibold)
 
-                if slot.isUsed {
-                    addressRow
-                    explorerRow
+                    Text(balance.formatted(.number.grouping(.automatic)))
+                        //                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .font(.title)
+                        .fontWeight(.semibold)
 
-                    if slot.pubkey != nil {
-                        pubkeyRow
-                    }
-
-                    footer
-                } else {
-                    unusedRow
                 }
             }
+
+            if slot.isUsed, let address = slot.address, !address.isEmpty {
+                //                Button {
+                //                    UIPasteboard.general.string = address
+                //                    addressCopied = true
+                //                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                //                        addressCopied = false
+                //                    }
+                //                } label: {
+                HStack {
+                    Text(address)
+                        .font(.body)
+                        .fontDesign(.monospaced)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundStyle(.primary)  //.foregroundStyle(addressCopied ? .green : .primary)
+
+                    //                        if addressCopied {
+                    //                            Image(systemName: "checkmark")
+                    //                                .font(.body)
+                    //                                .foregroundStyle(.green)
+                    //                                .symbolEffect(.bounce, value: addressCopied)
+                    //                        }
+
+                    Spacer(minLength: 80)
+                }
+                //                    .frame(maxWidth: .infinity, alignment: .leading)
+                //                }
+                //                .buttonStyle(.plain)
+                //                .sensoryFeedback(.success, trigger: addressCopied) { _, newValue in newValue }
+            }
+
+            if slot.isActive {
+                //                Text("Active")
+                //                    .font(.headline)
+                //                    .foregroundStyle(.secondary)
+                SlotBadge(text: "Active", tint: .green)
+                    .padding(.top, 10)
+            }
+
+            footer
         }
     }
 }
@@ -73,175 +115,6 @@ extension SlotRowView where Footer == EmptyView {
     }
 }
 
-extension SlotRowView {
-    fileprivate var addressRow: some View {
-        Group {
-            if let address = slot.address, !address.isEmpty {
-                Button {
-                    UIPasteboard.general.string = address
-                    addressCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        addressCopied = false
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        label("Address")
-
-                        HStack(spacing: 12) {
-                            Text(address)
-                                .font(.body)
-                                .fontDesign(.monospaced)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-
-                            Spacer(minLength: trailingAccessoryMinWidth)
-
-                            Image(systemName: addressCopied ? "checkmark" : "doc.on.doc")
-                                .font(.caption)
-                                .foregroundStyle(addressCopied ? .green : .blue)
-                                .symbolEffect(.bounce, value: addressCopied)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .sensoryFeedback(.success, trigger: addressCopied) { _, newValue in newValue }
-            } else {
-                fallbackRow(title: "Address", value: "No address available")
-            }
-        }
-    }
-
-    fileprivate var balanceRow: some View {
-        Group {
-            if let balance = slot.balance {
-                VStack(alignment: .leading, spacing: 4) {
-                    label("Balance")
-                    HStack(spacing: 8) {
-                        Image(systemName: "bitcoinsign")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(balance.formatted(.number.grouping(.automatic)))
-                            .font(.body)
-                            .fontWeight(.medium)
-                    }
-                }
-            } else if !slot.isUsed {
-                fallbackRow(title: "Balance", value: "No balance yet")
-            } else {
-                fallbackRow(title: "Balance", value: "Loading…", italic: true)
-            }
-        }
-    }
-
-    @ViewBuilder
-    fileprivate var explorerRow: some View {
-        if let address = slot.address, !address.isEmpty,
-            let url = URL(string: "https://mempool.space/address/\(address)")
-        {
-            Button {
-                UIApplication.shared.open(url)
-            } label: {
-                VStack(alignment: .leading, spacing: 4) {
-                    label("Explorer")
-                    HStack {
-                        Image(systemName: "square.bottomhalf.filled")
-                            .foregroundStyle(.blue)
-                            .font(.body)
-                        Text("mempool.space")
-                            .font(.body)
-                        Spacer(minLength: trailingAccessoryMinWidth)
-                        //                        Image(systemName: "square.bottomhalf.filled")
-                        //                            .foregroundStyle(.blue)
-                        Image(systemName: "chevron.right")
-                            .font(.footnote)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        } else {
-            fallbackRow(title: "Explorer", value: "Explorer unavailable")
-        }
-    }
-
-    fileprivate var pubkeyRow: some View {
-        Group {
-            if let pubkey = slot.pubkey, !pubkey.isEmpty {
-                Button {
-                    UIPasteboard.general.string = pubkey
-                    pubkeyCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        pubkeyCopied = false
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        label("Pubkey")
-
-                        HStack(spacing: 12) {
-                            Text(pubkey)
-                                .font(.body)
-                                .fontDesign(.monospaced)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-
-                            Spacer(minLength: trailingAccessoryMinWidth)
-
-                            Image(systemName: pubkeyCopied ? "checkmark" : "doc.on.doc")
-                                .font(.caption)
-                                .foregroundStyle(pubkeyCopied ? .green : .blue)
-                                .symbolEffect(.bounce, value: pubkeyCopied)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .sensoryFeedback(.success, trigger: pubkeyCopied) { _, newValue in newValue }
-            } else {
-                fallbackRow(title: "Pubkey", value: "No pubkey available")
-            }
-        }
-    }
-
-    fileprivate var unusedRow: some View {
-        fallbackRow(
-            title: "Status",
-            value: "This slot has not been used yet",
-            italic: true
-        )
-    }
-
-    fileprivate func label(_ text: String) -> some View {
-        Text(text)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-    }
-
-    fileprivate var trailingAccessoryMinWidth: CGFloat { 80 }
-
-    fileprivate func fallbackRow(
-        title: String,
-        value: String,
-        italic: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            label(title)
-            Text(value)
-                .font(.body)
-                .foregroundStyle(.tertiary)
-                .italic(italic)
-        }
-    }
-}
-
-extension Text {
-    fileprivate func italic(_ apply: Bool) -> Text {
-        apply ? self.italic() : self
-    }
-}
-
 private struct SlotCard<Content: View>: View {
     private let content: Content
 
@@ -250,20 +123,9 @@ private struct SlotCard<Content: View>: View {
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
-            .background(
-                shape
-                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
-            )
-            .overlay(
-                shape
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-            .clipShape(shape)
     }
 }
 

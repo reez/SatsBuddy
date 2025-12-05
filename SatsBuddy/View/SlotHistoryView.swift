@@ -130,8 +130,10 @@ private struct TransactionsSectionView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                LazyVStack(spacing: 16) {
-                    ForEach(viewModel.transactions) { transaction in
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(viewModel.transactions.enumerated()), id: \.element.id) {
+                        index,
+                        transaction in
                         Button {
                             onOpenMempool(transaction.txid)
                         } label: {
@@ -141,10 +143,18 @@ private struct TransactionsSectionView: View {
                             )
                         }
                         .buttonStyle(.plain)
+
+                        if index < viewModel.transactions.count - 1 {
+                            Divider()
+                                .overlay(Color.white.opacity(0.06))
+                                .padding(.vertical, 8)
+                        }
                     }
                 }
+                .padding()
             }
         }
+        .padding(.top)
     }
 }
 
@@ -154,45 +164,55 @@ private struct TransactionRowView: View {
 
     var body: some View {
         HistoryCard {
-            HStack(alignment: .center, spacing: 16) {
-                Circle()
-                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.6))
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: iconName)
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(iconColor)
-                    )
+            //            HStack(alignment: .center, spacing: 16) {
+            //                Circle()
+            //                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.6))
+            //                    .frame(width: 36, height: 36)
+            //                    .overlay(
+            //                        Image(systemName: iconName)
+            //                            .font(.footnote.weight(.semibold))
+            //                            .foregroundStyle(iconColor)
+            //                    )
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(truncatedTxid)
-                        .font(.callout)
-                        .fontDesign(.monospaced)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-
-                    Text(timestampLabel)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 6) {
-                        Image(systemName: "square.bottomhalf.filled")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.blue)
-                        Text("mempool.space")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(.footnote)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-
-                Spacer()
+            VStack(alignment: .leading, spacing: 12) {
+                Divider()
+                    .padding(.bottom)
 
                 TransactionAmountView(amount: transaction.amount)
+
+                Text(truncatedTxid)
+                    .font(.callout)
+                    .fontDesign(.monospaced)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(timestampLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 6) {
+                    Image(systemName: "square.bottomhalf.filled")
+                        .font(.caption.weight(.semibold))
+                    //                            .foregroundStyle(.blue)
+                    Text("mempool.space")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "arrow.up.forward")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Divider()
+                    .padding(.top)
             }
+
+            //                Spacer()
+            //
+            //                TransactionAmountView(amount: transaction.amount)
+
+            //            }
         }
     }
 
@@ -220,12 +240,14 @@ private struct TransactionAmountView: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(prefix)
-                .font(.callout.weight(.semibold))
+            //                .font(.callout.weight(.semibold))
             Image(systemName: "bitcoinsign")
-                .font(.caption.weight(.semibold))
+                //                .font(.caption.weight(.semibold))
+                .font(.caption)
             Text(valueString)
-                .font(.callout.weight(.semibold))
+            //                .font(.callout.weight(.semibold))
         }
+        .fontWeight(.semibold)
     }
 
     private var prefix: String {
@@ -249,20 +271,9 @@ private struct HistoryCard<Content: View>: View {
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-
         content
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(
-                shape
-                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
-            )
-            .overlay(
-                shape
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-            .clipShape(shape)
+        //            .padding(20)
     }
 }
 
@@ -284,5 +295,8 @@ private struct HistoryCard<Content: View>: View {
                 viewModel: SlotHistoryViewModel.previewMock()
             )
         }
+    }
+    #Preview {
+        TransactionAmountView(amount: Int64(2500))
     }
 #endif
