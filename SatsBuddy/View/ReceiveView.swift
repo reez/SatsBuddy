@@ -55,10 +55,10 @@ struct ReceiveView: View {
                             .padding(.vertical)
                             .padding(.bottom)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                    )
+                    //                    .background(
+                    //                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    //                            .fill(Color(.secondarySystemGroupedBackground))
+                    //                    )
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Address")
