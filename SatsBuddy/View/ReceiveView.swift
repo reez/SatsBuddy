@@ -91,6 +91,7 @@ struct ReceiveView: View {
 
                     }
                     .padding(.horizontal)
+                    .padding(.horizontal)
                     //                    .background(
                     //                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                     //                            .fill(Color(.secondarySystemGroupedBackground))
