@@ -31,22 +31,23 @@ struct ActiveSlotView: View {
 
             VStack(spacing: 32) {
                 HStack(spacing: 15) {
-                    Image(systemName: "bitcoinsign")
-                        .foregroundStyle(.secondary)
-                        .font(.title)
-                        .fontWeight(.thin)
-                        .opacity(balanceFormat == .sats ? 0 : 1)
-                        .transition(
-                            .asymmetric(
-                                insertion: .move(edge: .leading).combined(with: .opacity),
-                                removal: .move(edge: .trailing).combined(with: .opacity)
+                    if balanceFormat != .sats {
+                        Image(systemName: "bitcoinsign")
+                            .foregroundStyle(.secondary)
+                            .font(.title)
+                            .fontWeight(.thin)
+                            .transition(
+                                .asymmetric(
+                                    insertion: .move(edge: .leading).combined(with: .opacity),
+                                    removal: .move(edge: .trailing).combined(with: .opacity)
+                                )
                             )
-                        )
-                        .id("symbol-\(balanceFormat)")
-                        .animation(
-                            .spring(response: 0.3, dampingFraction: 0.7),
-                            value: balanceFormat
-                        )
+                            .id("symbol-\(balanceFormat)")
+                            .animation(
+                                .spring(response: 0.3, dampingFraction: 0.7),
+                                value: balanceFormat
+                            )
+                    }
 
                     Text(formattedBalance)
                         .contentTransition(.numericText(countsDown: true))
