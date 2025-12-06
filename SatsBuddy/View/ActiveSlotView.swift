@@ -36,17 +36,6 @@ struct ActiveSlotView: View {
                             .foregroundStyle(.secondary)
                             .font(.title)
                             .fontWeight(.thin)
-                            .transition(
-                                .asymmetric(
-                                    insertion: .move(edge: .leading).combined(with: .opacity),
-                                    removal: .move(edge: .trailing).combined(with: .opacity)
-                                )
-                            )
-                            .id("symbol-\(balanceFormat)")
-                            .animation(
-                                .spring(response: 0.3, dampingFraction: 0.7),
-                                value: balanceFormat
-                            )
                     }
 
                     Text(formattedBalance)
