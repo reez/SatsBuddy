@@ -85,11 +85,11 @@ struct SlotRowView<Footer: View>: View {
 extension SlotRowView {
     @ViewBuilder
     fileprivate func balanceRow(balance: UInt64) -> some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             if let symbol = balanceFormat.displayPrefix.first {
                 Text(String(symbol))
                     .foregroundStyle(.secondary)
-                    .font(.title3)
+                    .font(.title2)
                     .fontWeight(.semibold)
             }
 
@@ -101,7 +101,7 @@ extension SlotRowView {
             if !balanceFormat.displayText.isEmpty {
                 Text(balanceFormat.displayText)
                     .foregroundStyle(.secondary)
-                    .font(.subheadline)
+                    .font(.title2)
                     .fontWeight(.light)
             }
         }
