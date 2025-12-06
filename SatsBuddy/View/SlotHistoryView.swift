@@ -180,12 +180,12 @@ private struct TransactionRowView: View {
 
                 TransactionAmountView(amount: transaction.amount)
 
-                Text(truncatedTxid)
-                    .font(.callout)
-                    .fontDesign(.monospaced)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                //                Text(truncatedTxid)
+                //                    .font(.callout)
+                //                    .fontDesign(.monospaced)
+                //                    .foregroundStyle(.primary)
+                //                    .lineLimit(1)
+                //                    .truncationMode(.middle)
 
                 Text(timestampLabel)
                     .font(.caption2)
@@ -236,30 +236,29 @@ private struct TransactionRowView: View {
 
 private struct TransactionAmountView: View {
     let amount: Int64
+    @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(prefix)
-            //                .font(.callout.weight(.semibold))
-            Image(systemName: "bitcoinsign")
-                //                .font(.caption.weight(.semibold))
-                .font(.caption)
+            Text(signPrefix)
+            if let symbol = balanceFormat.displayPrefix.first {
+                Text(String(symbol))
+            }
             Text(valueString)
-            //                .font(.callout.weight(.semibold))
+            if !balanceFormat.displayText.isEmpty {
+                Text(balanceFormat.displayText)
+                    .foregroundStyle(.secondary)
+            }
         }
         .fontWeight(.semibold)
     }
 
-    private var prefix: String {
+    private var signPrefix: String {
         amount > 0 ? "+" : amount < 0 ? "−" : ""
     }
 
     private var valueString: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = Locale.current.groupingSeparator
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: abs(amount))) ?? "\(abs(amount))"
+        balanceFormat.formatted(UInt64(abs(amount)))
     }
 }
 

@@ -19,6 +19,7 @@ struct ActiveSlotView: View {
     let isScanning: Bool
     let onRefresh: () -> Void
 
+    @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var copied = false
     @State private var isPubkeyCopied = false
     @State private var receiveSheetState: ReceiveSheetState?
@@ -29,14 +30,37 @@ struct ActiveSlotView: View {
             Spacer()
 
             VStack(spacing: 32) {
-                HStack {
-                    Image(systemName: "bitcoinsign")
-                        .font(.title)
-                        .fontWeight(.regular)
-                        .foregroundStyle(.secondary)
-                    Text((slot.balance ?? 0).formatted(.number.grouping(.automatic)))
-                        .contentTransition(.numericText())
+                HStack(spacing: 15) {
+                    if balanceFormat != .sats {
+                        Image(systemName: "bitcoinsign")
+                            .foregroundStyle(.secondary)
+                            .font(.title)
+                            .fontWeight(.thin)
+                    }
+
+                    Text(formattedBalance)
+                        .contentTransition(.numericText(countsDown: true))
                         .opacity(slot.balance == nil ? 0.3 : 1)
+                        .animation(
+                            .spring(response: 0.4, dampingFraction: 0.8),
+                            value: balanceFormat
+                        )
+
+                    Text(balanceFormat.displayText)
+                        .foregroundStyle(.secondary)
+                        .fontWeight(.thin)
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            )
+                        )
+                        .id("format-\(balanceFormat)")
+                        .animation(
+                            .spring(response: 0.3, dampingFraction: 0.7),
+                            value: balanceFormat
+                        )
+
                     ProgressView()
                         .scaleEffect(0.6)
                         .frame(width: 20, height: 20)
@@ -49,6 +73,13 @@ struct ActiveSlotView: View {
                 .fontDesign(.rounded)
                 .padding()
                 .animation(.smooth, value: slot.balance)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        let formats = BalanceDisplayFormat.allCases
+                        balanceFormat = formats[(balanceFormat.index + 1) % formats.count]
+                    }
+                }
+                .sensoryFeedback(.selection, trigger: balanceFormat)
 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -279,6 +310,11 @@ private struct ReceiveSheetState: Identifiable {
 }
 
 extension ActiveSlotView {
+    private var formattedBalance: String {
+        let amount = slot.balance ?? 0
+        return balanceFormat.formatted(amount)
+    }
+
     fileprivate var displayAddress: String? {
         slot.address ?? card.address
     }
