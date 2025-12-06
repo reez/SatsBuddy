@@ -180,12 +180,12 @@ private struct TransactionRowView: View {
 
                 TransactionAmountView(amount: transaction.amount)
 
-                Text(truncatedTxid)
-                    .font(.callout)
-                    .fontDesign(.monospaced)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                //                Text(truncatedTxid)
+                //                    .font(.callout)
+                //                    .fontDesign(.monospaced)
+                //                    .foregroundStyle(.primary)
+                //                    .lineLimit(1)
+                //                    .truncationMode(.middle)
 
                 Text(timestampLabel)
                     .font(.caption2)
