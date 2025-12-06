@@ -9,6 +9,7 @@ import CoreNFC
 import Foundation
 import Observation
 import SwiftUI
+import UIKit
 import os
 
 @Observable
@@ -66,12 +67,15 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 nfcError.code == .readerSessionInvalidationErrorUserCanceled
             {
                 self.lastStatusMessage = "Scan cancelled."
+                Haptics.error()
             } else if let nfcError = error as? NFCReaderError,
                 nfcError.code == .readerSessionInvalidationErrorSessionTerminatedUnexpectedly
             {
                 self.lastStatusMessage = "Session terminated."
+                Haptics.error()
             } else {
                 self.lastStatusMessage = "NFC Error: \(error.localizedDescription)"
+                Haptics.error()
             }
             self.isScanning = false
         }
@@ -97,7 +101,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             if let error = error {
                 Log.nfc.error("Tag connect error: \(error.localizedDescription, privacy: .public)")
                 session.invalidate(errorMessage: "Connection failed.")
-                Task { @MainActor in self.lastStatusMessage = "Connection failed." }
+                Task { @MainActor in
+                    self.lastStatusMessage = "Connection failed."
+                    Haptics.error()
+                }
                 return
             }
 
@@ -164,6 +171,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                         self.isScanning = false
                         self.persistCards()
                         self.currentOperation = .scan
+                        Haptics.success()
                     }
 
                     if !Task.isCancelled {
@@ -186,6 +194,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     }
                     await MainActor.run { [weak self] in
                         self?.lastStatusMessage = message
+                        Haptics.error()
                     }
                     if !Task.isCancelled {
                         session.invalidate(errorMessage: message)
@@ -214,6 +223,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         tagSession?.begin()
 
         Log.nfc.info("NFC session started")
+        Haptics.selection()
     }
 
     func startSetupNextSlot(for card: SatsCardInfo, cvc: String) {
@@ -311,5 +321,22 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             dateScanned: newCard.dateScanned,
             label: newCard.label ?? existing.label
         )
+    }
+}
+
+private enum Haptics {
+    static func selection() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred(intensity: 0.7)
+    }
+
+    static func success() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    static func error() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
     }
 }

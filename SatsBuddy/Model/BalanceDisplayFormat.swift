@@ -2,7 +2,7 @@
 //  BalanceDisplayFormat.swift
 //  SatsBuddy
 //
-//  Created by Matthew Ramsden on 2/3/25.
+//  Created by Matthew Ramsden on 11/21/25.
 //
 
 import Foundation

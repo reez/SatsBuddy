@@ -20,7 +20,6 @@ struct SatsCardDetailView: View {
     @State private var isShowingSetupSheet = false
     @State private var setupCvc: String = ""
 
-    // Get the updated card from the cardViewModel's scannedCards array
     private var updatedCard: SatsCardInfo {
         cardViewModel.scannedCards.first(where: { $0.cardIdentifier == card.cardIdentifier })
             ?? card
@@ -53,17 +52,6 @@ struct SatsCardDetailView: View {
                     }
                 }
             }
-            // Uncomment when opening up send flow
-            //            .toolbar {
-            //                ToolbarItem(placement: .confirmationAction) {
-            //                    Button {
-            //                        isShowingSend = true
-            //                    } label: {
-            //                        Label("Send", systemImage: "paperplane")
-            //                            .labelStyle(.titleAndIcon)
-            //                    }
-            //                }
-            //            }
 
             FooterView(updatedCard: updatedCard)
                 .padding()

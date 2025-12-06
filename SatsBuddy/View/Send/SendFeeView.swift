@@ -140,11 +140,13 @@ extension SendFeeView {
     }
 }
 
-#Preview {
-    SendFeeView(
-        viewModel: .init(feeClient: .mock),
-        address: "tb1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
-        amount: "50",
-        onNext: { _ in }
-    )
-}
+#if DEBUG
+    #Preview {
+        SendFeeView(
+            viewModel: .init(feeClient: .mock),
+            address: "tb1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+            amount: "50",
+            onNext: { _ in }
+        )
+    }
+#endif

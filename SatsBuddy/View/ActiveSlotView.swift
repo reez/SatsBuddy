@@ -8,9 +8,6 @@
 import SwiftUI
 import UIKit
 
-//import CoreImage
-//import CoreImage.CIFilterBuiltins
-
 struct ActiveSlotView: View {
     let slot: SlotInfo
     let card: SatsCardInfo
@@ -174,7 +171,6 @@ struct ActiveSlotView: View {
                             HStack(alignment: .center) {
                                 HStack {
                                     Image(systemName: "square.bottomhalf.filled")
-                                        //                                        .foregroundStyle(.blue)
                                         .font(.body)
                                     Text("mempool.space")
                                         .foregroundColor(.primary)
@@ -197,7 +193,6 @@ struct ActiveSlotView: View {
                 }
 
                 Section {
-                    // Slot row
                     NavigationLink {
                         SlotsRowListView(
                             totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
@@ -216,7 +211,10 @@ struct ActiveSlotView: View {
                     .padding(.vertical, 8)
                     .disabled(card.totalSlots == nil)
 
-                    Button(action: onRefresh) {
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
+                        onRefresh()
+                    } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Card Refresh")
                                 .foregroundStyle(.secondary)
@@ -341,133 +339,3 @@ extension ActiveSlotView {
         card.dateScanned.formatted(date: .abbreviated, time: .shortened)
     }
 }
-
-//
-//    @Environment(\.dismiss) private var dismiss
-////    private let context = CIContext()
-////    private let filter = CIFilter.qrCodeGenerator()
-//
-//    var body: some View {
-//        NavigationStack {
-//            ScrollView {
-//                VStack(spacing: 24) {
-//
-//                    // QR
-////                    qrCodeView
-//
-//                    VStack(alignment: .leading, spacing: 12) {
-//
-//                        // Address
-////                        section(title: "Address") {
-////                            copyButton(text: address)
-////                        }
-//
-//                        // Pubkey
-////                        section(title: "Pubkey") {
-////                            Text(pubkey)
-////                                .font(.system(.footnote, design: .monospaced))
-////                                .foregroundStyle(.primary)
-////                                .lineLimit(2)
-////                                .truncationMode(.middle)
-////                                .frame(maxWidth: .infinity, alignment: .leading)
-////                        }
-//
-//                        // Mempool button
-////                        Button {
-////                            if let url = URL(string: "https://mempool.space/address/\(address)") {
-////                                UIApplication.shared.open(url)
-////                            }
-////                        } label: {
-////                            HStack {
-////                                Text("Verify on mempool.space")
-////                                Spacer()
-////                                Image(systemName: "arrow.up.right")
-////                            }
-////                            .font(.body.weight(.medium))
-////                        }
-////                        .buttonStyle(.bordered)
-////                        .frame(maxWidth: .infinity, alignment: .leading)
-//
-//
-//                    }
-//                    .padding()
-//                }
-//                .padding()
-//            }
-//            .navigationTitle("Receive")
-//            .navigationBarTitleDisplayMode(.inline)
-//            .toolbar {
-//                ToolbarItem(placement: .confirmationAction) {
-//                    Button("Done", action: dismiss.callAsFunction)
-//                }
-//            }
-//        }
-//    }
-//
-//    private func section(title: String, @ViewBuilder content: () -> some View) -> some View {
-//        VStack(alignment: .leading, spacing: 6) {
-//            Text(title.uppercased())
-//                .font(.caption)
-//                .foregroundStyle(.secondary)
-//            content()
-//        }
-//        .frame(maxWidth: .infinity, alignment: .leading)
-//    }
-//
-//    private func copyButton(text: String) -> some View {
-//        Button {
-//            UIPasteboard.general.string = text
-//            isCopied = true
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-//                isCopied = false
-//            }
-//        } label: {
-//            HStack {
-//                Text(text)
-//                    .font(.system(.footnote, design: .monospaced))
-//                    .lineLimit(2)
-//                    .truncationMode(.middle)
-//                Spacer()
-//                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-//                    .foregroundColor(isCopied ? .green : .secondary)
-//                    .symbolEffect(.bounce, value: isCopied)
-//            }
-//            .padding()
-//            .background(
-//                RoundedRectangle(cornerRadius: 20, style: .continuous)
-//                    .fill(Color(.secondarySystemGroupedBackground))
-//            )
-//        }
-//        .buttonStyle(.plain)
-//    }
-//
-////    private var qrCodeView: some View {
-////        Group {
-////            if let image = qrImage(from: address) {
-////                Image(uiImage: image)
-////                    .interpolation(.none)
-////                    .resizable()
-////                    .scaledToFit()
-////                    .frame(width: 180, height: 180)
-////                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-////                    .padding(.top)
-////            } else {
-////                ProgressView()
-////                    .frame(width: 180, height: 180)
-////            }
-////        }
-////    }
-//
-////    private func qrImage(from string: String) -> UIImage? {
-////        let data = Data(string.utf8)
-////        filter.setValue(data, forKey: "inputMessage")
-////
-////        guard let outputImage = filter.outputImage,
-////            let cgImage = context.createCGImage(outputImage, from: outputImage.extent)
-////        else {
-////            return nil
-////        }
-////
-////        return UIImage(cgImage: cgImage)
-////    }
-//}

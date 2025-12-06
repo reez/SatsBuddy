@@ -28,7 +28,6 @@ class SatsCardDetailViewModel {
         errorMessage = nil
         isLoading = true
 
-        // Load slots immediately from NFC scan data so the view renders right away.
         slots = card.slots
 
         let traceID = traceID ?? String(UUID().uuidString.prefix(6))

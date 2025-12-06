@@ -164,28 +164,10 @@ private struct TransactionRowView: View {
 
     var body: some View {
         HistoryCard {
-            //            HStack(alignment: .center, spacing: 16) {
-            //                Circle()
-            //                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.6))
-            //                    .frame(width: 36, height: 36)
-            //                    .overlay(
-            //                        Image(systemName: iconName)
-            //                            .font(.footnote.weight(.semibold))
-            //                            .foregroundStyle(iconColor)
-            //                    )
 
             VStack(alignment: .leading, spacing: 12) {
-                //                Divider()
-                //                    .padding(.bottom)
 
                 TransactionAmountView(amount: transaction.amount)
-
-                //                Text(truncatedTxid)
-                //                    .font(.callout)
-                //                    .fontDesign(.monospaced)
-                //                    .foregroundStyle(.primary)
-                //                    .lineLimit(1)
-                //                    .truncationMode(.middle)
 
                 Text(timestampLabel)
                     .font(.caption2)
@@ -194,7 +176,6 @@ private struct TransactionRowView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "square.bottomhalf.filled")
                         .font(.caption.weight(.semibold))
-                    //                            .foregroundStyle(.blue)
                     Text("mempool.space")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -208,11 +189,6 @@ private struct TransactionRowView: View {
                     .padding(.top)
             }
 
-            //                Spacer()
-            //
-            //                TransactionAmountView(amount: transaction.amount)
-
-            //            }
         }
     }
 

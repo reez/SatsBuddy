@@ -30,7 +30,6 @@ final class CkTapCardService {
         self.network = network
     }
 
-    // Default factories for convenience where DI is not wired explicitly
     static func defaultMainnet() -> CkTapCardService {
         CkTapCardService(addressDeriver: .live, network: .bitcoin)
     }
@@ -160,7 +159,7 @@ final class CkTapCardService {
                         slotAddress = derived
                     }
                     Log.cktap.debug(
-                        "Active slot read descriptor=\(descriptor, privacy: .public) derivedAddr=\(derived ?? "nil", privacy: .private(mask: .hash))"
+                        "Active slot read descriptor=\(descriptor, privacy: .private(mask: .hash)) derivedAddr=\(derived ?? "nil", privacy: .private(mask: .hash))"
                     )
                 } else {
                     // For unsealed/used slots, dump without CVC should include pubkeyDescriptor.
@@ -172,7 +171,7 @@ final class CkTapCardService {
                         {
                             slotAddress = slotAddress ?? derived
                             Log.cktap.debug(
-                                "Active slot dump descriptor=\(descriptor, privacy: .public) derivedAddr=\(derived, privacy: .private(mask: .hash))"
+                                "Active slot dump descriptor=\(descriptor, privacy: .private(mask: .hash)) derivedAddr=\(derived, privacy: .private(mask: .hash))"
                             )
                         }
                     }
@@ -184,7 +183,7 @@ final class CkTapCardService {
                 }
 
                 Log.cktap.debug(
-                    "Active slot \(slotNumber) summary -> addr=\(slotAddress ?? "nil", privacy: .private(mask: .hash)) desc=\(slotDescriptor ?? "nil", privacy: .public) pubkey=\(slotPubkey ?? "nil", privacy: .private(mask: .hash))"
+                    "Active slot \(slotNumber) summary -> addr=\(slotAddress ?? "nil", privacy: .private(mask: .hash)) desc=\(slotDescriptor ?? "nil", privacy: .private(mask: .hash)) pubkey=\(slotPubkey ?? "nil", privacy: .private(mask: .hash))"
                 )
             }
 

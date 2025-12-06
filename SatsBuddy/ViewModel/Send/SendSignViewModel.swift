@@ -215,14 +215,14 @@ final class SendSignViewModel: NSObject, NFCTagReaderSessionDelegate {
                 pubkey = dump.pubkey
                 descriptor = dump.pubkeyDescriptor
                 Log.nfc.info(
-                    "[SendSign] Dumped slot \(targetSlot) pubkey=\(pubkey ?? "nil") desc=\(descriptor ?? "nil")"
+                    "[SendSign] Dumped slot \(targetSlot) pubkey=\(pubkey ?? "nil", privacy: .private(mask: .hash)) desc=\(descriptor ?? "nil", privacy: .private(mask: .hash))"
                 )
             } else {
                 let details = try await satsCard.unseal(cvc: cvc)
                 pubkey = details.pubkey
                 descriptor = details.pubkeyDescriptor
                 Log.nfc.info(
-                    "[SendSign] Unsealed slot pubkey=\(pubkey ?? "nil") desc=\(descriptor ?? "nil")"
+                    "[SendSign] Unsealed slot pubkey=\(pubkey ?? "nil", privacy: .private(mask: .hash)) desc=\(descriptor ?? "nil", privacy: .private(mask: .hash))"
                 )
             }
 
@@ -251,7 +251,7 @@ final class SendSignViewModel: NSObject, NFCTagReaderSessionDelegate {
             txHex = tx.serialize().map { String(format: "%02x", $0) }.joined()
             if let txid = signedTxid, let psbtBase64, let txHex {
                 Log.ui.info(
-                    "[SendSign] Would broadcast txid=\(txid, privacy: .public) psbt=\(psbtBase64, privacy: .private(mask: .hash)) rawTxHex=\(txHex, privacy: .private(mask: .hash))"
+                    "[SendSign] Would broadcast txid=\(txid, privacy: .private(mask: .hash)) psbt=\(psbtBase64, privacy: .private(mask: .hash)) rawTxHex=\(txHex, privacy: .private(mask: .hash))"
                 )
                 Log.ui.info(
                     "[SendSign] Broadcast stub: POST https://mempool.space/api/tx body=\(txHex, privacy: .private(mask: .hash))"

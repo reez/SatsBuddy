@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SatsCardListView: View {
     @State var viewModel: SatsCardViewModel
@@ -53,6 +54,7 @@ struct SatsCardListView: View {
                                         : nil
                                 }
                                 cardsToRemove.forEach { viewModel.removeCard($0) }
+                                UINotificationFeedbackGenerator().notificationOccurred(.warning)
                             }
                         }
                     }
@@ -74,8 +76,6 @@ struct SatsCardListView: View {
                     }
                 }
             }
-            //            .toolbarBackground(.clear, for: .bottomBar)
-            //            .toolbarBackgroundVisibility(.hidden, for: .bottomBar)
         }
 
     }
