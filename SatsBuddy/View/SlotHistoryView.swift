@@ -175,8 +175,8 @@ private struct TransactionRowView: View {
             //                    )
 
             VStack(alignment: .leading, spacing: 12) {
-                Divider()
-                    .padding(.bottom)
+                //                Divider()
+                //                    .padding(.bottom)
 
                 TransactionAmountView(amount: transaction.amount)
 

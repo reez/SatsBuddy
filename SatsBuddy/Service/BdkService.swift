@@ -253,9 +253,11 @@ struct BdkClient {
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
         getBalanceFromAddress: @escaping @Sendable (String, Network) async throws -> Balance,
         warmUp: @escaping @Sendable () async -> Void,
-        getTransactionsForAddress: @escaping @Sendable (String, Network, Int) async throws ->
+        getTransactionsForAddress:
+            @escaping @Sendable (String, Network, Int) async throws ->
             [SlotTransaction],
-        buildPsbt: @escaping @Sendable (String?, String?, String, UInt64, Network) async throws ->
+        buildPsbt:
+            @escaping @Sendable (String?, String?, String, UInt64, Network) async throws ->
             Psbt
     ) {
         self.deriveAddress = deriveAddress
