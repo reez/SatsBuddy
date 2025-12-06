@@ -19,6 +19,7 @@ struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
     //    @State private var addressCopied = false
     private let footer: Footer
+    @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
     init(slot: SlotInfo, @ViewBuilder footer: () -> Footer) {
         self.slot = slot
@@ -34,20 +35,7 @@ struct SlotRowView<Footer: View>: View {
             //            }
 
             if slot.isActive || slot.balance != nil, let balance = slot.balance {
-                HStack(spacing: 8) {
-                    Image(systemName: "bitcoinsign")
-                        //                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-
-                    Text(balance.formatted(.number.grouping(.automatic)))
-                        //                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .font(.title)
-                        .fontWeight(.semibold)
-
-                }
+                balanceRow(balance: balance)
             }
 
             if slot.isUsed, let address = slot.address, !address.isEmpty {
@@ -90,6 +78,32 @@ struct SlotRowView<Footer: View>: View {
             }
 
             footer
+        }
+    }
+}
+
+extension SlotRowView {
+    @ViewBuilder
+    fileprivate func balanceRow(balance: UInt64) -> some View {
+        HStack(spacing: 8) {
+            if let symbol = balanceFormat.displayPrefix.first {
+                Text(String(symbol))
+                    .foregroundStyle(.secondary)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+            }
+
+            Text(balanceFormat.formatted(balance))
+                .foregroundStyle(.primary)
+                .font(.title)
+                .fontWeight(.semibold)
+
+            if !balanceFormat.displayText.isEmpty {
+                Text(balanceFormat.displayText)
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .fontWeight(.light)
+            }
         }
     }
 }
