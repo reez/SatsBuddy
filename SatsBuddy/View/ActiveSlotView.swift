@@ -30,23 +30,46 @@ struct ActiveSlotView: View {
             Spacer()
 
             VStack(spacing: 32) {
-                HStack(spacing: 8) {
-                    if let symbol = balanceFormat.displayPrefix.first {
-                        Text(String(symbol))
-                            .font(.title)
-                            .fontWeight(.regular)
-                            .foregroundStyle(.secondary)
-                    }
+                HStack(spacing: 15) {
+                    Image(systemName: "bitcoinsign")
+                        .foregroundStyle(.secondary)
+                        .font(.title)
+                        .fontWeight(.thin)
+                        .opacity(balanceFormat == .sats ? 0 : 1)
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            )
+                        )
+                        .id("symbol-\(balanceFormat)")
+                        .animation(
+                            .spring(response: 0.3, dampingFraction: 0.7),
+                            value: balanceFormat
+                        )
 
                     Text(formattedBalance)
-                        .contentTransition(.numericText())
+                        .contentTransition(.numericText(countsDown: true))
                         .opacity(slot.balance == nil ? 0.3 : 1)
+                        .animation(
+                            .spring(response: 0.4, dampingFraction: 0.8),
+                            value: balanceFormat
+                        )
 
-                    if !balanceFormat.displayText.isEmpty {
-                        Text(balanceFormat.displayText)
-                            .foregroundStyle(.secondary)
-                            .fontWeight(.light)
-                    }
+                    Text(balanceFormat.displayText)
+                        .foregroundStyle(.secondary)
+                        .fontWeight(.thin)
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            )
+                        )
+                        .id("format-\(balanceFormat)")
+                        .animation(
+                            .spring(response: 0.3, dampingFraction: 0.7),
+                            value: balanceFormat
+                        )
 
                     ProgressView()
                         .scaleEffect(0.6)
