@@ -18,7 +18,6 @@ enum CardsStore {
             return true
         } else {
             list.append(card)
-            // Avoid capturing the inout parameter `list` in the logger's autoclosure.
             let total = list.count
             Log.ui.info("Card appended. total=\(total)")
             return false

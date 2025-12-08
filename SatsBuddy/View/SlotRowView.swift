@@ -28,51 +28,26 @@ struct SlotRowView<Footer: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            //            if slot.isActive {
-            //                Text("Active")
-            //                    .font(.headline)
-            //                    .foregroundStyle(.secondary)
-            //            }
 
             if slot.isActive || slot.balance != nil, let balance = slot.balance {
                 balanceRow(balance: balance)
             }
 
             if slot.isUsed, let address = slot.address, !address.isEmpty {
-                //                Button {
-                //                    UIPasteboard.general.string = address
-                //                    addressCopied = true
-                //                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                //                        addressCopied = false
-                //                    }
-                //                } label: {
                 HStack {
                     Text(address)
                         .font(.body)
                         .fontDesign(.monospaced)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                        .foregroundStyle(.primary)  //.foregroundStyle(addressCopied ? .green : .primary)
-
-                    //                        if addressCopied {
-                    //                            Image(systemName: "checkmark")
-                    //                                .font(.body)
-                    //                                .foregroundStyle(.green)
-                    //                                .symbolEffect(.bounce, value: addressCopied)
-                    //                        }
+                        .foregroundStyle(.primary)
 
                     Spacer(minLength: 80)
                 }
-                //                    .frame(maxWidth: .infinity, alignment: .leading)
-                //                }
-                //                .buttonStyle(.plain)
-                //                .sensoryFeedback(.success, trigger: addressCopied) { _, newValue in newValue }
+
             }
 
             if slot.isActive {
-                //                Text("Active")
-                //                    .font(.headline)
-                //                    .foregroundStyle(.secondary)
                 SlotBadge(text: "Active", tint: .green)
                     .padding(.top, 10)
             }

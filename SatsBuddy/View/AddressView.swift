@@ -55,7 +55,6 @@ struct AddressView: View {
                         .foregroundStyle(.blue)
                         .font(.body)
                     Text("mempool.space")
-                    //                        .foregroundStyle(.blue)
                 }
             }
             .buttonStyle(.plain)

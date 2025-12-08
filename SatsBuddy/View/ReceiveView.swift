@@ -52,14 +52,8 @@ struct ReceiveView: View {
                             .padding(.horizontal)
 
                         BitcoinUI.AddressFormattedView(address: address, columns: 4)
-                            //                            .padding(.vertical)
                             .padding(.top)
-                        //                            .padding(.bottom)
                     }
-                    //                    .background(
-                    //                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    //                            .fill(Color(.secondarySystemGroupedBackground))
-                    //                    )
 
                     Divider()
                         .padding(.horizontal)
@@ -92,10 +86,6 @@ struct ReceiveView: View {
                     }
                     .padding(.horizontal)
                     .padding(.horizontal)
-                    //                    .background(
-                    //                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    //                            .fill(Color(.secondarySystemGroupedBackground))
-                    //                    )
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 }

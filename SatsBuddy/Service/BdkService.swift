@@ -9,20 +9,16 @@ import os
 
 private struct BdkService {
     func deriveAddress(descriptor: String, network: Network) throws -> String {
-        // Parse the target descriptor from CKTap.
         let descriptor = try Descriptor(descriptor: descriptor, network: network)
 
-        // Use an in-memory persister so nothing touches disk.
         let persister = try Persister.newInMemory()
 
-        // Create a temporary wallet from a single descriptor to derive an address.
         let wallet = try Wallet.createSingle(
             descriptor: descriptor,
             network: network,
             persister: persister
         )
 
-        // We only need the first external address to display to the user.
         let addressInfo = wallet.peekAddress(keychain: .external, index: 0)
         let address = String(describing: addressInfo.address)
         Log.cktap.debug(
@@ -36,7 +32,6 @@ private struct BdkService {
             "Fetching on-chain balance for address \(address, privacy: .private(mask: .hash))"
         )
 
-        // Use Mempool.space API to get real balance
         let baseURL = mempoolBaseURL(for: network)
         let urlString = "\(baseURL)/api/address/\(address)"
         guard let url = URL(string: urlString) else {
@@ -195,7 +190,7 @@ private struct BdkService {
 
         let revealed = wallet.revealNextAddress(keychain: .external).address
         Log.cktap.debug(
-            "Syncing for revealed address: \(revealed, privacy: .private(mask: .hash)) descriptor=\(descriptorString, privacy: .public)"
+            "Syncing for revealed address: \(revealed, privacy: .private(mask: .hash)) descriptor=\(descriptorString, privacy: .private(mask: .hash))"
         )
 
         let base = "\(mempoolBaseURL(for: network))/api"
@@ -310,7 +305,6 @@ extension BdkClient {
                 }
             },
             getBalanceFromAddress: { address, _ in
-                // Create a mock balance based on address for testing
                 let seed = abs(address.hashValue) % 3
                 let satAmount: UInt64 =
                     switch seed {
