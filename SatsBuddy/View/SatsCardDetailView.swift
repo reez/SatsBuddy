@@ -74,16 +74,12 @@ struct SatsCardDetailView: View {
                 prepareLabelForEditing()
                 isRenaming = true
             }
-            Button("Delete Card", role: .destructive) {
+            Button("Remove Card", role: .destructive) {
                 isShowingDeleteConfirm = true
             }
         }
-        .confirmationDialog(
-            "Delete this card?",
-            isPresented: $isShowingDeleteConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Delete Card", role: .destructive) {
+        .alert("Remove this card?", isPresented: $isShowingDeleteConfirm) {
+            Button("Remove Card", role: .destructive) {
                 cardViewModel.removeCard(updatedCard)
                 dismiss()
             }
