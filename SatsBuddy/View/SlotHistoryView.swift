@@ -16,16 +16,19 @@ import SwiftUI
 struct SlotHistoryView: View {
     let slot: SlotInfo
     let network: Network
+    let price: Price?
     @State private var viewModel: SlotHistoryViewModel
     @State private var slotDetails: SlotInfo
 
     init(
         slot: SlotInfo,
         network: Network = .bitcoin,
+        price: Price?,
         viewModel: SlotHistoryViewModel = SlotHistoryViewModel()
     ) {
         self.slot = slot
         self.network = network
+        self.price = price
         _slotDetails = State(initialValue: slot)
         _viewModel = State(initialValue: viewModel)
     }
@@ -33,12 +36,13 @@ struct SlotHistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                SlotRowView(slot: slotDetails)
+                SlotRowView(slot: slotDetails, price: price)
 
                 TransactionsSectionView(
                     slot: slotDetails,
                     network: network,
                     viewModel: viewModel,
+                    price: price,
                     onOpenMempool: { openOnMempool(txid: $0) }
                 )
             }
@@ -95,6 +99,7 @@ private struct TransactionsSectionView: View {
     let slot: SlotInfo
     let network: Network
     @Bindable var viewModel: SlotHistoryViewModel
+    let price: Price?
     let onOpenMempool: (String) -> Void
 
     var body: some View {
@@ -139,6 +144,7 @@ private struct TransactionsSectionView: View {
                         } label: {
                             TransactionRowView(
                                 transaction: transaction,
+                                price: price,
                                 onOpenMempool: onOpenMempool
                             )
                         }
@@ -160,6 +166,7 @@ private struct TransactionsSectionView: View {
 
 private struct TransactionRowView: View {
     let transaction: SlotTransaction
+    let price: Price?
     let onOpenMempool: (String) -> Void
 
     var body: some View {
@@ -167,7 +174,7 @@ private struct TransactionRowView: View {
 
             VStack(alignment: .leading, spacing: 12) {
 
-                TransactionAmountView(amount: transaction.amount)
+                TransactionAmountView(amount: transaction.amount, price: price)
 
                 Text(timestampLabel)
                     .font(.caption2)
@@ -213,16 +220,19 @@ private struct TransactionRowView: View {
 private struct TransactionAmountView: View {
     let amount: Int64
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
+    let price: Price?
 
     var body: some View {
         HStack(spacing: 4) {
             Text(signPrefix)
-            if let symbol = balanceFormat.displayPrefix.first {
-                Text(String(symbol))
+            let prefix = balanceFormat.displayPrefix(price: price)
+            if !prefix.isEmpty {
+                Text(prefix)
             }
             Text(valueString)
-            if !balanceFormat.displayText.isEmpty {
-                Text(balanceFormat.displayText)
+            let displayText = balanceFormat.displayText(price: price)
+            if !displayText.isEmpty {
+                Text(displayText)
                     .foregroundStyle(.secondary)
             }
         }
@@ -234,7 +244,7 @@ private struct TransactionAmountView: View {
     }
 
     private var valueString: String {
-        balanceFormat.formatted(UInt64(abs(amount)))
+        balanceFormat.formatted(UInt64(abs(amount)), price: price)
     }
 }
 
@@ -263,15 +273,36 @@ private struct HistoryCard<Content: View>: View {
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 125_000
         )
+        let fiatStore = Price(
+            time: 1_734_000_000,
+            usd: 89_000,
+            eur: 82_000,
+            gbp: 70_000,
+            cad: 120_000,
+            chf: 80_000,
+            aud: 130_000,
+            jpy: 13_700_000
+        )
 
         return NavigationStack {
             SlotHistoryView(
                 slot: slot,
+                price: fiatStore,
                 viewModel: SlotHistoryViewModel.previewMock()
             )
         }
     }
     #Preview {
-        TransactionAmountView(amount: Int64(2500))
+        let fiatStore = Price(
+            time: 1_734_000_000,
+            usd: 89_000,
+            eur: 82_000,
+            gbp: 70_000,
+            cad: 120_000,
+            chf: 80_000,
+            aud: 130_000,
+            jpy: 13_700_000
+        )
+        return TransactionAmountView(amount: Int64(2500), price: fiatStore)
     }
 #endif

@@ -15,6 +15,7 @@ struct ActiveSlotView: View {
     let viewModel: SatsCardDetailViewModel
     let isScanning: Bool
     let onRefresh: () -> Void
+    let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var copied = false
@@ -28,11 +29,19 @@ struct ActiveSlotView: View {
 
             VStack(spacing: 32) {
                 HStack(spacing: 15) {
-                    if balanceFormat != .sats {
+                    if balanceFormat.showsBitcoinSymbol {
                         Image(systemName: "bitcoinsign")
                             .foregroundStyle(.secondary)
                             .font(.title)
                             .fontWeight(.thin)
+                    } else if balanceFormat == .fiat {
+                        let symbol = balanceFormat.displayPrefix(price: price)
+                        if !symbol.isEmpty {
+                            Text(symbol)
+                                .foregroundStyle(.secondary)
+                                .font(.title)
+                                .fontWeight(.thin)
+                        }
                     }
 
                     Text(formattedBalance)
@@ -43,7 +52,7 @@ struct ActiveSlotView: View {
                             value: balanceFormat
                         )
 
-                    Text(balanceFormat.displayText)
+                    Text(balanceFormat.displayText(price: price))
                         .foregroundStyle(.secondary)
                         .fontWeight(.thin)
                         .transition(
@@ -196,7 +205,8 @@ struct ActiveSlotView: View {
                     NavigationLink {
                         SlotsRowListView(
                             totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
-                            slots: viewModel.slots
+                            slots: viewModel.slots,
+                            price: price
                         )
                         .navigationTitle("All Slots")
                         .navigationBarTitleDisplayMode(.inline)
@@ -289,6 +299,16 @@ struct ActiveSlotView: View {
             slots: [slot],
             isActive: true
         )
+        let fiatStore = Price(
+            time: 1_734_000_000,
+            usd: 89_000,
+            eur: 82_000,
+            gbp: 70_000,
+            cad: 120_000,
+            chf: 80_000,
+            aud: 130_000,
+            jpy: 13_700_000
+        )
 
         return ActiveSlotView(
             slot: slot,
@@ -296,7 +316,8 @@ struct ActiveSlotView: View {
             isLoading: false,
             viewModel: SatsCardDetailViewModel(),
             isScanning: false,
-            onRefresh: {}
+            onRefresh: {},
+            price: fiatStore
         )
         .padding()
     }
@@ -310,7 +331,7 @@ private struct ReceiveSheetState: Identifiable {
 extension ActiveSlotView {
     private var formattedBalance: String {
         let amount = slot.balance ?? 0
-        return balanceFormat.formatted(amount)
+        return balanceFormat.formatted(amount, price: price)
     }
 
     fileprivate var displayAddress: String? {
