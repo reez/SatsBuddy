@@ -257,6 +257,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         persistCards()
     }
 
+    func moveCards(from offsets: IndexSet, to destination: Int) {
+        scannedCards.move(fromOffsets: offsets, toOffset: destination)
+        persistCards()
+        Haptics.selection()
+    }
+
     func refreshCard(_ card: SatsCardInfo) {
         beginNFCSession()
     }
