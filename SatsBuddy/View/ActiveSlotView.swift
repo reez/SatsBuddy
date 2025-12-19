@@ -18,7 +18,7 @@ struct ActiveSlotView: View {
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var copied = false
-    @State private var isPubkeyCopied = false
+    @State private var isCardIdCopied = false
     @State private var receiveSheetState: ReceiveSheetState?
     @State private var isPreparingReceiveSheet = false
 
@@ -126,38 +126,38 @@ struct ActiveSlotView: View {
                     .buttonStyle(.plain)
                     .disabled(displayAddress == nil)
 
-                    // Pubkey row
+                    // Card ID row
                     Button {
-                        UIPasteboard.general.string = displayPubkey
-                        isPubkeyCopied = true
+                        UIPasteboard.general.string = card.cardIdentifier
+                        isCardIdCopied = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                            isPubkeyCopied = false
+                            isCardIdCopied = false
                         }
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Pubkey")
+                            Text("Card ID")
                                 .foregroundStyle(.secondary)
                             HStack(alignment: .center) {
-                                Text(displayPubkey)
+                                Text(card.cardIdentifier)
                                     .truncationMode(.middle)
                                     .lineLimit(1)
 
                                 Spacer(minLength: 80)
 
-                                Image(systemName: isPubkeyCopied ? "checkmark" : "doc.on.doc")
+                                Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
                                     .font(.footnote)
                                     .fontWeight(.bold)
-                                    .foregroundStyle(isPubkeyCopied ? .green : .blue)
-                                    .symbolEffect(.bounce, value: isPubkeyCopied)
+                                    .foregroundStyle(isCardIdCopied ? .green : .blue)
+                                    .symbolEffect(.bounce, value: isCardIdCopied)
                             }
                         }
                     }
                     .padding(.vertical, 8)
                     .buttonStyle(.plain)
-                    .sensoryFeedback(.success, trigger: isPubkeyCopied) { _, newValue in
+                    .sensoryFeedback(.success, trigger: isCardIdCopied) { _, newValue in
                         newValue
                     }
-                    .disabled(displayPubkey.isEmpty)
+                    .disabled(card.cardIdentifier.isEmpty)
 
                     Button {
                         guard let address = displayAddress else { return }
