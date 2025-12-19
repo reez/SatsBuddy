@@ -20,9 +20,11 @@ struct SlotRowView<Footer: View>: View {
     //    @State private var addressCopied = false
     private let footer: Footer
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
+    let price: Price?
 
-    init(slot: SlotInfo, @ViewBuilder footer: () -> Footer) {
+    init(slot: SlotInfo, price: Price?, @ViewBuilder footer: () -> Footer) {
         self.slot = slot
+        self.price = price
         self.footer = footer()
     }
 
@@ -61,20 +63,22 @@ extension SlotRowView {
     @ViewBuilder
     fileprivate func balanceRow(balance: UInt64) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            if let symbol = balanceFormat.displayPrefix.first {
-                Text(String(symbol))
+            let prefix = balanceFormat.displayPrefix(price: price)
+            if !prefix.isEmpty {
+                Text(prefix)
                     .foregroundStyle(.secondary)
                     .font(.title2)
                     .fontWeight(.semibold)
             }
 
-            Text(balanceFormat.formatted(balance))
+            Text(balanceFormat.formatted(balance, price: price))
                 .foregroundStyle(.primary)
                 .font(.title)
                 .fontWeight(.semibold)
 
-            if !balanceFormat.displayText.isEmpty {
-                Text(balanceFormat.displayText)
+            let displayText = balanceFormat.displayText(price: price)
+            if !displayText.isEmpty {
+                Text(displayText)
                     .foregroundStyle(.secondary)
                     .font(.title2)
                     .fontWeight(.light)
@@ -84,6 +88,16 @@ extension SlotRowView {
 }
 
 #Preview {
+    let price = Price(
+        time: 1_734_000_000,
+        usd: 89_000,
+        eur: 82_000,
+        gbp: 70_000,
+        cad: 120_000,
+        chf: 80_000,
+        aud: 130_000,
+        jpy: 13_700_000
+    )
     SlotRowView(
         slot: .init(
             slotNumber: UInt8(1),
@@ -93,14 +107,15 @@ extension SlotRowView {
             pubkeyDescriptor: nil,
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 21_000
-        )
+        ),
+        price: price
     )
     .padding()
 }
 
 extension SlotRowView where Footer == EmptyView {
-    init(slot: SlotInfo) {
-        self.init(slot: slot) { EmptyView() }
+    init(slot: SlotInfo, price: Price?) {
+        self.init(slot: slot, price: price) { EmptyView() }
     }
 }
 

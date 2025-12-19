@@ -36,7 +36,8 @@ struct SatsCardDetailView: View {
                 isScanning: cardViewModel.isScanning,
                 onRefresh: {
                     cardViewModel.refreshCard(updatedCard)
-                }
+                },
+                price: cardViewModel.price
             )
             if needsNextSlotSetup {
                 VStack(alignment: .leading, spacing: 12) {
@@ -129,6 +130,7 @@ struct SatsCardDetailView: View {
             }
         }
         .onAppear {
+            cardViewModel.refreshPrice()
             cardViewModel.detailLoadingCardIdentifier = updatedCard.cardIdentifier
         }
         .onChange(of: viewModel.isLoading) { isLoading in
@@ -195,7 +197,11 @@ struct SatsCardDetailView: View {
         SatsCardDetailView(
             card: sampleCard,
             viewModel: SatsCardDetailViewModel(),
-            cardViewModel: SatsCardViewModel(ckTapService: .mock, cardsStore: .mock)
+            cardViewModel: SatsCardViewModel(
+                ckTapService: .mock,
+                cardsStore: .mock,
+                priceClient: .mock
+            )
         )
     }
 #endif

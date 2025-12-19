@@ -10,6 +10,7 @@ import SwiftUI
 struct SlotsRowListView: View {
     let totalSlots: UInt8
     let slots: [SlotInfo]
+    let price: Price?
 
     var body: some View {
         ScrollView {
@@ -21,7 +22,10 @@ struct SlotsRowListView: View {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
                         NavigationLink {
-                            SlotHistoryView(slot: slot)
+                            SlotHistoryView(
+                                slot: slot,
+                                price: price
+                            )
                         } label: {
                             SlotSummaryRowView(slot: slot)
                                 .padding(.vertical, 32)
@@ -100,7 +104,17 @@ private struct SlotsCard<Content: View>: View {
     NavigationStack {
         SlotsRowListView(
             totalSlots: 10,
-            slots: sampleSlots
+            slots: sampleSlots,
+            price: Price(
+                time: 1_734_000_000,
+                usd: 89_000,
+                eur: 82_000,
+                gbp: 70_000,
+                cad: 120_000,
+                chf: 80_000,
+                aud: 130_000,
+                jpy: 13_700_000
+            )
         )
     }
 }
