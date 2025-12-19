@@ -18,6 +18,7 @@ struct SatsCardDetailView: View {
     @State private var isRenaming = false
     @State private var isShowingSend = false
     @State private var isShowingSetupSheet = false
+    @State private var isShowingDeleteConfirm = false
     @State private var setupCvc: String = ""
 
     private var updatedCard: SatsCardInfo {
@@ -73,6 +74,16 @@ struct SatsCardDetailView: View {
                 prepareLabelForEditing()
                 isRenaming = true
             }
+            Button("Remove Card", role: .destructive) {
+                isShowingDeleteConfirm = true
+            }
+        }
+        .alert("Remove this card?", isPresented: $isShowingDeleteConfirm) {
+            Button("Remove Card", role: .destructive) {
+                cardViewModel.removeCard(updatedCard)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .task(id: loadTaskID, priority: .userInitiated) {
             Log.ui.info(
