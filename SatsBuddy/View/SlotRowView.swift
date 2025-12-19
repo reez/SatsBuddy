@@ -88,7 +88,7 @@ extension SlotRowView {
 }
 
 #Preview {
-    let fiatStore = Price(
+    let price = Price(
         time: 1_734_000_000,
         usd: 89_000,
         eur: 82_000,
@@ -108,7 +108,7 @@ extension SlotRowView {
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 21_000
         ),
-        price: fiatStore
+        price: price
     )
     .padding()
 }

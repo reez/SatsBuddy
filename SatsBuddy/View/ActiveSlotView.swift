@@ -300,7 +300,7 @@ struct ActiveSlotView: View {
             slots: [slot],
             isActive: true
         )
-        let fiatStore = Price(
+        let price = Price(
             time: 1_734_000_000,
             usd: 89_000,
             eur: 82_000,
@@ -318,7 +318,7 @@ struct ActiveSlotView: View {
             viewModel: SatsCardDetailViewModel(),
             isScanning: false,
             onRefresh: {},
-            price: fiatStore
+            price: price
         )
         .padding()
     }
