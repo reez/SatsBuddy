@@ -56,6 +56,7 @@ struct SatsCardListView: View {
                                 cardsToRemove.forEach { viewModel.removeCard($0) }
                                 UINotificationFeedbackGenerator().notificationOccurred(.warning)
                             }
+                            .onMove(perform: viewModel.moveCards)
                         }
                     }
                     .listStyle(.insetGrouped)
@@ -66,6 +67,11 @@ struct SatsCardListView: View {
             .navigationTitle("SatsBuddy".uppercased())
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if !viewModel.scannedCards.isEmpty {
+                        EditButton()
+                    }
+                }
                 ToolbarItemGroup(placement: .bottomBar) {
                     Spacer()
                     Button {
