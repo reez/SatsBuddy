@@ -54,6 +54,7 @@ struct ActiveSlotView: View {
 
                     Text(balanceFormat.displayText(price: price))
                         .foregroundStyle(.secondary)
+                        .font(.title)
                         .fontWeight(.thin)
                         .transition(
                             .asymmetric(
