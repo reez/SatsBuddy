@@ -273,7 +273,7 @@ private struct HistoryCard<Content: View>: View {
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 125_000
         )
-        let fiatStore = Price(
+        let price = Price(
             time: 1_734_000_000,
             usd: 89_000,
             eur: 82_000,
@@ -287,13 +287,13 @@ private struct HistoryCard<Content: View>: View {
         return NavigationStack {
             SlotHistoryView(
                 slot: slot,
-                price: fiatStore,
+                price: price,
                 viewModel: SlotHistoryViewModel.previewMock()
             )
         }
     }
     #Preview {
-        let fiatStore = Price(
+        let price = Price(
             time: 1_734_000_000,
             usd: 89_000,
             eur: 82_000,
@@ -303,6 +303,6 @@ private struct HistoryCard<Content: View>: View {
             aud: 130_000,
             jpy: 13_700_000
         )
-        return TransactionAmountView(amount: Int64(2500), price: fiatStore)
+        return TransactionAmountView(amount: Int64(2500), price: price)
     }
 #endif
