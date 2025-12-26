@@ -49,13 +49,13 @@ private struct BdkService {
             let mempool_stats: MempoolStats
 
             struct ChainStats: Codable {
-                let funded_txo_sum: UInt64
-                let spent_txo_sum: UInt64
+                let funded_txo_sum: Int64
+                let spent_txo_sum: Int64
             }
 
             struct MempoolStats: Codable {
-                let funded_txo_sum: UInt64
-                let spent_txo_sum: UInt64
+                let funded_txo_sum: Int64
+                let spent_txo_sum: Int64
             }
         }
 
@@ -71,10 +71,10 @@ private struct BdkService {
         Log.cktap.debug(
             "Retrieved on-chain balance from Mempool.space: \(totalBalance, privacy: .private) sats"
         )
-
-        let confirmedAmount = Amount.fromSat(satoshi: confirmedBalance)
-        let mempoolAmount = Amount.fromSat(satoshi: mempoolBalance)
-        let totalAmount = Amount.fromSat(satoshi: totalBalance)
+        
+        let confirmedAmount = Amount.fromSat(satoshi: confirmedBalance.nonNegativeValue().toUInt64())
+        let mempoolAmount = Amount.fromSat(satoshi: mempoolBalance.nonNegativeValue().toUInt64())
+        let totalAmount = Amount.fromSat(satoshi: totalBalance.nonNegativeValue().toUInt64())
         let zero = Amount.fromSat(satoshi: 0)
 
         return Balance(
