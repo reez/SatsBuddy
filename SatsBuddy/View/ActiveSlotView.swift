@@ -68,16 +68,20 @@ struct ActiveSlotView: View {
                             value: balanceFormat
                         )
 
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 20, height: 20)
-                        .opacity(isLoading ? 1 : 0)
-                        .accessibilityHidden(!isLoading)
-                    Spacer()
+                    if isLoading {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(width: 20, height: 20)
+                            .opacity(isLoading ? 1 : 0)
+                            .accessibilityHidden(!isLoading)
+                    }
                 }
                 .font(.largeTitle)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .fontWeight(.bold)
                 .fontDesign(.rounded)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
                 .animation(.smooth, value: slot.balance)
                 .onTapGesture {
