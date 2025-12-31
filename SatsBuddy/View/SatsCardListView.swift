@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct SatsCardListView: View {
     @State var viewModel: SatsCardViewModel
@@ -61,8 +60,6 @@ struct SatsCardListView: View {
                     }
                     .listStyle(.insetGrouped)
                 }
-
-                //                Spacer()
             }
             .navigationTitle("SatsBuddy".uppercased())
             .navigationBarTitleDisplayMode(.large)
