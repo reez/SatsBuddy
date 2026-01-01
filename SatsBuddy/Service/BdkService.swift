@@ -352,6 +352,23 @@ extension BdkClient {
                 )
             }
         )
+        static func testing(
+            deriveAddress: @escaping @Sendable (String, Network) throws -> String = { _, _ in "" },
+            getBalanceFromAddress: @escaping @Sendable (String, Network) async throws -> Balance,
+            warmUp: @escaping @Sendable () async -> Void = {},
+            getTransactionsForAddress: @escaping @Sendable (String, Network, Int) async throws -> [SlotTransaction] = { _, _, _ in [] },
+            buildPsbt: @escaping @Sendable (String?, String?, String, UInt64, Network) async throws -> Psbt = { _, _, _, _, _ in
+                throw NSError(domain: "BdkClient.testing", code: 0)
+            }
+        ) -> Self {
+            Self(
+                deriveAddress: deriveAddress,
+                getBalanceFromAddress: getBalanceFromAddress,
+                warmUp: warmUp,
+                getTransactionsForAddress: getTransactionsForAddress,
+                buildPsbt: buildPsbt
+            )
+        }
     }
 #endif
 
