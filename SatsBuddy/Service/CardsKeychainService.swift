@@ -78,5 +78,12 @@ extension CardsKeychainClient {
             saveCards: { _ in },
             deleteCards: {}
         )
+        static func testing(
+            loadCards: @escaping () throws -> [SatsCardInfo],
+            saveCards: @escaping ([SatsCardInfo]) throws -> Void,
+            deleteCards: @escaping () throws -> Void = {}
+        ) -> Self {
+            Self(loadCards: loadCards, saveCards: saveCards, deleteCards: deleteCards)
+        }
     }
 #endif

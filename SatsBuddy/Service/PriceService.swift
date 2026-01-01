@@ -38,6 +38,9 @@ extension PriceClient {
     extension PriceClient {
         static let mock = Self(fetchPrice: { currentPriceMock })
         static let mockZero = Self(fetchPrice: { currentPriceMockZero })
+        static func testing(fetchPrice: @escaping () async throws -> Price) -> Self {
+            Self(fetchPrice: fetchPrice)
+        }
     }
 #endif
 
