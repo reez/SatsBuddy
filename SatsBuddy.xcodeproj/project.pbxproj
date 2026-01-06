@@ -15,18 +15,7 @@
 		AEA64EAB2E67604100108F53 /* CKTap in Frameworks */ = {isa = PBXBuildFile; productRef = AEA64EAA2E67604100108F53 /* CKTap */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		46471D942F06A3D400CA387C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AE2B97532E43ADDF002051EC /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AE2B975A2E43ADDF002051EC;
-			remoteInfo = SatsBuddy;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		46471D902F06A3D400CA387C /* SatsBuddyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SatsBuddyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE2B975B2E43ADDF002051EC /* SatsBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SatsBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE44A8662E7614EE00F00611 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -42,11 +31,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		46471D912F06A3D400CA387C /* SatsBuddyTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SatsBuddyTests;
-			sourceTree = "<group>";
-		};
 		AE2B975D2E43ADDF002051EC /* SatsBuddy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -58,13 +42,6 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		46471D8D2F06A3D400CA387C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		AE2B97582E43ADDF002051EC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -85,7 +62,6 @@
 			children = (
 				AE44A8662E7614EE00F00611 /* README.md */,
 				AE2B975D2E43ADDF002051EC /* SatsBuddy */,
-				46471D912F06A3D400CA387C /* SatsBuddyTests */,
 				AE2B975C2E43ADDF002051EC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -94,7 +70,6 @@
 			isa = PBXGroup;
 			children = (
 				AE2B975B2E43ADDF002051EC /* SatsBuddy.app */,
-				46471D902F06A3D400CA387C /* SatsBuddyTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,29 +77,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		46471D8F2F06A3D400CA387C /* SatsBuddyTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 46471D982F06A3D400CA387C /* Build configuration list for PBXNativeTarget "SatsBuddyTests" */;
-			buildPhases = (
-				46471D8C2F06A3D400CA387C /* Sources */,
-				46471D8D2F06A3D400CA387C /* Frameworks */,
-				46471D8E2F06A3D400CA387C /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				46471D952F06A3D400CA387C /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				46471D912F06A3D400CA387C /* SatsBuddyTests */,
-			);
-			name = SatsBuddyTests;
-			packageProductDependencies = (
-			);
-			productName = SatsBuddyTests;
-			productReference = 46471D902F06A3D400CA387C /* SatsBuddyTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		AE2B975A2E43ADDF002051EC /* SatsBuddy */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AE2B97662E43ADE1002051EC /* Build configuration list for PBXNativeTarget "SatsBuddy" */;
@@ -162,10 +114,6 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
-					46471D8F2F06A3D400CA387C = {
-						CreatedOnToolsVersion = 26.2;
-						TestTargetID = AE2B975A2E43ADDF002051EC;
-					};
 					AE2B975A2E43ADDF002051EC = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -193,19 +141,11 @@
 			projectRoot = "";
 			targets = (
 				AE2B975A2E43ADDF002051EC /* SatsBuddy */,
-				46471D8F2F06A3D400CA387C /* SatsBuddyTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		46471D8E2F06A3D400CA387C /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		AE2B97592E43ADDF002051EC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -217,13 +157,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		46471D8C2F06A3D400CA387C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		AE2B97572E43ADDF002051EC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -233,57 +166,7 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		46471D952F06A3D400CA387C /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AE2B975A2E43ADDF002051EC /* SatsBuddy */;
-			targetProxy = 46471D942F06A3D400CA387C /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		46471D962F06A3D400CA387C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bitcoindevkit.SatsBuddyTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SatsBuddy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SatsBuddy";
-			};
-			name = Debug;
-		};
-		46471D972F06A3D400CA387C /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bitcoindevkit.SatsBuddyTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SatsBuddy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SatsBuddy";
-			};
-			name = Release;
-		};
 		AE2B97642E43ADE1002051EC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -480,15 +363,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		46471D982F06A3D400CA387C /* Build configuration list for PBXNativeTarget "SatsBuddyTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				46471D962F06A3D400CA387C /* Debug */,
-				46471D972F06A3D400CA387C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		AE2B97562E43ADDF002051EC /* Build configuration list for PBXProject "SatsBuddy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
