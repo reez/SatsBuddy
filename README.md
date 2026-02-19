@@ -14,7 +14,7 @@ Download on [TestFlight](https://testflight.apple.com/join/Pq7KwWzB).
 
 - [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess)
 
-- [rust-cktap](https://github.com/notmandatory/rust-cktap)
+- [rust-cktap](https://github.com/bitcoindevkit/rust-cktap)
 
 ## Running SatsBuddy Locally
 
@@ -22,49 +22,26 @@ Download on [TestFlight](https://testflight.apple.com/join/Pq7KwWzB).
 
 - Xcode (and Xcode Command Line Tools)
 - Git
-- Rust toolchain (via `rustup`) — required to build the CKTap Swift XCFramework
 
 You can verify the required tools are installed with:
 
 ```bash
 xcodebuild -version
 git --version
-rustc --version
-cargo --version
 ```
 
-### Repository Setup (Important Folder Layout)
+### Repository Setup
 
-SatsBuddy depends on the rust-cktap repository via a local Swift Package reference.
-Both repositories must be cloned into the same parent directory.
+Clone SatsBuddy and open the project:
 
 ```bash
 cd ~/Documents
 git clone https://github.com/reez/SatsBuddy.git
-git clone https://github.com/bitcoindevkit/rust-cktap.git
+cd SatsBuddy
+open SatsBuddy.xcodeproj
 ```
 
-Resulting folder structure:
-
-```bash
-~/Documents/
-├─ SatsBuddy/
-└─ rust-cktap/
-   └─ cktap-swift/
-```
-
-### Build the CKTap XCFramework
-
-The `rust-cktap/cktap-swift` package includes a script that builds the
-`cktapFFI.xcframework` required by Swift Package Manager.
-
-Run the following:
-
-```bash
-cd ~/Documents/rust-cktap/cktap-swift
-chmod +x build-xcframework.sh
-./build-xcframework.sh
-```
+SatsBuddy resolves `CKTap` from the remote `rust-cktap` Swift Package (`v0.2.2`).
 
 ## SwiftUI Previews
 
