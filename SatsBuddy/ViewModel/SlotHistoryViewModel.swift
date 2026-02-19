@@ -19,6 +19,7 @@ final class SlotHistoryViewModel {
     var slotBalance: UInt64?
     var isLoading = false
     var errorMessage: String?
+    var isSweepBalanceButtonDisabled = true
 
     init(bdkClient: BdkClient = .live) {
         self.bdkClient = bdkClient
@@ -73,6 +74,7 @@ final class SlotHistoryViewModel {
                 await MainActor.run {
                     guard self.currentTaskID == taskID else { return }
                     self.slotBalance = balance.total.toSat()
+                    isSweepBalanceButtonDisabled = balance.confirmed.toSat() == .zero
                     Log.cktap.info(
                         "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
                     )

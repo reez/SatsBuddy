@@ -5,6 +5,7 @@
 //  Created by Matthew Ramsden on 10/10/25.
 //
 
+import BitcoinUI
 import BitcoinDevKit
 import Observation
 import SwiftUI
@@ -17,41 +18,66 @@ struct SlotHistoryView: View {
     let slot: SlotInfo
     let network: Network
     let price: Price?
+    let card: SatsCardInfo
     @State private var viewModel: SlotHistoryViewModel
     @State private var slotDetails: SlotInfo
+    @State private var isShowingSend = false
 
     init(
         slot: SlotInfo,
         network: Network = .bitcoin,
         price: Price?,
-        viewModel: SlotHistoryViewModel = SlotHistoryViewModel()
+        viewModel: SlotHistoryViewModel = SlotHistoryViewModel(),
+        card: SatsCardInfo
     ) {
         self.slot = slot
         self.network = network
         self.price = price
+        self.card = card
         _slotDetails = State(initialValue: slot)
         _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                SlotRowView(slot: slotDetails, price: price)
+        VStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    SlotRowView(slot: slotDetails, price: price)
 
-                TransactionsSectionView(
-                    slot: slotDetails,
-                    network: network,
-                    viewModel: viewModel,
-                    price: price,
-                    onOpenMempool: { openOnMempool(txid: $0) }
-                )
+                    TransactionsSectionView(
+                        slot: slotDetails,
+                        network: network,
+                        viewModel: viewModel,
+                        price: price,
+                        onOpenMempool: { openOnMempool(txid: $0) }
+                    )
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 24)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 24)
-        }
-        .scrollIndicators(.hidden)
-        .refreshable {
-            await viewModel.loadHistory(for: slotDetails, network: network)
+            .scrollIndicators(.hidden)
+            .refreshable {
+                await viewModel.loadHistory(for: slotDetails, network: network)
+            }
+            
+            Button {
+                isShowingSend = true
+            } label: {
+                Text("Sweep balance")
+                    .bold()
+                    .frame(maxWidth: .infinity)
+                    .padding(.all, 8)
+            }
+            .buttonStyle(
+                BitcoinFilled(
+                    tintColor: .primary,
+                    textColor: Color(uiColor: .systemBackground),
+                    isCapsule: true
+                )
+            )
+            .padding()
+            .accessibilityLabel("Sweep balance")
+            .disabled(viewModel.isSweepBalanceButtonDisabled)
         }
         .navigationTitle("Slot \(slot.slotNumber)")
         .navigationBarTitleDisplayMode(.inline)
@@ -66,6 +92,15 @@ struct SlotHistoryView: View {
                 slotDetails.balance = newValue
             }
         }
+        .background(
+            NavigationLink(
+                destination: SendFlowView(slot: slot, card: card),
+                isActive: $isShowingSend
+            ) {
+                EmptyView()
+            }
+            .hidden()
+        )
     }
 }
 
@@ -284,11 +319,12 @@ private struct HistoryCard<Content: View>: View {
             jpy: 13_700_000
         )
 
-        return NavigationStack {
+        NavigationStack {
             SlotHistoryView(
                 slot: slot,
                 price: price,
-                viewModel: SlotHistoryViewModel.previewMock()
+                viewModel: SlotHistoryViewModel.previewMock(),
+                card: SatsCardInfo(version: "1", pubkey: "1234")
             )
         }
     }

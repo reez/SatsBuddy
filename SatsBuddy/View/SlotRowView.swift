@@ -20,6 +20,7 @@ struct SlotRowView<Footer: View>: View {
     //    @State private var addressCopied = false
     private let footer: Footer
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
+    @State private var isAddressCopied: Bool = false
     let price: Price?
 
     init(slot: SlotInfo, price: Price?, @ViewBuilder footer: () -> Footer) {
@@ -36,17 +37,40 @@ struct SlotRowView<Footer: View>: View {
             }
 
             if slot.isUsed, let address = slot.address, !address.isEmpty {
-                HStack {
-                    Text(address)
-                        .font(.body)
-                        .fontDesign(.monospaced)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .foregroundStyle(.primary)
+                
+                Button {
+                    UIPasteboard.general.string = address
+                    isAddressCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        isAddressCopied = false
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Card ID")
+                            .foregroundStyle(.secondary)
+                        HStack(alignment: .center) {
+                            Text(address)
+                                .font(.body)
+                                .fontDesign(.monospaced)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .foregroundStyle(.primary)
 
-                    Spacer(minLength: 80)
+                            Spacer(minLength: 80)
+
+                            Image(systemName: isAddressCopied ? "checkmark" : "doc.on.doc")
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                                .foregroundStyle(isAddressCopied ? .green : .blue)
+                                .symbolEffect(.bounce, value: isAddressCopied)
+                        }
+                    }
                 }
-
+                .padding(.vertical, 8)
+                .buttonStyle(.plain)
+                .sensoryFeedback(.success, trigger: isAddressCopied) { _, newValue in
+                    newValue
+                }
             }
 
             if slot.isActive {

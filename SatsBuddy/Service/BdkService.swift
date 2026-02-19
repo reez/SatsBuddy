@@ -156,66 +156,95 @@ private struct BdkService {
     func warmUpIfNeeded() async {
         await BdkWarmUp.shared.run()
     }
-
+    
     func buildPsbt(
-        sourcePubkey: String?,
-        sourceDescriptor: String?,
+        pubkey: String,
         destinationAddress: String,
         feeRate: UInt64,
         network: Network
     ) async throws -> Psbt {
-        let descriptorString: String
-        if let sourceDescriptor, !sourceDescriptor.isEmpty {
-            descriptorString = sourceDescriptor
-        } else if let sourcePubkey {
-            descriptorString = "wpkh(\(sourcePubkey))"
-        } else {
+        let descriptorString = "wpkh(\(pubkey))"
+        let descriptor = try Descriptor(descriptor: descriptorString, network: network)
+        let wallet = try createSingleWallet(descriptor: descriptor, network: network)
+        
+        let addressInfo = wallet.peekAddress(keychain: .external, index: 0)
+        let slotAddress = String(describing: addressInfo.address)
+        Log.cktap.debug(
+            "buildPsbt: address=\(slotAddress, privacy: .private(mask: .hash))"
+        )
+
+        try setupEsploraClientAndSync(wallet: wallet)
+        let utxos = getUTXOs(wallet: wallet)
+        
+        guard !utxos.isEmpty else {
             throw NSError(
                 domain: "BdkService",
-                code: 100,
-                userInfo: [NSLocalizedDescriptionKey: "Missing source key/descriptor"]
+                code: 102,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "No UTXOs found for slot address \(slotAddress)."
+                ]
             )
         }
 
-        let descriptor = try Descriptor(
-            descriptor: descriptorString,
-            network: network
+        let destScript = try Address(address: destinationAddress, network: network).scriptPubkey()
+        
+        let psbt = try TxBuilder()
+            .drainWallet()
+            .drainTo(script: destScript)
+            .feeRate(feeRate: FeeRate.fromSatPerVb(satVb: feeRate))
+            .finish(wallet: wallet)
+        
+        return psbt
+    }
+
+    private func getUTXOs(wallet: Wallet) -> [LocalOutput] {
+        let utxos = wallet.listUnspent()
+        let total = utxos.reduce(UInt64(0)) { $0 + $1.txout.value.toSat() }
+        Log.cktap.debug(
+            "Post-sync UTXOs: count=\(utxos.count) total=\(total, privacy: .private) sats"
         )
+        return utxos
+    }
+    
+    private func setupEsploraClientAndSync(
+        wallet: Wallet
+    ) throws {
+        let base = "\(mempoolBaseURL(for: wallet.network()))/api"
+        let esplora = EsploraClient(url: base)
+        
+        let syncRequest = try wallet.startSyncWithRevealedSpks().build()
+        let update = try esplora.sync(request: syncRequest, parallelRequests: 4)
+        try wallet.applyUpdate(update: update)
+    }
+    
+    private func createSingleWallet(
+        descriptor: Descriptor,
+        network: Network,
+        shouldRevealNextAddress: Bool = true
+    ) throws -> Wallet {
         let persister = try Persister.newInMemory()
         let wallet = try Wallet.createSingle(
             descriptor: descriptor,
             network: network,
             persister: persister
         )
-
-        let revealed = wallet.revealNextAddress(keychain: .external).address
-        Log.cktap.debug(
-            "Syncing for revealed address: \(revealed, privacy: .private(mask: .hash)) descriptor=\(descriptorString, privacy: .private(mask: .hash))"
-        )
-
-        let base = "\(mempoolBaseURL(for: network))/api"
-        let esplora = EsploraClient(url: base)
-
-        let syncRequest = try wallet.startSyncWithRevealedSpks().build()
-        let update = try esplora.sync(request: syncRequest, parallelRequests: 4)
-        try wallet.applyUpdate(update: update)
-
-        let utxos = wallet.listUnspent()
-        let total = utxos.reduce(UInt64(0)) { $0 + $1.txout.value.toSat() }
-        Log.cktap.debug(
-            "Post-sync UTXOs: count=\(utxos.count) total=\(total, privacy: .private) sats"
-        )
-
-        let destScript = try Address(address: destinationAddress, network: network)
-            .scriptPubkey()
-
-        let psbt = try TxBuilder()
-            .drainWallet()
-            .drainTo(script: destScript)
-            .feeRate(feeRate: FeeRate.fromSatPerVb(satVb: feeRate))
-            .finish(wallet: wallet)
-
-        return psbt
+        
+        if shouldRevealNextAddress {
+            let addressInfo = wallet.revealNextAddress(keychain: .external)
+            Log.cktap.info("Revealed address: \(addressInfo.address)")
+        }
+        
+        return wallet
+    }
+    
+    func brodacastTransaction(_ transaction: Transaction) throws {
+        let base = "\(mempoolBaseURL(for: .bitcoin))/api"
+        let client = EsploraClient(url: base)
+        
+        try client.broadcast(transaction: transaction)
+        
+        Log.ui.info("[Broadcast] Transaction broadscasted successfully")
     }
 
     private func mempoolBaseURL(for network: Network) -> String {
@@ -242,7 +271,8 @@ struct BdkClient {
     let warmUp: @Sendable () async -> Void
     let getTransactionsForAddress:
         @Sendable (String, Network, Int) async throws -> [SlotTransaction]
-    let buildPsbt: @Sendable (String?, String?, String, UInt64, Network) async throws -> Psbt
+    let buildPsbt: @Sendable (String, String, UInt64, Network) async throws -> Psbt
+    let broadcast: @Sendable (Transaction) throws -> Void
 
     private init(
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
@@ -252,14 +282,16 @@ struct BdkClient {
             @escaping @Sendable (String, Network, Int) async throws ->
             [SlotTransaction],
         buildPsbt:
-            @escaping @Sendable (String?, String?, String, UInt64, Network) async throws ->
-            Psbt
+            @escaping @Sendable (String, String, UInt64, Network) async throws ->
+            Psbt,
+        broadcast: @escaping @Sendable (Transaction) throws -> Void
     ) {
         self.deriveAddress = deriveAddress
         self.getBalanceFromAddress = getBalanceFromAddress
         self.warmUp = warmUp
         self.getTransactionsForAddress = getTransactionsForAddress
         self.buildPsbt = buildPsbt
+        self.broadcast = broadcast
     }
 }
 
@@ -281,14 +313,16 @@ extension BdkClient {
                 limit: limit
             )
         },
-        buildPsbt: { sourcePubkey, sourceDescriptor, destination, feeRate, network in
+        buildPsbt: { key, destination, feeRate, network in
             try await BdkService().buildPsbt(
-                sourcePubkey: sourcePubkey,
-                sourceDescriptor: sourceDescriptor,
+                pubkey: key,
                 destinationAddress: destination,
                 feeRate: feeRate,
                 network: network
             )
+        },
+        broadcast: { transaction in
+            try BdkService().brodacastTransaction(transaction)
         }
     )
 }
@@ -344,11 +378,18 @@ extension BdkClient {
                     )
                 }
             },
-            buildPsbt: { _, _, _, _, _ in
+            buildPsbt: { _, _, _, _ in
                 throw NSError(
                     domain: "BdkClient.mock",
                     code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "buildPsbt not implemented in mock"]
+                )
+            },
+            broadcast: { tx in
+                throw NSError(
+                    domain: "BdkClient.mock",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "broadcast not implemented in mock"]
                 )
             }
         )

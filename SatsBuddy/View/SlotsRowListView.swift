@@ -11,6 +11,7 @@ struct SlotsRowListView: View {
     let totalSlots: UInt8
     let slots: [SlotInfo]
     let price: Price?
+    let card: SatsCardInfo
 
     var body: some View {
         ScrollView {
@@ -24,7 +25,8 @@ struct SlotsRowListView: View {
                         NavigationLink {
                             SlotHistoryView(
                                 slot: slot,
-                                price: price
+                                price: price,
+                                card: card
                             )
                         } label: {
                             SlotSummaryRowView(slot: slot)
@@ -114,7 +116,8 @@ private struct SlotsCard<Content: View>: View {
                 chf: 80_000,
                 aud: 130_000,
                 jpy: 13_700_000
-            )
+            ),
+            card: SatsCardInfo(version: "1", pubkey: "1234")
         )
     }
 }

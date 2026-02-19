@@ -70,6 +70,16 @@ struct SatsCardDetailView: View {
             }
             .hidden()
         )
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    isShowingSend = true
+                } label: {
+                    Label("Send", systemImage: "paperplane")
+                        .labelStyle(.titleAndIcon)
+                }
+            }
+        }
         .toolbarTitleMenu {
             Button("Rename Card") {
                 prepareLabelForEditing()

@@ -5,6 +5,7 @@
 //  Created by Matthew Ramsden on 11/21/25.
 //
 
+import BitcoinUI
 import SwiftUI
 
 struct SendSignView: View {
@@ -81,32 +82,45 @@ struct SendSignView: View {
 
             Spacer()
 
-            Button {
-                cvcFocused = false
-                viewModel.startNfc()
-            } label: {
-                HStack {
-                    if viewModel.isBusy {
-                        ProgressView()
-                    }
-                    Text("Start NFC")
+            if viewModel.isBroadCasted {
+                Button {
+                    onDone()
+                } label: {
+                    Text("Done, broadcasted")
                         .bold()
                         .frame(maxWidth: .infinity)
+                        .padding()
                 }
-                .padding()
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(viewModel.isBusy || !viewModel.canStartNfc)
-
-            Button {
-                onDone()
-            } label: {
-                Text("Done (no broadcast)")
-                    .bold()
-                    .frame(maxWidth: .infinity)
+                .buttonStyle(
+                    BitcoinOutlined(
+                        tintColor: .primary,
+                        isCapsule: true
+                    )
+                )
+            } else {
+                Button {
+                    cvcFocused = false
+                    viewModel.startNfc()
+                } label: {
+                    HStack {
+                        if viewModel.isBusy {
+                            ProgressView()
+                        }
+                        Text("Start NFC")
+                            .bold()
+                            .frame(maxWidth: .infinity)
+                    }
                     .padding()
+                }
+                .buttonStyle(
+                    BitcoinFilled(
+                        tintColor: .primary,
+                        textColor: Color(uiColor: .systemBackground),
+                        isCapsule: true
+                    )
+                )
+                .disabled(viewModel.isBusy || !viewModel.canStartNfc)
             }
-            .buttonStyle(.bordered)
         }
         .padding()
         .navigationTitle("Sign")
