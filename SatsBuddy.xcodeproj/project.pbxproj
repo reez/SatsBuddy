@@ -413,7 +413,7 @@
 			repositoryURL = "https://github.com/bitcoindevkit/bdk-swift";
 			requirement = {
 				kind = exactVersion;
-				version = 2.2.1;
+				version = 2.3.0;
 			};
 		};
 		AEA64EA92E67604100108F53 /* XCRemoteSwiftPackageReference "rust-cktap" */ = {
