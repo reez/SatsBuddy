@@ -212,12 +212,18 @@ private struct BdkService {
     private func setupEsploraClientAndSync(
         wallet: Wallet
     ) throws {
-        let base = "\(mempoolBaseURL(for: wallet.network()))/api"
-        let esplora = EsploraClient(url: base)
+        let esplora = getEsplora(network: wallet.network())
 
         let syncRequest = try wallet.startSyncWithRevealedSpks().build()
         let update = try esplora.sync(request: syncRequest, parallelRequests: 4)
         try wallet.applyUpdate(update: update)
+    }
+    
+    private func getEsplora(network: Network) -> EsploraClient {
+        let base = "\(mempoolBaseURL(for: network))/api"
+        let esplora = EsploraClient(url: base)
+        
+        return esplora
     }
 
     private func createSingleWallet(
@@ -240,10 +246,8 @@ private struct BdkService {
         return wallet
     }
 
-    func brodacastTransaction(_ transaction: Transaction) throws {
-        let base = "\(mempoolBaseURL(for: .bitcoin))/api"
-        let client = EsploraClient(url: base)
-
+    func brodacastTransaction(_ transaction: Transaction, network: Network) throws {
+        let client = getEsplora(network: network)
         try client.broadcast(transaction: transaction)
 
         Log.ui.info("[Broadcast] Transaction broadscasted successfully")
@@ -274,7 +278,7 @@ struct BdkClient {
     let getTransactionsForAddress:
         @Sendable (String, Network, Int) async throws -> [SlotTransaction]
     let buildPsbt: @Sendable (String, String, UInt64, Network) async throws -> Psbt
-    let broadcast: @Sendable (Transaction) throws -> Void
+    let broadcast: @Sendable (Transaction, Network) throws -> Void
 
     private init(
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
@@ -286,7 +290,7 @@ struct BdkClient {
         buildPsbt:
             @escaping @Sendable (String, String, UInt64, Network) async throws ->
             Psbt,
-        broadcast: @escaping @Sendable (Transaction) throws -> Void
+        broadcast: @escaping @Sendable (Transaction, Network) throws -> Void
     ) {
         self.deriveAddress = deriveAddress
         self.getBalanceFromAddress = getBalanceFromAddress
@@ -323,8 +327,8 @@ extension BdkClient {
                 network: network
             )
         },
-        broadcast: { transaction in
-            try BdkService().brodacastTransaction(transaction)
+        broadcast: { transaction, network in
+            try BdkService().brodacastTransaction(transaction, network: network)
         }
     )
 }
@@ -387,7 +391,7 @@ extension BdkClient {
                     userInfo: [NSLocalizedDescriptionKey: "buildPsbt not implemented in mock"]
                 )
             },
-            broadcast: { tx in
+            broadcast: { tx, _ in
                 throw NSError(
                     domain: "BdkClient.mock",
                     code: 1,

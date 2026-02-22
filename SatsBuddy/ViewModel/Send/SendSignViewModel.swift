@@ -207,7 +207,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             )
 
             statusMessage = "Broadcasting transaction…"
-            try bdkClient.broadcast(signedTx)
+            try bdkClient.broadcast(signedTx, network)
 
             state = .done
             statusMessage = "Transaction broadcast! TXID: \(signedTxid ?? "unknown")"
