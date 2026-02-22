@@ -5,8 +5,8 @@
 //  Created by Matthew Ramsden on 10/10/25.
 //
 
-import BitcoinUI
 import BitcoinDevKit
+import BitcoinUI
 import Observation
 import SwiftUI
 
@@ -59,7 +59,7 @@ struct SlotHistoryView: View {
             .refreshable {
                 await viewModel.loadHistory(for: slotDetails, network: network)
             }
-            
+
             Button {
                 isShowingSend = true
             } label: {

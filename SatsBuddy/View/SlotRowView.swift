@@ -37,7 +37,7 @@ struct SlotRowView<Footer: View>: View {
             }
 
             if slot.isUsed, let address = slot.address, !address.isEmpty {
-                
+
                 Button {
                     UIPasteboard.general.string = address
                     isAddressCopied = true

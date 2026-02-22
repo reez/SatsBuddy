@@ -71,8 +71,10 @@ private struct BdkService {
         Log.cktap.debug(
             "Retrieved on-chain balance from Mempool.space: \(totalBalance, privacy: .private) sats"
         )
-        
-        let confirmedAmount = Amount.fromSat(satoshi: confirmedBalance.nonNegativeValue().toUInt64())
+
+        let confirmedAmount = Amount.fromSat(
+            satoshi: confirmedBalance.nonNegativeValue().toUInt64()
+        )
         let mempoolAmount = Amount.fromSat(satoshi: mempoolBalance.nonNegativeValue().toUInt64())
         let totalAmount = Amount.fromSat(satoshi: totalBalance.nonNegativeValue().toUInt64())
         let zero = Amount.fromSat(satoshi: 0)
@@ -156,7 +158,7 @@ private struct BdkService {
     func warmUpIfNeeded() async {
         await BdkWarmUp.shared.run()
     }
-    
+
     func buildPsbt(
         pubkey: String,
         destinationAddress: String,
@@ -166,7 +168,7 @@ private struct BdkService {
         let descriptorString = "wpkh(\(pubkey))"
         let descriptor = try Descriptor(descriptor: descriptorString, network: network)
         let wallet = try createSingleWallet(descriptor: descriptor, network: network)
-        
+
         let addressInfo = wallet.peekAddress(keychain: .external, index: 0)
         let slotAddress = String(describing: addressInfo.address)
         Log.cktap.debug(
@@ -175,7 +177,7 @@ private struct BdkService {
 
         try setupEsploraClientAndSync(wallet: wallet)
         let utxos = getUTXOs(wallet: wallet)
-        
+
         guard !utxos.isEmpty else {
             throw NSError(
                 domain: "BdkService",
@@ -188,13 +190,13 @@ private struct BdkService {
         }
 
         let destScript = try Address(address: destinationAddress, network: network).scriptPubkey()
-        
+
         let psbt = try TxBuilder()
             .drainWallet()
             .drainTo(script: destScript)
             .feeRate(feeRate: FeeRate.fromSatPerVb(satVb: feeRate))
             .finish(wallet: wallet)
-        
+
         return psbt
     }
 
@@ -206,18 +208,18 @@ private struct BdkService {
         )
         return utxos
     }
-    
+
     private func setupEsploraClientAndSync(
         wallet: Wallet
     ) throws {
         let base = "\(mempoolBaseURL(for: wallet.network()))/api"
         let esplora = EsploraClient(url: base)
-        
+
         let syncRequest = try wallet.startSyncWithRevealedSpks().build()
         let update = try esplora.sync(request: syncRequest, parallelRequests: 4)
         try wallet.applyUpdate(update: update)
     }
-    
+
     private func createSingleWallet(
         descriptor: Descriptor,
         network: Network,
@@ -229,21 +231,21 @@ private struct BdkService {
             network: network,
             persister: persister
         )
-        
+
         if shouldRevealNextAddress {
             let addressInfo = wallet.revealNextAddress(keychain: .external)
             Log.cktap.info("Revealed address: \(addressInfo.address)")
         }
-        
+
         return wallet
     }
-    
+
     func brodacastTransaction(_ transaction: Transaction) throws {
         let base = "\(mempoolBaseURL(for: .bitcoin))/api"
         let client = EsploraClient(url: base)
-        
+
         try client.broadcast(transaction: transaction)
-        
+
         Log.ui.info("[Broadcast] Transaction broadscasted successfully")
     }
 
