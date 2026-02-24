@@ -46,7 +46,7 @@ struct SlotRowView<Footer: View>: View {
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Card ID")
+                        Text("Address")
                             .foregroundStyle(.secondary)
                         HStack(alignment: .center) {
                             Text(address)

@@ -106,7 +106,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         didInvalidateWithError error: any Error
     ) {
         // If we already succeeded, ignore spurious invalidations.
-        if case .unsealed = state { return }
+        switch state {
+        case .done, .unsealed:
+            return
+        default:
+            break
+        }
 
         if case let nfcError as NFCReaderError = error,
             nfcError.code == .readerSessionInvalidationErrorUserCanceled
@@ -180,7 +185,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] Live status: activeSlot=\(liveStatus.activeSlot) targetSlot=\(targetSlot)"
             )
 
-            guard let detail = await dumpOrUnseal(targetSlot: targetSlot, satsCard: satsCard) else {
+            guard let detail = await dumpOrUnseal(
+                targetSlot: targetSlot,
+                activeSlot: liveStatus.activeSlot,
+                satsCard: satsCard
+            ) else {
                 throw NSError(
                     domain: "SendSign",
                     code: 4,
@@ -208,9 +217,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             statusMessage = "Broadcasting transaction…"
             try bdkClient.broadcast(signedTx, network)
-
+            
+            cvc = ""
             state = .done
             statusMessage = "Transaction broadcast! TXID: \(signedTxid ?? "unknown")"
+            session?.alertMessage = "Transaction broadcasted"
             session?.invalidate()
             Log.ui.info(
                 "[SendSign] Broadcast success txid=\(self.signedTxid ?? "nil", privacy: .private(mask: .hash))"
@@ -220,7 +231,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         } catch {
             Log.nfc.error(
-                "[SendSign] handleTag error: \(error.localizedDescription, privacy: .public)"
+                "[SendSign] Dump failed with \(error.localizedDescription, privacy: .public). Falling back to dump"
             )
             state = .error(error.localizedDescription)
             statusMessage = "Failed: \(error.localizedDescription)"
@@ -264,7 +275,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         return psbtSigned
     }
 
-    private func dumpOrUnseal(targetSlot: UInt8, satsCard: SatsCard) async -> SlotDetails? {
+    private func dumpOrUnseal(
+        targetSlot: UInt8,
+        activeSlot: UInt8,
+        satsCard: SatsCard
+    ) async -> SlotDetails? {
         do {
             statusMessage = "Dumping slot…"
             Log.nfc.info(
@@ -275,10 +290,14 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return detail
 
         } catch {
-            Log.nfc.error(
-                "[SendSign] Dump failed with error: \(error.localizedDescription). Falling back to dump."
-            )
             do {
+                guard targetSlot == activeSlot else {
+                    Log.nfc.error(
+                        "[SendSign] Not falling back to unseal: targetSlot=\(targetSlot) activeSlot=\(activeSlot)"
+                    )
+                    return nil
+                }
+                
                 statusMessage = "Unsealing slot…"
                 Log.nfc.info(
                     "[SendSign] Unsealing slot…"
