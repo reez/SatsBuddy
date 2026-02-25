@@ -57,7 +57,7 @@ extension Int64 {
     func nonNegativeValue() -> Int64 {
         self < .zero ? self * -1 : self
     }
-    
+
     func toUInt64() -> UInt64 {
         UInt64(truncatingIfNeeded: self)
     }

@@ -211,7 +211,8 @@ struct ActiveSlotView: View {
                         SlotsRowListView(
                             totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
                             slots: viewModel.slots,
-                            price: price
+                            price: price,
+                            card: card
                         )
                         .navigationTitle("All Slots")
                         .navigationBarTitleDisplayMode(.inline)
@@ -259,7 +260,6 @@ struct ActiveSlotView: View {
                 }
             }
             .listStyle(.plain)
-            .scrollDisabled(true)
             .animation(.smooth, value: isLoading)
             .sheet(
                 item: $receiveSheetState,
