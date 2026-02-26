@@ -56,6 +56,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     var isBroadCasted = false
 
     private var session: NFCTagReaderSession?
+    private var psbt: Psbt?
+    private var didRunPreflight = false
 
     init(
         address: String,
@@ -69,12 +71,57 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         self.slot = slot
         self.network = network
         self.bdkClient = bdkClient
-        self.state = .ready
+        self.state = .preparingPsbt
+        self.statusMessage = "Preparing sweep transaction…"
     }
 
     // MARK: - NFC
 
+    func runPreflightIfNeeded() async {
+        guard !didRunPreflight else { return }
+        didRunPreflight = true
+
+        state = .preparingPsbt
+        psbt = nil
+        psbtBase64 = nil
+        psbtError = nil
+        statusMessage = "Preparing sweep transaction…"
+
+        guard let slotPubkey = slot.pubkey, !slotPubkey.isEmpty else {
+            state = .ready
+            statusMessage = "Enter CVC and tap your card to sign."
+            return
+        }
+
+        do {
+            let preparedPsbt = try await bdkClient.buildPsbt(
+                slotPubkey,
+                address,
+                UInt64(feeRate),
+                network
+            )
+            psbt = preparedPsbt
+            psbtBase64 = preparedPsbt.serialize()
+            state = .ready
+            statusMessage = "Transaction ready. Enter CVC and tap your card to sign."
+        } catch {
+            let message = friendlyError(for: error)
+            psbt = nil
+            psbtBase64 = nil
+            psbtError = message
+            state = .error(message)
+            statusMessage = message
+        }
+    }
+
     func startNfc() {
+        guard case .ready = state else {
+            if case .preparingPsbt = state {
+                statusMessage = "Still preparing transaction…"
+            }
+            return
+        }
+
         guard !cvc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             statusMessage = "Enter CVC to continue."
             return
@@ -246,17 +293,38 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     ) async throws -> Psbt {
 
         let psbtSigned: Psbt?
+        let psbtToSign: Psbt
 
-        let psbt = try await bdkClient.buildPsbt(
-            detail.pubkey,
-            address,
-            UInt64(feeRate),
-            network
-        )
+        if let preparedPsbt = psbt {
+            if let slotPubkey = slot.pubkey, slotPubkey != detail.pubkey {
+                Log.nfc.error(
+                    "[SendSign] Preflight pubkey mismatch: slot=\(slotPubkey, privacy: .private(mask: .hash)) detail=\(detail.pubkey, privacy: .private(mask: .hash))"
+                )
+                psbtToSign = try await bdkClient.buildPsbt(
+                    detail.pubkey,
+                    address,
+                    UInt64(feeRate),
+                    network
+                )
+                psbt = psbtToSign
+                psbtBase64 = psbtToSign.serialize()
+            } else {
+                psbtToSign = preparedPsbt
+            }
+        } else {
+            psbtToSign = try await bdkClient.buildPsbt(
+                detail.pubkey,
+                address,
+                UInt64(feeRate),
+                network
+            )
+            psbt = psbtToSign
+            psbtBase64 = psbtToSign.serialize()
+        }
 
         let psbtSignedBase64 = try await satsCard.signPsbt(
             slot: targetSlot,
-            psbt: psbt.serialize(),
+            psbt: psbtToSign.serialize(),
             cvc: cvc
         )
 
