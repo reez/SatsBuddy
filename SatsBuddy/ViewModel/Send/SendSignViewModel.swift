@@ -185,11 +185,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] Live status: activeSlot=\(liveStatus.activeSlot) targetSlot=\(targetSlot)"
             )
 
-            guard let detail = await dumpOrUnseal(
-                targetSlot: targetSlot,
-                activeSlot: liveStatus.activeSlot,
-                satsCard: satsCard
-            ) else {
+            guard
+                let detail = await dumpOrUnseal(
+                    targetSlot: targetSlot,
+                    activeSlot: liveStatus.activeSlot,
+                    satsCard: satsCard
+                )
+            else {
                 throw NSError(
                     domain: "SendSign",
                     code: 4,
@@ -217,7 +219,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             statusMessage = "Broadcasting transaction…"
             try bdkClient.broadcast(signedTx, network)
-            
+
             cvc = ""
             state = .done
             statusMessage = "Transaction broadcast! TXID: \(signedTxid ?? "unknown")"
@@ -231,7 +233,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         } catch {
             Log.nfc.error(
-                "[SendSign] Dump failed with \(error.localizedDescription, privacy: .public). Falling back to dump"
+                "[SendSign] handleTag error: \(error.localizedDescription, privacy: .public)"
             )
             state = .error(error.localizedDescription)
             statusMessage = "Failed: \(error.localizedDescription)"
@@ -290,6 +292,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return detail
 
         } catch {
+            Log.nfc.error(
+                "[SendSign] Dump failed with error: \(error.localizedDescription). Attempting unseal fallback if target slot is active."
+            )
             do {
                 guard targetSlot == activeSlot else {
                     Log.nfc.error(
@@ -297,7 +302,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     )
                     return nil
                 }
-                
+
                 statusMessage = "Unsealing slot…"
                 Log.nfc.info(
                     "[SendSign] Unsealing slot…"
@@ -308,7 +313,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             } catch {
                 Log.nfc.error(
-                    "[SendSign] Unseal failed with error: \(error.localizedDescription). Falling back to dump."
+                    "[SendSign] Unseal failed with error: \(error.localizedDescription)."
                 )
 
             }
