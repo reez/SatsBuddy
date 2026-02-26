@@ -231,7 +231,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         } catch {
             Log.nfc.error(
-                "[SendSign] Dump failed with \(error.localizedDescription, privacy: .public). Falling back to dump"
+                "[SendSign] handleTag error: \(error.localizedDescription, privacy: .public)"
             )
             state = .error(error.localizedDescription)
             statusMessage = "Failed: \(error.localizedDescription)"
@@ -290,6 +290,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return detail
 
         } catch {
+            Log.nfc.error(
+                "[SendSign] Dump failed with error: \(error.localizedDescription). Attempting unseal fallback if target slot is active."
+            )
             do {
                 guard targetSlot == activeSlot else {
                     Log.nfc.error(
@@ -308,7 +311,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             } catch {
                 Log.nfc.error(
-                    "[SendSign] Unseal failed with error: \(error.localizedDescription). Falling back to dump."
+                    "[SendSign] Unseal failed with error: \(error.localizedDescription)."
                 )
 
             }
