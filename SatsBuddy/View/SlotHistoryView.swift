@@ -94,7 +94,15 @@ struct SlotHistoryView: View {
         }
         .background(
             NavigationLink(
-                destination: SendFlowView(slot: slot, card: card),
+                destination: SendFlowView(
+                    slot: slot,
+                    card: card,
+                    onBroadcastSuccess: {
+                        Task {
+                            await viewModel.loadHistory(for: slotDetails, network: network)
+                        }
+                    }
+                ),
                 isActive: $isShowingSend
             ) {
                 EmptyView()
