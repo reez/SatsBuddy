@@ -63,7 +63,13 @@ struct SatsCardDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(
             NavigationLink(
-                destination: SendFlowView(slot: slotForDisplay, card: updatedCard),
+                destination: SendFlowView(
+                    slot: slotForDisplay,
+                    card: updatedCard,
+                    onBroadcastSuccess: {
+                        cardViewModel.refreshCard(updatedCard)
+                    }
+                ),
                 isActive: $isShowingSend
             ) {
                 EmptyView()

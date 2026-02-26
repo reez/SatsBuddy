@@ -10,6 +10,7 @@ import SwiftUI
 struct SendFlowView: View {
     let slot: SlotInfo
     let card: SatsCardInfo
+    let onBroadcastSuccess: (() -> Void)?
 
     private enum Step {
         case destination
@@ -20,6 +21,16 @@ struct SendFlowView: View {
 
     @State private var step: Step = .destination
     @Environment(\.dismiss) private var dismiss
+
+    init(
+        slot: SlotInfo,
+        card: SatsCardInfo,
+        onBroadcastSuccess: (() -> Void)? = nil
+    ) {
+        self.slot = slot
+        self.card = card
+        self.onBroadcastSuccess = onBroadcastSuccess
+    }
 
     var body: some View {
         VStack {
@@ -53,6 +64,7 @@ struct SendFlowView: View {
                         network: .bitcoin
                     ),
                     onDone: {
+                        onBroadcastSuccess?()
                         dismiss()
                     }
                 )
