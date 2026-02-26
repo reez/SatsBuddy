@@ -114,6 +114,9 @@ struct SendSignView: View {
         .padding()
         .navigationTitle("Sign")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.runPreflightIfNeeded()
+        }
     }
 }
 
