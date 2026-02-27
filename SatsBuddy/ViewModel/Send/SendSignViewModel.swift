@@ -33,7 +33,6 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
     var cvc: String = ""
     var statusMessage: String = "Enter CVC and tap your card to unseal."
-    var psbtBase64: String?
     var signedTxid: String?
     var psbtError: String?
     var txHex: String?
@@ -57,7 +56,6 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     var isBroadCasted = false
 
     private var session: NFCTagReaderSession?
-    private var psbt: Psbt?
 
     init(
         address: String,
@@ -185,11 +183,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] Live status: activeSlot=\(liveStatus.activeSlot) targetSlot=\(targetSlot)"
             )
 
-            guard let detail = await dumpOrUnseal(
-                targetSlot: targetSlot,
-                activeSlot: liveStatus.activeSlot,
-                satsCard: satsCard
-            ) else {
+            guard
+                let detail = await dumpOrUnseal(
+                    targetSlot: targetSlot,
+                    activeSlot: liveStatus.activeSlot,
+                    satsCard: satsCard
+                )
+            else {
                 throw NSError(
                     domain: "SendSign",
                     code: 4,
@@ -217,7 +217,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             statusMessage = "Broadcasting transaction…"
             try bdkClient.broadcast(signedTx, network)
-            
+
             cvc = ""
             state = .done
             statusMessage = "Transaction broadcast! TXID: \(signedTxid ?? "unknown")"
@@ -297,7 +297,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     )
                     return nil
                 }
-                
+
                 statusMessage = "Unsealing slot…"
                 Log.nfc.info(
                     "[SendSign] Unsealing slot…"

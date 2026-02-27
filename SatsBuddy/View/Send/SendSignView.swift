@@ -50,17 +50,6 @@ struct SendSignView: View {
                         .foregroundColor(.secondary)
                 }
 
-                if let psbt = viewModel.psbtBase64 {
-                    Text("PSBT (base64, truncated):")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(psbt)
-                        .font(.caption2.monospaced())
-                        .lineLimit(2)
-                        .truncationMode(.middle)
-                        .textSelection(.enabled)
-                }
-
                 if let txid = viewModel.signedTxid {
                     Text("Txid: \(txid)")
                         .font(.caption2.monospaced())
