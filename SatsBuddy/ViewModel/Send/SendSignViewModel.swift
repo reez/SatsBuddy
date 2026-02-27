@@ -33,6 +33,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
     var cvc: String = ""
     var statusMessage: String = "Enter CVC and tap your card to unseal."
+    var psbtBase64: String?
     var signedTxid: String?
     var psbtError: String?
     var txHex: String?
