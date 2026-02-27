@@ -58,6 +58,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
     private var session: NFCTagReaderSession?
     private var psbt: Psbt?
+    private var didRunPreflight = false
 
     init(
         address: String,
@@ -71,12 +72,53 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         self.slot = slot
         self.network = network
         self.bdkClient = bdkClient
-        self.state = .ready
+        self.state = .preparingPsbt
+        self.statusMessage = "Preparing sweep transaction…"
     }
 
     // MARK: - NFC
 
+    func runPreflightIfNeeded() async {
+        guard !didRunPreflight else { return }
+        didRunPreflight = true
+
+        state = .preparingPsbt
+        psbtError = nil
+        statusMessage = "Preparing sweep transaction…"
+
+        guard let slotPubkey = slot.pubkey, !slotPubkey.isEmpty else {
+            let errorMessage = "Missing slot pubkey; cannot prepare transaction."
+            psbtError = errorMessage
+            statusMessage = errorMessage
+            state = .error(errorMessage)
+            return
+        }
+
+        do {
+            _ = try await bdkClient.buildPsbt(
+                slotPubkey,
+                address,
+                UInt64(feeRate),
+                network
+            )
+            state = .ready
+            statusMessage = "Transaction ready. Enter CVC and tap your card to sign."
+        } catch {
+            let message = friendlyError(for: error)
+            psbtError = message
+            state = .error(message)
+            statusMessage = message
+        }
+    }
+
     func startNfc() {
+        guard case .ready = state else {
+            if case .preparingPsbt = state {
+                statusMessage = "Still preparing transaction…"
+            }
+            return
+        }
+
         guard !cvc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             statusMessage = "Enter CVC to continue."
             return
@@ -185,11 +227,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] Live status: activeSlot=\(liveStatus.activeSlot) targetSlot=\(targetSlot)"
             )
 
-            guard let detail = await dumpOrUnseal(
-                targetSlot: targetSlot,
-                activeSlot: liveStatus.activeSlot,
-                satsCard: satsCard
-            ) else {
+            guard
+                let detail = await dumpOrUnseal(
+                    targetSlot: targetSlot,
+                    activeSlot: liveStatus.activeSlot,
+                    satsCard: satsCard
+                )
+            else {
                 throw NSError(
                     domain: "SendSign",
                     code: 4,
@@ -217,7 +261,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             statusMessage = "Broadcasting transaction…"
             try bdkClient.broadcast(signedTx, network)
-            
+
             cvc = ""
             state = .done
             statusMessage = "Transaction broadcast! TXID: \(signedTxid ?? "unknown")"
@@ -297,7 +341,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     )
                     return nil
                 }
-                
+
                 statusMessage = "Unsealing slot…"
                 Log.nfc.info(
                     "[SendSign] Unsealing slot…"
