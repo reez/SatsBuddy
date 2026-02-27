@@ -83,6 +83,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         didRunPreflight = true
 
         state = .preparingPsbt
+        psbt = nil
+        psbtBase64 = nil
         psbtError = nil
         statusMessage = "Preparing sweep transaction…"
 
@@ -95,16 +97,20 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
 
         do {
-            _ = try await bdkClient.buildPsbt(
+            let preparedPsbt = try await bdkClient.buildPsbt(
                 slotPubkey,
                 address,
                 UInt64(feeRate),
                 network
             )
+            psbt = preparedPsbt
+            psbtBase64 = preparedPsbt.serialize()
             state = .ready
             statusMessage = "Transaction ready. Enter CVC and tap your card to sign."
         } catch {
             let message = friendlyError(for: error)
+            psbt = nil
+            psbtBase64 = nil
             psbtError = message
             state = .error(message)
             statusMessage = message
@@ -290,17 +296,26 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     ) async throws -> Psbt {
 
         let psbtSigned: Psbt?
+        guard let preparedPsbt = psbt else {
+            throw NSError(
+                domain: "SendSign",
+                code: 6,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Preflight transaction unavailable. Please go back and try again."
+                ]
+            )
+        }
 
-        let psbt = try await bdkClient.buildPsbt(
-            detail.pubkey,
-            address,
-            UInt64(feeRate),
-            network
-        )
+        if let slotPubkey = slot.pubkey, slotPubkey != detail.pubkey {
+            Log.nfc.error(
+                "[SendSign] Preflight pubkey mismatch: slot=\(slotPubkey, privacy: .private(mask: .hash)) detail=\(detail.pubkey, privacy: .private(mask: .hash))"
+            )
+        }
 
         let psbtSignedBase64 = try await satsCard.signPsbt(
             slot: targetSlot,
-            psbt: psbt.serialize(),
+            psbt: preparedPsbt.serialize(),
             cvc: cvc
         )
 
