@@ -45,7 +45,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private let bdkClient: BdkClient
 
     var cvc: String = ""
-    var statusMessage: String = "Enter CVC and tap your card to sign."
+    var statusMessage: String = "Enter CVC and tap your card to sign and broadcast."
     var psbtBase64: String?
     var signedTxid: String?
     var psbtError: String?
@@ -123,7 +123,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             psbt = preparedPsbt
             psbtBase64 = preparedPsbt.serialize()
             state = .ready
-            statusMessage = "Transaction ready. Enter CVC and tap your card to sign."
+            statusMessage = "Transaction ready. Enter CVC and tap your card to sign and broadcast."
         } catch {
             let message = friendlyError(for: error)
             psbt = nil
@@ -161,11 +161,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         session?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
-        session?.alertMessage = "Hold your iPhone near the SatsCard to continue."
+        session?.alertMessage = "Hold your iPhone near the SatsCard to sign and broadcast."
         session?.begin()
 
         state = .tapping
-        statusMessage = "Hold near card to sign…"
+        statusMessage = "Hold near card to sign and broadcast…"
         Log.nfc.info("[SendSign] NFC session started for signing")
     }
 

@@ -15,7 +15,7 @@ struct SendSignView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Text("Prepare to sign")
+            Text("Sign and broadcast")
                 .font(.title2)
                 .fontWeight(.semibold)
 
@@ -106,7 +106,7 @@ struct SendSignView: View {
                         if viewModel.isBusy {
                             ProgressView()
                         }
-                        Text("Start NFC")
+                        Text("Tap Card to Sign and Broadcast")
                             .bold()
                             .frame(maxWidth: .infinity)
                     }
