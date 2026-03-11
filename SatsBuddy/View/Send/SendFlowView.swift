@@ -22,6 +22,13 @@ struct SendFlowView: View {
     @State private var step: Step = .destination
     @Environment(\.dismiss) private var dismiss
 
+    private var isShowingDestinationStep: Bool {
+        if case .destination = step {
+            return true
+        }
+        return false
+    }
+
     init(
         slot: SlotInfo,
         card: SatsCardInfo,
@@ -73,6 +80,7 @@ struct SendFlowView: View {
         }
         .navigationTitle("Send")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(isShowingDestinationStep ? .hidden : .visible, for: .navigationBar)
     }
 }
 
