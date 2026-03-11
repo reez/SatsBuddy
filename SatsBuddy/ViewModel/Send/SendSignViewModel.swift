@@ -37,6 +37,89 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
     }
 
+    private enum StatusPhase {
+        case preparingSweep
+        case readyToSignAndBroadcast
+        case stillPreparing
+        case enterCvc
+        case nfcUnavailable
+        case waitingForCard
+        case checkingCard
+        case readingSlotDetails
+        case unsealingActiveSlot
+        case signingTransaction
+        case broadcastingTransaction
+        case broadcasted(txid: String?)
+        case nfcCancelled
+        case noTagFound
+        case connectionFailed
+        case unsupportedTag
+        case raw(String)
+        case failed(String)
+
+        var screenMessage: String {
+            switch self {
+            case .preparingSweep:
+                "Preparing sweep transaction…"
+            case .readyToSignAndBroadcast:
+                "Transaction ready. Enter CVC and tap your card to sign and broadcast."
+            case .stillPreparing:
+                "Still preparing transaction…"
+            case .enterCvc:
+                "Enter CVC to continue."
+            case .nfcUnavailable:
+                "NFC not available on this device."
+            case .waitingForCard:
+                "Hold your iPhone near the SATSCARD."
+            case .checkingCard:
+                "Checking SATSCARD status…"
+            case .readingSlotDetails:
+                "Reading slot details…"
+            case .unsealingActiveSlot:
+                "Unsealing active slot…"
+            case .signingTransaction:
+                "Finalizing signed transaction…"
+            case .broadcastingTransaction:
+                "Broadcasting transaction…"
+            case .broadcasted(let txid):
+                "Transaction broadcast! TXID: \(txid ?? "unknown")"
+            case .nfcCancelled:
+                "NFC cancelled."
+            case .noTagFound:
+                "No tag found."
+            case .connectionFailed:
+                "Connection failed."
+            case .unsupportedTag:
+                "Unsupported tag."
+            case .raw(let message):
+                message
+            case .failed(let message):
+                "Failed: \(message)"
+            }
+        }
+
+        var nfcAlertMessage: String? {
+            switch self {
+            case .waitingForCard:
+                "Hold your iPhone near the SATSCARD."
+            case .checkingCard:
+                "Checking SATSCARD status…"
+            case .readingSlotDetails:
+                "Reading slot details…"
+            case .unsealingActiveSlot:
+                "Unsealing active slot…"
+            case .signingTransaction:
+                "Finalizing signed transaction…"
+            case .broadcastingTransaction:
+                "Broadcasting transaction…"
+            case .broadcasted:
+                "Transaction broadcasted"
+            default:
+                nil
+            }
+        }
+    }
+
     let address: String
     let feeRate: Int
     let slot: SlotInfo
@@ -45,7 +128,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private let bdkClient: BdkClient
 
     var cvc: String = ""
-    var statusMessage: String = "Enter CVC and tap your card to sign and broadcast."
+    var statusMessage: String = StatusPhase.preparingSweep.screenMessage
     var psbtBase64: String?
     var signedTxid: String?
     var psbtError: String?
@@ -89,7 +172,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         self.network = network
         self.bdkClient = bdkClient
         self.state = .preparingPsbt
-        self.statusMessage = "Preparing sweep transaction…"
+        self.statusMessage = StatusPhase.preparingSweep.screenMessage
     }
 
     // MARK: - NFC
@@ -102,13 +185,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         psbt = nil
         psbtBase64 = nil
         psbtError = nil
-        statusMessage = "Preparing sweep transaction…"
+        setStatusMessage(.preparingSweep)
 
         guard let slotPubkey = slot.pubkey, !slotPubkey.isEmpty else {
             let message =
                 "Unable to prepare the transaction for this slot. Refresh the card and try again."
             psbtError = message
-            statusMessage = message
+            setStatusMessage(.raw(message))
             state = .error(message)
             return
         }
@@ -123,21 +206,21 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             psbt = preparedPsbt
             psbtBase64 = preparedPsbt.serialize()
             state = .ready
-            statusMessage = "Transaction ready. Enter CVC and tap your card to sign and broadcast."
+            setStatusMessage(.readyToSignAndBroadcast)
         } catch {
             let message = friendlyError(for: error)
             psbt = nil
             psbtBase64 = nil
             psbtError = message
             state = .error(message)
-            statusMessage = message
+            setStatusMessage(.raw(message))
         }
     }
 
     func startNfc() {
         guard case .ready = state else {
             if case .preparingPsbt = state {
-                statusMessage = "Still preparing transaction…"
+                setStatusMessage(.stillPreparing)
             }
             return
         }
@@ -145,27 +228,26 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         guard hasPreparedPsbt else {
             let message = psbtError ?? "Transaction not ready. Go back and try again."
             psbtError = message
-            statusMessage = message
+            setStatusMessage(.raw(message))
             return
         }
 
         guard !cvc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            statusMessage = "Enter CVC to continue."
+            setStatusMessage(.enterCvc)
             return
         }
 
         guard NFCTagReaderSession.readingAvailable else {
-            statusMessage = "NFC not available on this device."
+            setStatusMessage(.nfcUnavailable)
             return
         }
 
         session?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
-        session?.alertMessage = "Hold your iPhone near the SatsCard to sign and broadcast."
         session?.begin()
 
         state = .tapping
-        statusMessage = "Hold near card to sign and broadcast…"
+        setStatusMessage(.waitingForCard)
         Log.nfc.info("[SendSign] NFC session started for signing")
     }
 
@@ -188,12 +270,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         if case let nfcError as NFCReaderError = error,
             nfcError.code == .readerSessionInvalidationErrorUserCanceled
         {
-            statusMessage = "NFC cancelled."
+            setStatusMessage(.nfcCancelled)
             state = .ready
             return
         }
 
-        statusMessage = "NFC error: \(error.localizedDescription)"
+        setStatusMessage(.failed(error.localizedDescription))
         state = .error(error.localizedDescription)
         Log.nfc.error(
             "[SendSign] session invalidated: \(error.localizedDescription, privacy: .public)"
@@ -203,7 +285,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         guard let first = tags.first else {
             session.invalidate(errorMessage: "No tag found.")
-            statusMessage = "No tag found."
+            setStatusMessage(.noTagFound)
             state = .error("No tag found.")
             return
         }
@@ -216,7 +298,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 )
                 session.invalidate(errorMessage: "Connection failed.")
                 Task { @MainActor in
-                    self.statusMessage = "Connection failed."
+                    self.setStatusMessage(.connectionFailed)
                     self.state = .error(error.localizedDescription)
                 }
                 return
@@ -225,7 +307,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             guard case .iso7816(let iso7816Tag) = first else {
                 session.invalidate(errorMessage: "Unsupported tag.")
                 Task { @MainActor in
-                    self.statusMessage = "Unsupported tag."
+                    self.setStatusMessage(.unsupportedTag)
                     self.state = .error("Unsupported tag.")
                 }
                 return
@@ -262,7 +344,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
 
             state = .preparingPsbt
-            statusMessage = "Reading card status…"
+            setStatusMessage(.checkingCard)
 
             let liveStatus = await satsCard.status()
             let liveCardIdentifier =
@@ -302,17 +384,15 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             switch slotAccess {
             case .dumped:
                 Log.nfc.info(
-                    "[SendSign] Slot \(targetSlot) details retrieved via dump, building and signing tx…"
+                    "[SendSign] Slot \(targetSlot) details retrieved via dump, signing tx…"
                 )
-                session?.alertMessage = "Card read. Building transaction…"
             case .unsealed:
                 Log.nfc.info(
-                    "[SendSign] Active slot \(targetSlot) unsealed, building and signing tx…"
+                    "[SendSign] Active slot \(targetSlot) unsealed, signing tx…"
                 )
-                session?.alertMessage = "Slot unsealed. Building transaction…"
             }
 
-            statusMessage = "Building and signing transaction…"
+            setStatusMessage(.signingTransaction)
             let signedTx = try await buildPsbtAndSign(
                 detail: detail,
                 targetSlot: targetSlot,
@@ -326,13 +406,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] Signed txid=\(self.signedTxid ?? "nil", privacy: .private(mask: .hash))"
             )
 
-            statusMessage = "Broadcasting transaction…"
+            setStatusMessage(.broadcastingTransaction)
             try bdkClient.broadcast(signedTx, network)
 
             cvc = ""
             state = .done
-            statusMessage = "Transaction broadcast! TXID: \(signedTxid ?? "unknown")"
-            session?.alertMessage = "Transaction broadcasted"
+            setStatusMessage(.broadcasted(txid: signedTxid))
             session?.invalidate()
             Log.ui.info(
                 "[SendSign] Broadcast success txid=\(self.signedTxid ?? "nil", privacy: .private(mask: .hash))"
@@ -345,7 +424,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] handleTag error: \(error.localizedDescription, privacy: .public)"
             )
             state = .error(error.localizedDescription)
-            statusMessage = "Failed: \(error.localizedDescription)"
+            setStatusMessage(.failed(error.localizedDescription))
             session?.invalidate(errorMessage: "Error: \(error.localizedDescription)")
         }
     }
@@ -403,7 +482,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         satsCard: SatsCard
     ) async -> SlotAccessResult? {
         do {
-            statusMessage = "Reading slot details…"
+            setStatusMessage(.readingSlotDetails)
             Log.nfc.info(
                 "[SendSign] Reading slot details via dump…"
             )
@@ -423,7 +502,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     return nil
                 }
 
-                statusMessage = "Unsealing active slot…"
+                setStatusMessage(.unsealingActiveSlot)
                 Log.nfc.info(
                     "[SendSign] Unsealing active slot…"
                 )
@@ -454,5 +533,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
         }
         return "Failed to build PSBT: \(error.localizedDescription)"
+    }
+
+    private func setStatusMessage(_ phase: StatusPhase) {
+        statusMessage = phase.screenMessage
+        if let alertMessage = phase.nfcAlertMessage {
+            session?.alertMessage = alertMessage
+        }
     }
 }
