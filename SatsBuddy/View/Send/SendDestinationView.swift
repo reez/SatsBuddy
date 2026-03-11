@@ -5,6 +5,7 @@
 //  Created by Matthew Ramsden on 11/21/25.
 //
 
+import BitcoinDevKit
 import BitcoinUI
 import CodeScanner
 import SwiftUI
@@ -72,8 +73,14 @@ struct SendDestinationView: View {
             isShowingAlert = true
             return
         }
-        address = trimmed
-        onNext(trimmed.lowercased())
+
+        guard let validatedAddress = validatedAddress(from: trimmed) else {
+            isShowingAlert = true
+            return
+        }
+
+        address = validatedAddress
+        onNext(validatedAddress)
     }
 
     private func pasteAddress() {
@@ -88,7 +95,7 @@ struct SendDestinationView: View {
             isShowingAlert = true
             return
         }
-        routeToFee(with: trimmedContent.lowercased())
+        routeToFee(with: trimmedContent)
     }
 
     private func pasteAddressFromScanner() {
@@ -97,9 +104,7 @@ struct SendDestinationView: View {
     }
 
     private func handleScannedString(_ raw: String) {
-        let cleaned = raw.lowercased().replacingOccurrences(of: "bitcoin:", with: "")
-        let components = cleaned.components(separatedBy: "?")
-        if let bitcoinAddress = components.first, !bitcoinAddress.isEmpty {
+        if let bitcoinAddress = extractedAddress(from: raw) {
             routeToFee(with: bitcoinAddress)
             isShowingScanner = false
         } else {
@@ -107,6 +112,49 @@ struct SendDestinationView: View {
             isShowingAlert = true
             isShowingScanner = false
         }
+    }
+
+    private func validatedAddress(from rawValue: String) -> String? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        guard let candidate = extractedAddress(from: trimmed), !candidate.isEmpty else {
+            alertMessage = "The address is not a valid Bitcoin mainnet address."
+            return nil
+        }
+
+        do {
+            _ = try Address(address: candidate, network: .bitcoin)
+            return candidate
+        } catch {
+            alertMessage = "The address is not a valid Bitcoin mainnet address."
+            return nil
+        }
+    }
+
+    private func extractedAddress(from rawValue: String) -> String? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefix = "bitcoin:"
+
+        let withoutScheme: String
+        if trimmed.count >= prefix.count,
+            String(trimmed.prefix(prefix.count)).caseInsensitiveCompare(prefix) == .orderedSame
+        {
+            withoutScheme = String(trimmed.dropFirst(prefix.count))
+        } else {
+            withoutScheme = trimmed
+        }
+
+        let addressOnly = withoutScheme.components(separatedBy: "?").first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let addressOnly, !addressOnly.isEmpty else {
+            return nil
+        }
+
+        return addressOnly
     }
 }
 
