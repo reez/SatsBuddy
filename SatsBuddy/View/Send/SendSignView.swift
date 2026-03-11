@@ -62,7 +62,7 @@ struct SendSignView: View {
                 }
 
                 if let txid = viewModel.signedTxid {
-                    Text("Txid: \(txid)")
+                    Text("TXID: \(txid)")
                         .font(.caption2.monospaced())
                         .textSelection(.enabled)
                 }
@@ -86,7 +86,7 @@ struct SendSignView: View {
                 Button {
                     onDone()
                 } label: {
-                    Text("Done, broadcasted")
+                    Text("Done")
                         .bold()
                         .frame(maxWidth: .infinity)
                         .padding()
