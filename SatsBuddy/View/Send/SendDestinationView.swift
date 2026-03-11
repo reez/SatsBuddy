@@ -15,6 +15,7 @@ struct SendDestinationView: View {
     @State private var isShowingAlert = false
     @State private var alertMessage = ""
     @State private var isShowingScanner = false
+    @State private var scannerErrorMessage: String?
     let pasteboard = UIPasteboard.general
     let onNext: (String) -> Void
 
@@ -36,20 +37,19 @@ struct SendDestinationView: View {
             HStack(spacing: 12) {
                 Button("Paste") { pasteAddress() }
                     .buttonStyle(.bordered)
-                Button("Scan QR") { isShowingScanner = true }
-                    .buttonStyle(.borderedProminent)
+                Button("Scan QR") {
+                    scannerErrorMessage = nil
+                    isShowingScanner = true
+                }
+                .buttonStyle(.bordered)
                 Button("Next") {
                     routeToFee(with: address)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
                 .disabled(address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
         .padding()
-        .onAppear {
-            // Pop up scanner by default; user can dismiss and paste instead.
-            isShowingScanner = true
-        }
         .alert(isPresented: $isShowingAlert) {
             Alert(
                 title: Text("Error"),
@@ -60,8 +60,13 @@ struct SendDestinationView: View {
         .fullScreenCover(isPresented: $isShowingScanner) {
             ScannerOverlay(
                 onScan: handleScannedString,
+                onScanError: handleScannerFailure,
                 onPaste: pasteAddressFromScanner,
-                onDismiss: { isShowingScanner = false }
+                onDismiss: {
+                    scannerErrorMessage = nil
+                    isShowingScanner = false
+                },
+                errorMessage: scannerErrorMessage
             )
         }
     }
@@ -99,19 +104,27 @@ struct SendDestinationView: View {
     }
 
     private func pasteAddressFromScanner() {
+        scannerErrorMessage = nil
         pasteAddress()
         isShowingScanner = false
     }
 
     private func handleScannedString(_ raw: String) {
-        if let bitcoinAddress = extractedAddress(from: raw) {
-            routeToFee(with: bitcoinAddress)
-            isShowingScanner = false
-        } else {
-            alertMessage = "The scanned QR code did not contain a valid Bitcoin address."
-            isShowingAlert = true
-            isShowingScanner = false
+        guard let bitcoinAddress = extractedAddress(from: raw),
+            isValidBitcoinMainnetAddress(bitcoinAddress)
+        else {
+            scannerErrorMessage =
+                "That QR code did not contain a valid Bitcoin mainnet address. Try again or paste the address instead."
+            return
         }
+
+        scannerErrorMessage = nil
+        routeToFee(with: bitcoinAddress)
+        isShowingScanner = false
+    }
+
+    private func handleScannerFailure(_ message: String) {
+        scannerErrorMessage = message
     }
 
     private func validatedAddress(from rawValue: String) -> String? {
@@ -125,13 +138,12 @@ struct SendDestinationView: View {
             return nil
         }
 
-        do {
-            _ = try Address(address: candidate, network: .bitcoin)
-            return candidate
-        } catch {
+        guard isValidBitcoinMainnetAddress(candidate) else {
             alertMessage = "The address is not a valid Bitcoin mainnet address."
             return nil
         }
+
+        return candidate
     }
 
     private func extractedAddress(from rawValue: String) -> String? {
@@ -156,12 +168,18 @@ struct SendDestinationView: View {
 
         return addressOnly
     }
+
+    private func isValidBitcoinMainnetAddress(_ value: String) -> Bool {
+        (try? Address(address: value, network: .bitcoin)) != nil
+    }
 }
 
 private struct ScannerOverlay: View {
     let onScan: (String) -> Void
+    let onScanError: (String) -> Void
     let onPaste: () -> Void
     let onDismiss: () -> Void
+    let errorMessage: String?
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -172,8 +190,10 @@ private struct ScannerOverlay: View {
                 switch result {
                 case .success(let scan):
                     onScan(scan.string)
-                case .failure(let error):
-                    onDismiss()
+                case .failure:
+                    onScanError(
+                        "Unable to read the QR code. Try again or paste the address instead."
+                    )
                 }
             }
             .edgesIgnoringSafeArea(.all)
@@ -197,6 +217,19 @@ private struct ScannerOverlay: View {
                 }
 
                 Spacer()
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color.black.opacity(0.75))
+                        .clipShape(.rect(cornerRadius: 16))
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+                }
 
                 Button(action: onPaste) {
                     Text("Paste Address")
