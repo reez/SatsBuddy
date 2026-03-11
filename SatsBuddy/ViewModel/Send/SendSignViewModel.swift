@@ -81,8 +81,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "Finalizing signed transaction…"
             case .broadcastingTransaction:
                 "Broadcasting transaction…"
-            case .broadcasted(let txid):
-                "Transaction broadcast! TXID: \(txid ?? "unknown")"
+            case .broadcasted:
+                "Transaction broadcasted successfully."
             case .nfcCancelled:
                 "NFC cancelled."
             case .noTagFound:
@@ -94,7 +94,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             case .raw(let message):
                 message
             case .failed(let message):
-                "Failed: \(message)"
+                "Sign and broadcast failed: \(message)"
             }
         }
 
@@ -113,7 +113,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             case .broadcastingTransaction:
                 "Broadcasting transaction…"
             case .broadcasted:
-                "Transaction broadcasted"
+                "Transaction broadcasted successfully"
             default:
                 nil
             }
