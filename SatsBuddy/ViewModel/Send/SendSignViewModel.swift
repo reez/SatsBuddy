@@ -110,8 +110,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             psbt = nil
             psbtBase64 = nil
             psbtError = message
-            state = .error(message)
-            statusMessage = message
+            state = .ready
+            statusMessage = "Enter CVC and tap your card to sign."
         }
     }
 
@@ -133,6 +133,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return
         }
 
+        psbtError = nil
         session?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         session?.alertMessage = "Hold your iPhone near the SatsCard."
