@@ -28,9 +28,12 @@ final class SlotHistoryViewModel {
     func loadHistory(for slot: SlotInfo, network: Network = .bitcoin) async {
         guard let address = slot.address, !address.isEmpty else {
             await MainActor.run {
+                self.currentTaskID = nil
                 self.errorMessage = "No address available for this slot."
                 self.transactions = []
                 self.slotBalance = slot.balance
+                self.isLoading = false
+                self.isSweepBalanceButtonDisabled = true
             }
             return
         }
@@ -44,6 +47,7 @@ final class SlotHistoryViewModel {
             self.currentTaskID = taskID
             self.isLoading = true
             self.errorMessage = nil
+            self.isSweepBalanceButtonDisabled = true
         }
 
         Log.cktap.info(
@@ -83,6 +87,10 @@ final class SlotHistoryViewModel {
                 Log.cktap.error(
                     "[\(traceID)] Failed to fetch balance: \(error.localizedDescription, privacy: .public)"
                 )
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.isSweepBalanceButtonDisabled = true
+                }
             }
 
             await MainActor.run {
@@ -94,6 +102,7 @@ final class SlotHistoryViewModel {
             let didSetError = await MainActor.run { () -> Bool in
                 guard self.currentTaskID == taskID else { return false }
                 self.errorMessage = "Unable to load transactions."
+                self.isSweepBalanceButtonDisabled = true
                 return true
             }
 
@@ -117,6 +126,10 @@ final class SlotHistoryViewModel {
                 Log.cktap.error(
                     "[\(traceID)] Failed to fetch balance after transaction error: \(error.localizedDescription, privacy: .public)"
                 )
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.isSweepBalanceButtonDisabled = true
+                }
             }
 
             await MainActor.run {
