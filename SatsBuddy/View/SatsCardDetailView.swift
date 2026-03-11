@@ -84,6 +84,7 @@ struct SatsCardDetailView: View {
                     Label("Send", systemImage: "paperplane")
                         .labelStyle(.titleAndIcon)
                 }
+                .disabled(!canSendFromActiveSlot)
             }
         }
         .toolbarTitleMenu {
@@ -237,6 +238,15 @@ extension SatsCardDetailView {
 
     private var needsNextSlotSetup: Bool {
         slotForDisplay.isActive && slotForDisplay.isUsed && slotForDisplay.address == nil
+    }
+
+    private var canSendFromActiveSlot: Bool {
+        guard let address = slotForDisplay.address?.trimmingCharacters(in: .whitespacesAndNewlines)
+        else {
+            return false
+        }
+
+        return !address.isEmpty
     }
 
     private func placeholderSlot(for card: SatsCardInfo) -> SlotInfo {
