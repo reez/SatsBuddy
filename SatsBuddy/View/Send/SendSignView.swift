@@ -20,6 +20,17 @@ struct SendSignView: View {
                 .fontWeight(.semibold)
 
             VStack(alignment: .leading, spacing: 8) {
+                Text("Expected card ID")
+                    .font(.headline)
+
+                Text(viewModel.expectedCardIdentifier)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Destination: \(viewModel.address)")
                     .lineLimit(1)
                     .truncationMode(.middle)
