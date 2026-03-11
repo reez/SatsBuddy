@@ -22,6 +22,7 @@ struct SlotHistoryView: View {
     @State private var viewModel: SlotHistoryViewModel
     @State private var slotDetails: SlotInfo
     @State private var isShowingSend = false
+    @State private var isRefreshingBalanceAfterBroadcast = false
 
     init(
         slot: SlotInfo,
@@ -43,6 +44,15 @@ struct SlotHistoryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     SlotRowView(slot: slotDetails, price: price)
+                        .overlay(alignment: .topTrailing) {
+                            if isRefreshingBalanceAfterBroadcast {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                                    .tint(.secondary)
+                                    .padding(.top, 10)
+                                    .padding(.trailing, 4)
+                            }
+                        }
 
                     TransactionsSectionView(
                         slot: slotDetails,
@@ -92,11 +102,17 @@ struct SlotHistoryView: View {
                 slotDetails.balance = newValue
             }
         }
+        .onChange(of: viewModel.isLoading) { _, isLoading in
+            if !isLoading {
+                isRefreshingBalanceAfterBroadcast = false
+            }
+        }
         .navigationDestination(isPresented: $isShowingSend) {
             SendFlowView(
                 slot: slot,
                 card: card,
                 onBroadcastSuccess: {
+                    isRefreshingBalanceAfterBroadcast = true
                     Task {
                         await viewModel.loadHistory(for: slotDetails, network: network)
                     }
