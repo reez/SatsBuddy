@@ -47,18 +47,19 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
     }
     var canStartNfc: Bool {
-        switch state {
-        case .ready, .unsealed, .done:
-            return true
-        default:
-            return false
+        if case .ready = state {
+            return hasPreparedPsbt
         }
+        return false
     }
     var isBroadCasted = false
 
     private var session: NFCTagReaderSession?
     private var psbt: Psbt?
     private var didRunPreflight = false
+    private var hasPreparedPsbt: Bool {
+        psbt != nil && psbtError == nil
+    }
 
     init(
         address: String,
@@ -89,8 +90,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         statusMessage = "Preparing sweep transaction…"
 
         guard let slotPubkey = slot.pubkey, !slotPubkey.isEmpty else {
-            state = .ready
-            statusMessage = "Enter CVC and tap your card to sign."
+            let message =
+                "Unable to prepare the transaction for this slot. Refresh the card and try again."
+            psbtError = message
+            statusMessage = message
+            state = .error(message)
             return
         }
 
@@ -110,8 +114,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             psbt = nil
             psbtBase64 = nil
             psbtError = message
-            state = .ready
-            statusMessage = "Enter CVC and tap your card to sign."
+            state = .error(message)
+            statusMessage = message
         }
     }
 
@@ -120,6 +124,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             if case .preparingPsbt = state {
                 statusMessage = "Still preparing transaction…"
             }
+            return
+        }
+
+        guard hasPreparedPsbt else {
+            let message = psbtError ?? "Transaction not ready. Go back and try again."
+            psbtError = message
+            statusMessage = message
             return
         }
 
@@ -133,7 +144,6 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return
         }
 
-        psbtError = nil
         session?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         session?.alertMessage = "Hold your iPhone near the SatsCard."
@@ -223,6 +233,16 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
 
             let targetSlot = slot.slotNumber
+            guard let preparedPsbt = psbt else {
+                throw NSError(
+                    domain: "SendSign",
+                    code: 6,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            psbtError ?? "Transaction not prepared. Go back and try again."
+                    ]
+                )
+            }
 
             state = .preparingPsbt
             statusMessage = "Reading card status…"
@@ -255,7 +275,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             let signedTx = try await buildPsbtAndSign(
                 detail: detail,
                 targetSlot: targetSlot,
-                satsCard: satsCard
+                satsCard: satsCard,
+                preparedPsbt: preparedPsbt
             ).extractTx()
 
             signedTxid = signedTx.computeTxid().description
@@ -291,29 +312,17 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private func buildPsbtAndSign(
         detail: SlotDetails,
         targetSlot: UInt8,
-        satsCard: SatsCard
+        satsCard: SatsCard,
+        preparedPsbt: Psbt
     ) async throws -> Psbt {
 
         let psbtSigned: Psbt?
         let psbtToSign: Psbt
 
-        if let preparedPsbt = psbt {
-            if let slotPubkey = slot.pubkey, slotPubkey != detail.pubkey {
-                Log.nfc.error(
-                    "[SendSign] Preflight pubkey mismatch: slot=\(slotPubkey, privacy: .private(mask: .hash)) detail=\(detail.pubkey, privacy: .private(mask: .hash))"
-                )
-                psbtToSign = try await bdkClient.buildPsbt(
-                    detail.pubkey,
-                    address,
-                    UInt64(feeRate),
-                    network
-                )
-                psbt = psbtToSign
-                psbtBase64 = psbtToSign.serialize()
-            } else {
-                psbtToSign = preparedPsbt
-            }
-        } else {
+        if let slotPubkey = slot.pubkey, slotPubkey != detail.pubkey {
+            Log.nfc.error(
+                "[SendSign] Preflight pubkey mismatch: slot=\(slotPubkey, privacy: .private(mask: .hash)) detail=\(detail.pubkey, privacy: .private(mask: .hash))"
+            )
             psbtToSign = try await bdkClient.buildPsbt(
                 detail.pubkey,
                 address,
@@ -322,6 +331,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             )
             psbt = psbtToSign
             psbtBase64 = psbtToSign.serialize()
+        } else {
+            psbtToSign = preparedPsbt
         }
 
         let psbtSignedBase64 = try await satsCard.signPsbt(
