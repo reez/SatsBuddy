@@ -144,7 +144,7 @@ struct SatsCardDetailView: View {
             cardViewModel.refreshPrice()
             cardViewModel.detailLoadingCardIdentifier = updatedCard.cardIdentifier
         }
-        .onChange(of: viewModel.isLoading) { isLoading in
+        .onChange(of: viewModel.isLoading) { _, isLoading in
             let identifier = updatedCard.cardIdentifier
             if isLoading {
                 cardViewModel.detailLoadingCardIdentifier = identifier

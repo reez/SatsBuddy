@@ -87,7 +87,7 @@ struct SlotHistoryView: View {
         .onDisappear {
             viewModel.cancel()
         }
-        .onChange(of: viewModel.slotBalance) { newValue in
+        .onChange(of: viewModel.slotBalance) { _, newValue in
             if slotDetails.balance != newValue {
                 slotDetails.balance = newValue
             }
