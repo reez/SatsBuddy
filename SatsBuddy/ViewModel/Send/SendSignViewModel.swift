@@ -164,7 +164,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             nfcError.code == .readerSessionInvalidationErrorUserCanceled
         {
             statusMessage = "NFC cancelled."
-            state = .idle
+            state = .ready
             return
         }
 
