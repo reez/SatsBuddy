@@ -61,6 +61,7 @@ struct SendFlowView: View {
                         address: address,
                         feeRate: fee,
                         slot: slot,
+                        expectedCardIdentifier: card.cardIdentifier,
                         network: .bitcoin
                     ),
                     onDone: {

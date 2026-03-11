@@ -28,6 +28,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     let address: String
     let feeRate: Int
     let slot: SlotInfo
+    let expectedCardIdentifier: String
     let network: Network
     private let bdkClient: BdkClient
 
@@ -65,12 +66,14 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         address: String,
         feeRate: Int,
         slot: SlotInfo,
+        expectedCardIdentifier: String,
         network: Network,
         bdkClient: BdkClient = .live
     ) {
         self.address = address
         self.feeRate = feeRate
         self.slot = slot
+        self.expectedCardIdentifier = expectedCardIdentifier
         self.network = network
         self.bdkClient = bdkClient
         self.state = .preparingPsbt
@@ -248,6 +251,21 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             statusMessage = "Reading card status…"
 
             let liveStatus = await satsCard.status()
+            let liveCardIdentifier =
+                liveStatus.cardIdent.isEmpty ? liveStatus.pubkey : liveStatus.cardIdent
+            guard liveCardIdentifier == expectedCardIdentifier else {
+                Log.nfc.error(
+                    "[SendSign] Wrong card detected: expected=\(self.expectedCardIdentifier, privacy: .private(mask: .hash)) actual=\(liveCardIdentifier, privacy: .private(mask: .hash))"
+                )
+                throw NSError(
+                    domain: "SendSign",
+                    code: 6,
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "Wrong SATSCARD detected. Tap the original card and try again."
+                    ]
+                )
+            }
             Log.nfc.info(
                 "[SendSign] Live status: activeSlot=\(liveStatus.activeSlot) targetSlot=\(targetSlot)"
             )
@@ -323,14 +341,14 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             Log.nfc.error(
                 "[SendSign] Preflight pubkey mismatch: slot=\(slotPubkey, privacy: .private(mask: .hash)) detail=\(detail.pubkey, privacy: .private(mask: .hash))"
             )
-            psbtToSign = try await bdkClient.buildPsbt(
-                detail.pubkey,
-                address,
-                UInt64(feeRate),
-                network
+            throw NSError(
+                domain: "SendSign",
+                code: 7,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Tapped card slot does not match the prepared transaction."
+                ]
             )
-            psbt = psbtToSign
-            psbtBase64 = psbtToSign.serialize()
         } else {
             psbtToSign = preparedPsbt
         }

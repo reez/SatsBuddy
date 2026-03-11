@@ -134,6 +134,7 @@ struct SendSignView: View {
                 address: "bc1qexample",
                 balance: 10_000
             ),
+            expectedCardIdentifier: "DEMO-CARD",
             network: .bitcoin
         ),
         onDone: {}
