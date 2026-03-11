@@ -25,6 +25,18 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         case error(String)
     }
 
+    private enum SlotAccessResult {
+        case dumped(SlotDetails)
+        case unsealed(SlotDetails)
+
+        var detail: SlotDetails {
+            switch self {
+            case .dumped(let detail), .unsealed(let detail):
+                return detail
+            }
+        }
+    }
+
     let address: String
     let feeRate: Int
     let slot: SlotInfo
@@ -33,7 +45,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private let bdkClient: BdkClient
 
     var cvc: String = ""
-    var statusMessage: String = "Enter CVC and tap your card to unseal."
+    var statusMessage: String = "Enter CVC and tap your card to sign."
     var psbtBase64: String?
     var signedTxid: String?
     var psbtError: String?
@@ -149,11 +161,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         session?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
-        session?.alertMessage = "Hold your iPhone near the SatsCard."
+        session?.alertMessage = "Hold your iPhone near the SatsCard to continue."
         session?.begin()
 
         state = .tapping
-        statusMessage = "Hold near card to unseal…"
+        statusMessage = "Hold near card to sign…"
         Log.nfc.info("[SendSign] NFC session started for signing")
     }
 
@@ -231,7 +243,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 throw NSError(
                     domain: "SendSign",
                     code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Only SATSCARD supported for sweep"]
+                    userInfo: [
+                        NSLocalizedDescriptionKey: "Only SATSCARD supported for this signing flow"
+                    ]
                 )
             }
 
@@ -271,7 +285,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             )
 
             guard
-                let detail = await dumpOrUnseal(
+                let slotAccess = await dumpOrUnseal(
                     targetSlot: targetSlot,
                     activeSlot: liveStatus.activeSlot,
                     satsCard: satsCard
@@ -280,14 +294,23 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 throw NSError(
                     domain: "SendSign",
                     code: 4,
-                    userInfo: [NSLocalizedDescriptionKey: "Unseal or dump failed"]
+                    userInfo: [NSLocalizedDescriptionKey: "Failed to access slot details."]
                 )
             }
 
-            Log.nfc.info(
-                "[SendSign] Slot \(targetSlot) dumped/unsealed successfully, building and signing tx…"
-            )
-            session?.alertMessage = "Slot unsealed! Building transaction…"
+            let detail = slotAccess.detail
+            switch slotAccess {
+            case .dumped:
+                Log.nfc.info(
+                    "[SendSign] Slot \(targetSlot) details retrieved via dump, building and signing tx…"
+                )
+                session?.alertMessage = "Card read. Building transaction…"
+            case .unsealed:
+                Log.nfc.info(
+                    "[SendSign] Active slot \(targetSlot) unsealed, building and signing tx…"
+                )
+                session?.alertMessage = "Slot unsealed. Building transaction…"
+            }
 
             statusMessage = "Building and signing transaction…"
             let signedTx = try await buildPsbtAndSign(
@@ -378,15 +401,15 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         targetSlot: UInt8,
         activeSlot: UInt8,
         satsCard: SatsCard
-    ) async -> SlotDetails? {
+    ) async -> SlotAccessResult? {
         do {
-            statusMessage = "Dumping slot…"
+            statusMessage = "Reading slot details…"
             Log.nfc.info(
-                "[SendSign] Dumping slot…"
+                "[SendSign] Reading slot details via dump…"
             )
             let detail = try await satsCard.dump(slot: targetSlot, cvc: cvc)
 
-            return detail
+            return .dumped(detail)
 
         } catch {
             Log.nfc.error(
@@ -400,13 +423,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     return nil
                 }
 
-                statusMessage = "Unsealing slot…"
+                statusMessage = "Unsealing active slot…"
                 Log.nfc.info(
-                    "[SendSign] Unsealing slot…"
+                    "[SendSign] Unsealing active slot…"
                 )
                 let detail = try await satsCard.unseal(cvc: cvc)
 
-                return detail
+                return .unsealed(detail)
 
             } catch {
                 Log.nfc.error(
