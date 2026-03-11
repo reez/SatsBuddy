@@ -92,23 +92,17 @@ struct SlotHistoryView: View {
                 slotDetails.balance = newValue
             }
         }
-        .background(
-            NavigationLink(
-                destination: SendFlowView(
-                    slot: slot,
-                    card: card,
-                    onBroadcastSuccess: {
-                        Task {
-                            await viewModel.loadHistory(for: slotDetails, network: network)
-                        }
+        .navigationDestination(isPresented: $isShowingSend) {
+            SendFlowView(
+                slot: slot,
+                card: card,
+                onBroadcastSuccess: {
+                    Task {
+                        await viewModel.loadHistory(for: slotDetails, network: network)
                     }
-                ),
-                isActive: $isShowingSend
-            ) {
-                EmptyView()
-            }
-            .hidden()
-        )
+                }
+            )
+        }
     }
 }
 

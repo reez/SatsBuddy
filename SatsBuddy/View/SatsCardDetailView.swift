@@ -61,21 +61,15 @@ struct SatsCardDetailView: View {
         .padding()
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
-        .background(
-            NavigationLink(
-                destination: SendFlowView(
-                    slot: slotForDisplay,
-                    card: updatedCard,
-                    onBroadcastSuccess: {
-                        cardViewModel.refreshCard(updatedCard)
-                    }
-                ),
-                isActive: $isShowingSend
-            ) {
-                EmptyView()
-            }
-            .hidden()
-        )
+        .navigationDestination(isPresented: $isShowingSend) {
+            SendFlowView(
+                slot: slotForDisplay,
+                card: updatedCard,
+                onBroadcastSuccess: {
+                    cardViewModel.refreshCard(updatedCard)
+                }
+            )
+        }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
