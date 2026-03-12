@@ -66,7 +66,7 @@ struct SatsCardDetailView: View {
                 slot: slotForDisplay,
                 card: updatedCard,
                 onBroadcastSuccess: {
-                    cardViewModel.refreshCard(updatedCard)
+                    viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
                 }
             )
         }

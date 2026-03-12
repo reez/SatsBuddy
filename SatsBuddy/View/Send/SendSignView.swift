@@ -12,6 +12,7 @@ struct SendSignView: View {
     @State var viewModel: SendSignViewModel
     let onDone: () -> Void
     @FocusState private var cvcFocused: Bool
+    @State private var didFinishFlow = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -127,6 +128,16 @@ struct SendSignView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.runPreflightIfNeeded()
+        }
+        .onChange(of: viewModel.isBroadCasted) { _, isBroadCasted in
+            guard isBroadCasted, !didFinishFlow else { return }
+            didFinishFlow = true
+            cvcFocused = false
+
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(600))
+                onDone()
+            }
         }
     }
 }
