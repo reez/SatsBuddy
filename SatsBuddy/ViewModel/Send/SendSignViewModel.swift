@@ -187,18 +187,28 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         psbtError = nil
         setStatusMessage(.preparingSweep)
 
-        guard let slotPubkey = slot.pubkey, !slotPubkey.isEmpty else {
-            let message =
-                "Unable to prepare the transaction for this slot. Refresh the card and try again."
-            psbtError = message
-            setStatusMessage(.raw(message))
-            state = .error(message)
-            return
-        }
-
         do {
+            let sourceDescriptor: String
+            if let slotDescriptor = slot.pubkeyDescriptor?.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ), !slotDescriptor.isEmpty {
+                sourceDescriptor = slotDescriptor
+            } else if let slotPubkey = slot.pubkey?.trimmingCharacters(in: .whitespacesAndNewlines),
+                !slotPubkey.isEmpty
+            {
+                // Compatibility fallback for older cached slot data that predates descriptor storage.
+                sourceDescriptor = "wpkh(\(slotPubkey))"
+            } else {
+                let message =
+                    "Unable to prepare the transaction for this slot. Refresh the card and try again."
+                psbtError = message
+                setStatusMessage(.raw(message))
+                state = .error(message)
+                return
+            }
+
             let preparedPsbt = try await bdkClient.buildPsbt(
-                slotPubkey,
+                sourceDescriptor,
                 address,
                 UInt64(feeRate),
                 network
@@ -439,7 +449,22 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         let psbtSigned: Psbt?
         let psbtToSign: Psbt
 
-        if let slotPubkey = slot.pubkey, slotPubkey != detail.pubkey {
+        if let slotDescriptor = slot.pubkeyDescriptor,
+            !slotDescriptor.isEmpty,
+            slotDescriptor != detail.pubkeyDescriptor
+        {
+            Log.nfc.error(
+                "[SendSign] Preflight descriptor mismatch: slot=\(slotDescriptor, privacy: .private(mask: .hash)) detail=\(detail.pubkeyDescriptor, privacy: .private(mask: .hash))"
+            )
+            throw NSError(
+                domain: "SendSign",
+                code: 7,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Tapped card slot does not match the prepared transaction."
+                ]
+            )
+        } else if let slotPubkey = slot.pubkey, slotPubkey != detail.pubkey {
             Log.nfc.error(
                 "[SendSign] Preflight pubkey mismatch: slot=\(slotPubkey, privacy: .private(mask: .hash)) detail=\(detail.pubkey, privacy: .private(mask: .hash))"
             )

@@ -160,12 +160,11 @@ private struct BdkService {
     }
 
     func buildPsbt(
-        pubkey: String,
+        descriptorString: String,
         destinationAddress: String,
         feeRate: UInt64,
         network: Network
     ) async throws -> Psbt {
-        let descriptorString = "wpkh(\(pubkey))"
         let descriptor = try Descriptor(descriptor: descriptorString, network: network)
         let wallet = try createSingleWallet(descriptor: descriptor, network: network)
 
@@ -218,11 +217,11 @@ private struct BdkService {
         let update = try esplora.sync(request: syncRequest, parallelRequests: 4)
         try wallet.applyUpdate(update: update)
     }
-    
+
     private func getEsplora(network: Network) -> EsploraClient {
         let base = "\(mempoolBaseURL(for: network))/api"
         let esplora = EsploraClient(url: base)
-        
+
         return esplora
     }
 
@@ -319,9 +318,9 @@ extension BdkClient {
                 limit: limit
             )
         },
-        buildPsbt: { key, destination, feeRate, network in
+        buildPsbt: { descriptor, destination, feeRate, network in
             try await BdkService().buildPsbt(
-                pubkey: key,
+                descriptorString: descriptor,
                 destinationAddress: destination,
                 feeRate: feeRate,
                 network: network
