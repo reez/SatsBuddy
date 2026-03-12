@@ -18,7 +18,7 @@ struct AddressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Slot \(activeSlot)/\(totalSlots)")
+            Text("Slot \(activeSlot + 1)/\(totalSlots)")
 
             Text("\(pubkey)")
                 .truncationMode(.middle)

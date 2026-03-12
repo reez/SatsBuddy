@@ -47,8 +47,8 @@ struct SatsCardView: View {
                         .fontWeight(.medium)
                 }
 
-                if let activeSlot = card.activeSlot, let totalSlots = card.totalSlots {
-                    Text("Slot \(activeSlot)/\(totalSlots)")
+                if let _ = card.activeSlot, let totalSlots = card.totalSlots {
+                    Text("Slot \(card.formattedActiveSlot)/\(totalSlots)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

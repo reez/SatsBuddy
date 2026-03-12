@@ -109,7 +109,7 @@ final class CkTapCardService {
 
         var slots: [SlotInfo] = []
         for slotNumber in 0..<status.numSlots {
-            let isActive = status.activeSlot == slotNumber
+            let isActive = status.activeSlot == slotNumber && status.addr != nil
             let isUsed = slotNumber <= status.activeSlot
 
             var slotPubkey: String?

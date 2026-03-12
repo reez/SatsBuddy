@@ -348,14 +348,14 @@ extension ActiveSlotView {
     }
 
     fileprivate var slotPositionText: String {
-        if let activeSlot = card.activeSlot,
+        if let _ = card.activeSlot,
             let totalSlots = card.totalSlots
         {
-            return "\(activeSlot)/\(totalSlots)"
+            return "\(card.formattedActiveSlot)/\(totalSlots)"
         }
 
         if let totalSlots = card.totalSlots {
-            return "\(slot.slotNumber)/\(totalSlots)"
+            return "\(slot.slotNumber + 1)/\(totalSlots)"
         }
 
         return "--/--"

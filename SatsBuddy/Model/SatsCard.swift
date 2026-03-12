@@ -52,6 +52,10 @@ struct SatsCardInfo: Identifiable, Codable {
     var dateScanned: Date  // Made mutable for refresh
     var label: String?
     let slots: [SlotInfo]
+    
+    var formattedActiveSlot: Int {
+        return Int(activeSlot ?? .zero) + 1
+    }
 
     init(
         id: UUID = UUID(),
