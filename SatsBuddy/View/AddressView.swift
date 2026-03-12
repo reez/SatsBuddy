@@ -16,9 +16,13 @@ struct AddressView: View {
 
     @State private var copied = false
 
+    private var slotPositionText: String {
+        "\(Int(activeSlot) + 1)/\(totalSlots)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Slot \(activeSlot)/\(totalSlots)")
+            Text("Slot \(slotPositionText)")
 
             Text("\(pubkey)")
                 .truncationMode(.middle)
