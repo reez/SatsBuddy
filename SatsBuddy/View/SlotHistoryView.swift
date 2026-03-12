@@ -89,7 +89,7 @@ struct SlotHistoryView: View {
             .accessibilityLabel("Sweep balance")
             .disabled(viewModel.isSweepBalanceButtonDisabled)
         }
-        .navigationTitle("Slot \(slot.slotNumber)")
+        .navigationTitle("Slot \(slot.displaySlotNumber)")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: slot.id) {
             await viewModel.loadHistory(for: slotDetails, network: network)

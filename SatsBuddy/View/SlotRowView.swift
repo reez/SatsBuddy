@@ -171,7 +171,7 @@ private struct SlotSummaryHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
             if showsSlotTitle {
-                Text("Slot \(slot.slotNumber)")
+                Text("Slot \(slot.displaySlotNumber)")
                     .font(.body)
                     .fontWeight(.medium)
             }

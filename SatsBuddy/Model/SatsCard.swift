@@ -36,6 +36,10 @@ struct SlotInfo: Identifiable, Codable {
         self.address = address
         self.balance = balance
     }
+
+    var displaySlotNumber: Int {
+        Int(slotNumber) + 1
+    }
 }
 
 struct SatsCardInfo: Identifiable, Codable {
@@ -100,4 +104,8 @@ struct SatsCardInfo: Identifiable, Codable {
 
     /// Stable hardware identifier exposed by CKTap, used to merge scans.
     var cardIdentifier: String { cardIdent ?? pubkey }
+
+    var displayActiveSlotNumber: Int? {
+        activeSlot.map { Int($0) + 1 }
+    }
 }
