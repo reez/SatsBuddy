@@ -177,9 +177,12 @@ final class CkTapCardService {
                     }
                 }
 
-                // Ensure we still have a pubkey for display/logging even if read/dump fail.
-                if slotPubkey == nil {
-                    slotPubkey = status.pubkey
+                if slotPubkey == nil,
+                    slotDescriptor == nil || slotDescriptor?.isEmpty == true
+                {
+                    Log.cktap.error(
+                        "Unable to determine descriptor or pubkey for active slot \(slotNumber) from read/dump data"
+                    )
                 }
 
                 Log.cktap.debug(
