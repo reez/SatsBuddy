@@ -77,8 +77,8 @@ class SatsCardDetailViewModel {
             }
         }
 
-        guard let cardAddress = card.address else {
-            Log.cktap.debug("[\(traceID)] Missing card address; skipping balance fetch")
+        guard let activeSlotAddress = activeSlotAddress(for: card) else {
+            Log.cktap.debug("[\(traceID)] Missing active slot address; skipping balance fetch")
             await MainActor.run {
                 if self.currentFetchToken == fetchToken {
                     self.isLoading = false
@@ -88,12 +88,12 @@ class SatsCardDetailViewModel {
         }
 
         Log.cktap.debug(
-            "[\(traceID)] Fetching balance for address \(cardAddress, privacy: .private(mask: .hash))"
+            "[\(traceID)] Fetching balance for active slot address \(activeSlotAddress, privacy: .private(mask: .hash))"
         )
 
         do {
             let networkStart = Date()
-            let balance = try await bdkClient.getBalanceFromAddress(cardAddress, .bitcoin)
+            let balance = try await bdkClient.getBalanceFromAddress(activeSlotAddress, .bitcoin)
             let networkDuration = Date().timeIntervalSince(networkStart)
             let totalDuration = Date().timeIntervalSince(loadStartedAt)
             let networkDurationString = String(format: "%.3f", networkDuration)
@@ -139,5 +139,22 @@ class SatsCardDetailViewModel {
                 "[\(traceID)] Total time before failure: \(totalDurationString)s"
             )
         }
+    }
+
+    private func activeSlotAddress(for card: SatsCardInfo) -> String? {
+        if let slotAddress = card.slots.first(where: { $0.isActive })?.address?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !slotAddress.isEmpty
+        {
+            return slotAddress
+        }
+
+        if let cardAddress = card.address?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !cardAddress.isEmpty
+        {
+            return cardAddress
+        }
+
+        return nil
     }
 }
