@@ -37,6 +37,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
     }
 
+    private struct PendingInvalidationOutcome {
+        let phase: StatusPhase
+        let state: State
+    }
+
     private enum StatusPhase {
         case preparingSweep
         case readyToSignAndBroadcast
@@ -45,6 +50,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         case nfcUnavailable
         case waitingForCard
         case checkingCard
+        case waitingForSecurityDelay(seconds: Int)
         case readingSlotDetails
         case unsealingActiveSlot
         case signingTransaction
@@ -60,62 +66,70 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         var screenMessage: String {
             switch self {
             case .preparingSweep:
-                "Preparing sweep transaction…"
+                return "Preparing sweep transaction…"
             case .readyToSignAndBroadcast:
-                "Transaction ready. Enter CVC and tap your card to sign and broadcast."
+                return "Transaction ready. Enter CVC and tap your card to sign and broadcast."
             case .stillPreparing:
-                "Still preparing transaction…"
+                return "Still preparing transaction…"
             case .enterCvc:
-                "Enter CVC to continue."
+                return "Enter CVC to continue."
             case .nfcUnavailable:
-                "NFC not available on this device."
+                return "NFC not available on this device."
             case .waitingForCard:
-                "Hold your iPhone near the SATSCARD."
+                return "Hold your iPhone near the SATSCARD."
             case .checkingCard:
-                "Checking SATSCARD status…"
+                return "Checking SATSCARD status…"
+            case .waitingForSecurityDelay(let seconds):
+                let unit = seconds == 1 ? "second" : "seconds"
+                return
+                    "Card security delay active. Keep the SATSCARD near your iPhone for about \(seconds) \(unit) while it cools off."
             case .readingSlotDetails:
-                "Reading slot details…"
+                return "Reading slot details…"
             case .unsealingActiveSlot:
-                "Unsealing active slot…"
+                return "Unsealing active slot…"
             case .signingTransaction:
-                "Finalizing signed transaction…"
+                return "Finalizing signed transaction…"
             case .broadcastingTransaction:
-                "Broadcasting transaction…"
+                return "Broadcasting transaction…"
             case .broadcasted:
-                "Transaction broadcasted successfully."
+                return "Transaction broadcasted successfully."
             case .nfcCancelled:
-                "NFC cancelled."
+                return "NFC cancelled."
             case .noTagFound:
-                "No tag found."
+                return "No SATSCARD detected. Hold your iPhone near the card and try again."
             case .connectionFailed:
-                "Connection failed."
+                return
+                    "Lost connection to the SATSCARD. Keep it near the top of your iPhone and try again."
             case .unsupportedTag:
-                "Unsupported tag."
+                return "This tag is not a supported SATSCARD. Try the original card again."
             case .raw(let message):
-                message
+                return message
             case .failed(let message):
-                "Sign and broadcast failed: \(message)"
+                return "Sign and broadcast failed: \(message)"
             }
         }
 
         var nfcAlertMessage: String? {
             switch self {
             case .waitingForCard:
-                "Hold your iPhone near the SATSCARD."
+                return "Hold your iPhone near the SATSCARD."
             case .checkingCard:
-                "Checking SATSCARD status…"
+                return "Checking SATSCARD status…"
+            case .waitingForSecurityDelay(let seconds):
+                let unit = seconds == 1 ? "second" : "seconds"
+                return "Cooling off for about \(seconds) \(unit)…"
             case .readingSlotDetails:
-                "Reading slot details…"
+                return "Reading slot details…"
             case .unsealingActiveSlot:
-                "Unsealing active slot…"
+                return "Unsealing active slot…"
             case .signingTransaction:
-                "Finalizing signed transaction…"
+                return "Finalizing signed transaction…"
             case .broadcastingTransaction:
-                "Broadcasting transaction…"
+                return "Broadcasting transaction…"
             case .broadcasted:
-                "Transaction broadcasted successfully"
+                return "Transaction broadcasted successfully"
             default:
-                nil
+                return nil
             }
         }
     }
@@ -153,6 +167,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private var session: NFCTagReaderSession?
     private var psbt: Psbt?
     private var didRunPreflight = false
+    private var pendingInvalidationOutcome: PendingInvalidationOutcome?
+    private var latestAuthDelaySeconds: Int?
     private var hasPreparedPsbt: Bool {
         psbt != nil && psbtError == nil
     }
@@ -252,6 +268,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return
         }
 
+        pendingInvalidationOutcome = nil
+        latestAuthDelaySeconds = nil
         session?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         session?.begin()
@@ -269,12 +287,21 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         _ session: NFCTagReaderSession,
         didInvalidateWithError error: any Error
     ) {
+        self.session = nil
+
         // If we already succeeded, ignore spurious invalidations.
         switch state {
         case .done, .unsealed:
             return
         default:
             break
+        }
+
+        if let pendingInvalidationOutcome {
+            self.pendingInvalidationOutcome = nil
+            setStatusMessage(pendingInvalidationOutcome.phase)
+            state = pendingInvalidationOutcome.state
+            return
         }
 
         if case let nfcError as NFCReaderError = error,
@@ -294,9 +321,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
     func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         guard let first = tags.first else {
-            session.invalidate(errorMessage: "No tag found.")
-            setStatusMessage(.noTagFound)
-            state = .error("No tag found.")
+            finishAfterSessionInvalidation(
+                phase: .noTagFound,
+                nextState: .ready,
+                alertMessage: "No SATSCARD detected."
+            )
             return
         }
 
@@ -306,19 +335,23 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 Log.nfc.error(
                     "[SendSign] connect failed: \(error.localizedDescription, privacy: .public)"
                 )
-                session.invalidate(errorMessage: "Connection failed.")
                 Task { @MainActor in
-                    self.setStatusMessage(.connectionFailed)
-                    self.state = .error(error.localizedDescription)
+                    self.finishAfterSessionInvalidation(
+                        phase: .connectionFailed,
+                        nextState: .ready,
+                        alertMessage: "Connection failed."
+                    )
                 }
                 return
             }
 
             guard case .iso7816(let iso7816Tag) = first else {
-                session.invalidate(errorMessage: "Unsupported tag.")
                 Task { @MainActor in
-                    self.setStatusMessage(.unsupportedTag)
-                    self.state = .error("Unsupported tag.")
+                    self.finishAfterSessionInvalidation(
+                        phase: .unsupportedTag,
+                        nextState: .ready,
+                        alertMessage: "Unsupported tag."
+                    )
                 }
                 return
             }
@@ -356,7 +389,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             state = .preparingPsbt
             setStatusMessage(.checkingCard)
 
-            let liveStatus = await satsCard.status()
+            var liveStatus = await satsCard.status()
             let liveCardIdentifier =
                 liveStatus.cardIdent.isEmpty ? liveStatus.pubkey : liveStatus.cardIdent
             guard liveCardIdentifier == expectedCardIdentifier else {
@@ -372,23 +405,27 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     ]
                 )
             }
+
+            latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
+            if let authDelay = latestAuthDelaySeconds, authDelay > 0 {
+                setStatusMessage(.waitingForSecurityDelay(seconds: authDelay))
+                Log.nfc.info(
+                    "[SendSign] Auth delay active for \(authDelay) seconds. Waiting for cooldown…"
+                )
+                try await satsCard.wait()
+                liveStatus = await satsCard.status()
+                latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
+            }
+
             Log.nfc.info(
                 "[SendSign] Live status: activeSlot=\(liveStatus.activeSlot) targetSlot=\(targetSlot)"
             )
 
-            guard
-                let slotAccess = await dumpOrUnseal(
-                    targetSlot: targetSlot,
-                    activeSlot: liveStatus.activeSlot,
-                    satsCard: satsCard
-                )
-            else {
-                throw NSError(
-                    domain: "SendSign",
-                    code: 4,
-                    userInfo: [NSLocalizedDescriptionKey: "Failed to access slot details."]
-                )
-            }
+            let slotAccess = try await dumpOrUnseal(
+                targetSlot: targetSlot,
+                activeSlot: liveStatus.activeSlot,
+                satsCard: satsCard
+            )
 
             let detail = slotAccess.detail
             switch slotAccess {
@@ -416,8 +453,16 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] Signed txid=\(self.signedTxid ?? "nil", privacy: .private(mask: .hash))"
             )
 
-            setStatusMessage(.broadcastingTransaction)
-            try bdkClient.broadcast(signedTx, network)
+            do {
+                setStatusMessage(.broadcastingTransaction)
+                try bdkClient.broadcast(signedTx, network)
+            } catch {
+                Log.nfc.error(
+                    "[SendSign] broadcast error: \(error.localizedDescription, privacy: .public)"
+                )
+                handleTerminalFailure(error)
+                return
+            }
 
             cvc = ""
             state = .done
@@ -433,9 +478,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             Log.nfc.error(
                 "[SendSign] handleTag error: \(error.localizedDescription, privacy: .public)"
             )
-            state = .error(error.localizedDescription)
-            setStatusMessage(.failed(error.localizedDescription))
-            session?.invalidate(errorMessage: "Error: \(error.localizedDescription)")
+            handleRecoverableFailure(error)
         }
     }
 
@@ -505,7 +548,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         targetSlot: UInt8,
         activeSlot: UInt8,
         satsCard: SatsCard
-    ) async -> SlotAccessResult? {
+    ) async throws -> SlotAccessResult {
         do {
             setStatusMessage(.readingSlotDetails)
             Log.nfc.info(
@@ -516,6 +559,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             return .dumped(detail)
 
         } catch {
+            let dumpError = error
             Log.nfc.error(
                 "[SendSign] Dump failed with error: \(error.localizedDescription). Attempting unseal fallback if target slot is active."
             )
@@ -524,7 +568,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     Log.nfc.error(
                         "[SendSign] Not falling back to unseal: targetSlot=\(targetSlot) activeSlot=\(activeSlot)"
                     )
-                    return nil
+                    throw dumpError
                 }
 
                 setStatusMessage(.unsealingActiveSlot)
@@ -539,10 +583,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 Log.nfc.error(
                     "[SendSign] Unseal failed with error: \(error.localizedDescription)."
                 )
-
+                throw error
             }
-
-            return nil
         }
     }
 
@@ -558,6 +600,174 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
         }
         return "Failed to build PSBT: \(error.localizedDescription)"
+    }
+
+    private func handleRecoverableFailure(_ error: Error) {
+        let message = userFacingMessage(for: error, includeRetryInstruction: true)
+        finishAfterSessionInvalidation(
+            phase: .raw(message),
+            nextState: .ready,
+            alertMessage: message
+        )
+    }
+
+    private func handleTerminalFailure(_ error: Error) {
+        let message = userFacingMessage(for: error, includeRetryInstruction: false)
+        finishAfterSessionInvalidation(
+            phase: .failed(message),
+            nextState: .error(message),
+            alertMessage: message
+        )
+    }
+
+    private func finishAfterSessionInvalidation(
+        phase: StatusPhase,
+        nextState: State,
+        alertMessage: String
+    ) {
+        pendingInvalidationOutcome = PendingInvalidationOutcome(
+            phase: phase,
+            state: nextState
+        )
+
+        guard let session else {
+            pendingInvalidationOutcome = nil
+            setStatusMessage(phase)
+            state = nextState
+            return
+        }
+
+        session.invalidate(errorMessage: alertMessage)
+    }
+
+    private func userFacingMessage(
+        for error: Error,
+        includeRetryInstruction: Bool
+    ) -> String {
+        if let cktapError = cktapError(from: error) {
+            return userFacingMessage(
+                for: cktapError,
+                includeRetryInstruction: includeRetryInstruction
+            )
+        }
+
+        if let dumpError = error as? DumpError {
+            switch dumpError {
+            case .SlotSealed:
+                return "This slot is still sealed. Enter the correct CVC and try again."
+            case .SlotUnused:
+                return
+                    "This slot has not been used yet. Refresh the card details and choose a funded slot."
+            case .SlotTampered:
+                return
+                    "This slot was already unsealed. Refresh the card details and confirm you are sending from the right slot."
+            case .Key(let err):
+                return "Couldn't read the slot keys: \(err.localizedDescription)"
+            case .CkTap:
+                break
+            }
+        }
+
+        if let signPsbtError = error as? SignPsbtError {
+            switch signPsbtError {
+            case .SlotNotUnsealed:
+                return
+                    "This slot needs to be unsealed before it can sign. Enter the correct CVC and try again."
+            case .PubkeyMismatch:
+                return "Tapped card slot does not match the prepared transaction."
+            case .MissingUtxo, .MissingPubkey, .InvalidPath, .InvalidScript, .WitnessProgram:
+                return
+                    "The transaction could not be signed with this slot. Go back, refresh the card details, and try again."
+            case .SighashError(let msg), .SignatureError(let msg), .PsbtEncoding(let msg),
+                .Base64Encoding(let msg):
+                return "The card could not finish signing: \(msg)"
+            case .CkTap:
+                break
+            }
+        }
+
+        if let nfcError = error as? NFCReaderError,
+            nfcError.code == .readerSessionInvalidationErrorUserCanceled
+        {
+            return StatusPhase.nfcCancelled.screenMessage
+        }
+
+        return error.localizedDescription
+    }
+
+    private func userFacingMessage(
+        for error: CkTapError,
+        includeRetryInstruction: Bool
+    ) -> String {
+        switch error {
+        case .Card(let cardError):
+            switch cardError {
+            case .BadAuth:
+                return "Incorrect CVC. Check the code printed on the SATSCARD and try again."
+            case .NeedsAuth:
+                return "Enter the SATSCARD's CVC to continue."
+            case .RateLimited:
+                let seconds = max(latestAuthDelaySeconds ?? 15, 1)
+                let unit = seconds == 1 ? "second" : "seconds"
+                if includeRetryInstruction {
+                    return
+                        "Too many incorrect CVC attempts. Keep the SATSCARD near your iPhone for about \(seconds) \(unit) while it cools off, then try again with the correct CVC."
+                }
+                return
+                    "Too many incorrect CVC attempts. The SATSCARD needs about \(seconds) \(unit) to cool off."
+            case .InvalidState:
+                return
+                    "The SATSCARD is not in the right state for that action. Refresh the card details and try again."
+            case .UnluckyNumber:
+                return
+                    "The card asked to retry the signature. Keep it steady near your iPhone and try again."
+            case .BadArguments, .UnknownCommand, .InvalidCommand, .WeakNonce, .BadCbor,
+                .BackupFirst:
+                return "The SATSCARD rejected that request. Try again."
+            }
+        case .Transport(let msg):
+            if msg.localizedCaseInsensitiveContains("no response from tag")
+                || msg.localizedCaseInsensitiveContains("tag response error")
+            {
+                return
+                    "The SATSCARD stopped responding. Keep it steady near the top of your iPhone and try again."
+            }
+            if msg.localizedCaseInsensitiveContains("timed out") {
+                return
+                    "The SATSCARD took too long to respond. Keep it steady near the top of your iPhone and try again."
+            }
+            if msg.localizedCaseInsensitiveContains("invalid apdu") {
+                return "The SATSCARD request was invalid. Try again."
+            }
+            return "Lost connection to the SATSCARD. \(msg)"
+        case .CborDe, .CborValue:
+            return "The SATSCARD returned data the app couldn't read. Try again."
+        case .UnknownCardType:
+            return "Only SATSCARD is supported in this signing flow."
+        }
+    }
+
+    private func cktapError(from error: Error) -> CkTapError? {
+        switch error {
+        case let error as CkTapError:
+            return error
+        case let error as DumpError:
+            if case .CkTap(let cktapError) = error {
+                return cktapError
+            }
+        case let error as SignPsbtError:
+            if case .CkTap(let cktapError) = error {
+                return cktapError
+            }
+        case let error as UnsealError:
+            if case .CkTap(let cktapError) = error {
+                return cktapError
+            }
+        default:
+            break
+        }
+
+        return nil
     }
 
     private func setStatusMessage(_ phase: StatusPhase) {
