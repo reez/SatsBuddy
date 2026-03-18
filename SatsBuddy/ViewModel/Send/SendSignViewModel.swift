@@ -270,7 +270,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         pendingInvalidationOutcome = nil
         latestAuthDelaySeconds = nil
-        session?.invalidate()
+        let previousSession = session
+        session = nil
+        previousSession?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         session?.begin()
 
@@ -287,6 +289,11 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         _ session: NFCTagReaderSession,
         didInvalidateWithError error: any Error
     ) {
+        guard self.session === session else {
+            Log.nfc.debug("[SendSign] Ignoring stale NFC invalidation")
+            return
+        }
+
         self.session = nil
 
         // If we already succeeded, ignore spurious invalidations.
