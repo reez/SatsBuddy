@@ -10,20 +10,6 @@ import CoreNFC
 import Foundation
 import os
 
-enum NFCError: Error, LocalizedError {
-    case connectionFailed(String)
-    case timeout(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .connectionFailed(let message):
-            return "NFC Connection Failed: \(message)"
-        case .timeout(let message):
-            return "NFC Timeout: \(message)"
-        }
-    }
-}
-
 final class NFCTransport: NSObject, CkTransport {
 
     private let tag: NFCISO7816Tag
@@ -43,7 +29,7 @@ final class NFCTransport: NSObject, CkTransport {
             Log.nfc.error(
                 "Failed to construct NFCISO7816APDU from data (len: \(commandApdu.count))"
             )
-            throw NFCError.connectionFailed("Invalid APDU data")
+            throw CkTapError.Transport(msg: "Invalid APDU data")
         }
 
         var responseData: Data?
@@ -69,11 +55,11 @@ final class NFCTransport: NSObject, CkTransport {
         _ = semaphore.wait(timeout: .now() + 15.0)
 
         if let error = responseError {
-            throw NFCError.connectionFailed(error.localizedDescription)
+            throw CkTapError.Transport(msg: error.localizedDescription)
         }
 
         guard let data = responseData else {
-            throw NFCError.timeout("NFC command timed out or returned no data.")
+            throw CkTapError.Transport(msg: "NFC command timed out or returned no data.")
         }
 
         let sw = data.suffix(2)
