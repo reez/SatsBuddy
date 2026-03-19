@@ -12,21 +12,42 @@ import Foundation
 @Observable
 class FeeViewModel {
     let feeClient: FeeClient
-    //    let bdkClient: BDKClient
+    private let manualFallbackFees = [1, 2, 5, 10]
 
     var feeViewError: AppError?
+    var isLoadingFees = false
+    var availableFees: [Int]? {
+        if let fees = recommendedFees {
+            return [
+                fees.minimumFee,
+                fees.hourFee,
+                fees.halfHourFee,
+                fees.fastestFee,
+            ]
+        }
+
+        if feeViewError != nil {
+            return manualFallbackFees
+        }
+
+        return nil
+    }
+    var isUsingManualFeeFallback: Bool {
+        recommendedFees == nil && feeViewError != nil
+    }
     var selectedFee: Int? {
-        guard let fees = recommendedFees else {
+        guard let fees = availableFees, fees.indices.contains(selectedFeeIndex) else {
             return nil
         }
-        switch selectedFeeIndex {
-        case 0: return fees.minimumFee
-        case 1: return fees.hourFee
-        case 2: return fees.halfHourFee
-        default: return fees.fastestFee
-        }
+        return fees[selectedFeeIndex]
     }
     var selectedFeeDescription: String {
+        if isLoadingFees {
+            return "Loading recommended fees"
+        }
+        if isUsingManualFeeFallback, let selectedFee {
+            return "Selected manual fee: \(selectedFee) sat/vB"
+        }
         guard let selectedFee = selectedFee else {
             return "Failed to load fees"
         }
@@ -35,24 +56,34 @@ class FeeViewModel {
     }
     var selectedFeeIndex: Int = 2
     var recommendedFees: RecommendedFees?
-    var showingFeeViewErrorAlert = false
 
     init(
         feeClient: FeeClient = .live
-            //         , bdkClient: BDKClient = .live
     ) {
         self.feeClient = feeClient
-        //        self.bdkClient = bdkClient
     }
 
-    func getFees() async {
+    func getFees(forceRefresh: Bool = false) async {
+        guard !isLoadingFees else { return }
+        if !forceRefresh, recommendedFees != nil {
+            return
+        }
+
+        isLoadingFees = true
+        feeViewError = nil
+
         do {
             let recommendedFees = try await feeClient.fetchFees()
             self.recommendedFees = recommendedFees
         } catch {
-            self.feeViewError = .generic(message: error.localizedDescription)
-            self.showingFeeViewErrorAlert = true
+            self.recommendedFees = nil
+            self.feeViewError = .generic(
+                message:
+                    "Couldn't load recommended fee rates. Check your connection and try again."
+            )
         }
+
+        isLoadingFees = false
     }
 
     private func text(for index: Int) -> String {

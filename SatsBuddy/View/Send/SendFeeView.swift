@@ -24,49 +24,97 @@ struct SendFeeView: View {
 
                 Spacer()
 
-                VStack(spacing: 12) {
-                    Slider(
-                        value: feeSliderBinding,
-                        in: 0...3,
-                        step: 1
-                    ) {
-                        Text("Fee Priority")
-                    } minimumValueLabel: {
-                        Text(feeTitle(for: 0))
-                    } maximumValueLabel: {
-                        Text(feeTitle(for: 3))
-                    }
-                    .tint(.primary)
-                    .accessibilityLabel("Select Transaction Fee")
-                    .accessibilityValue("\(viewModel.selectedFee ?? 1) satoshis per vbyte")
+                VStack(spacing: 16) {
+                    if viewModel.isLoadingFees && viewModel.availableFees == nil {
+                        VStack(spacing: 12) {
+                            ProgressView()
 
-                    HStack(spacing: 8) {
-                        ForEach(0..<4, id: \.self) { index in
-                            VStack(spacing: 4) {
-                                feeIcon(for: index)
+                            Text("Loading recommended fee rates...")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        if viewModel.isUsingManualFeeFallback {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Live fee estimates unavailable")
                                     .font(.headline)
-                                Text("\(feeTitle(for: index)) • \(feeValue(for: index))")
-                                    .font(.caption2)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundStyle(
-                                        index == viewModel.selectedFeeIndex
-                                            ? .primary : .secondary
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Text(
+                                    "Choose a manual fee rate from 1, 2, 5, or 10 sat/vB, or retry the fee lookup. Lower fees may confirm slowly when the network is busy."
+                                )
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Button {
+                                    Task {
+                                        await viewModel.getFees(forceRefresh: true)
+                                    }
+                                } label: {
+                                    Text("Retry fee lookup")
+                                        .bold()
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.all, 8)
+                                }
+                                .buttonStyle(
+                                    BitcoinOutlined(
+                                        tintColor: .primary,
+                                        isCapsule: true
                                     )
+                                )
+                                .disabled(viewModel.isLoadingFees)
                             }
                             .frame(maxWidth: .infinity)
                         }
-                    }
 
-                    Text("Selected: \(viewModel.selectedFee ?? 1) sat/vb fee")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        Slider(
+                            value: feeSliderBinding,
+                            in: 0...3,
+                            step: 1
+                        ) {
+                            Text("Fee Priority")
+                        } minimumValueLabel: {
+                            Text(feeSliderEdgeLabel(for: 0))
+                        } maximumValueLabel: {
+                            Text(feeSliderEdgeLabel(for: 3))
+                        }
+                        .tint(.primary)
+                        .accessibilityLabel("Select Transaction Fee")
+                        .accessibilityValue(feeAccessibilityValue)
+
+                        HStack(spacing: 8) {
+                            ForEach(0..<4, id: \.self) { index in
+                                VStack(spacing: 4) {
+                                    feeIcon(for: index)
+                                        .font(.headline)
+                                    Text(feeOptionLabel(for: index))
+                                        .font(.caption2)
+                                        .multilineTextAlignment(.center)
+                                        .foregroundStyle(
+                                            index == viewModel.selectedFeeIndex
+                                                ? .primary : .secondary
+                                        )
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+
+                        if let selectedFee = viewModel.selectedFee {
+                            Text(selectedFeeText(selectedFee))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 .padding(.horizontal)
 
                 Spacer()
 
                 Button {
-                    onNext(viewModel.selectedFee ?? 1)
+                    guard let selectedFee = viewModel.selectedFee else { return }
+                    onNext(selectedFee)
                 } label: {
                     Label(
                         title: { Text("Next") },
@@ -81,6 +129,7 @@ struct SendFeeView: View {
                         isCapsule: true
                     )
                 )
+                .disabled(viewModel.selectedFee == nil || viewModel.isLoadingFees)
 
             }
             .padding()
@@ -90,21 +139,21 @@ struct SendFeeView: View {
             }
 
         }
-        .alert(isPresented: $viewModel.showingFeeViewErrorAlert) {
-            Alert(
-                title: Text("Fee Error"),
-                message: Text(viewModel.feeViewError?.description ?? "Unknown"),
-                dismissButton: .default(Text("OK")) {
-                    viewModel.feeViewError = nil
-                }
-            )
-        }
-
     }
 
 }
 
 extension SendFeeView {
+    fileprivate var feeAccessibilityValue: String {
+        guard let selectedFee = viewModel.selectedFee else {
+            return "Recommended fees unavailable"
+        }
+        if viewModel.isUsingManualFeeFallback {
+            return "\(selectedFee) satoshis per vbyte, manual fee"
+        }
+        return "\(selectedFee) satoshis per vbyte"
+    }
+
     fileprivate var feeSliderBinding: Binding<Double> {
         Binding(
             get: { Double(viewModel.selectedFeeIndex) },
@@ -113,13 +162,8 @@ extension SendFeeView {
     }
 
     fileprivate func feeValue(for index: Int) -> Int {
-        guard let fees = viewModel.recommendedFees else { return 1 }
-        switch index {
-        case 0: return fees.minimumFee
-        case 1: return fees.hourFee
-        case 2: return fees.halfHourFee
-        default: return fees.fastestFee
-        }
+        guard let fees = viewModel.availableFees, fees.indices.contains(index) else { return 0 }
+        return fees[index]
     }
 
     fileprivate func feeTitle(for index: Int) -> String {
@@ -129,6 +173,28 @@ extension SendFeeView {
         case 2: return "Medium"
         default: return "High"
         }
+    }
+
+    fileprivate func feeSliderEdgeLabel(for index: Int) -> String {
+        if viewModel.isUsingManualFeeFallback {
+            return "\(feeValue(for: index))"
+        }
+        return feeTitle(for: index)
+    }
+
+    fileprivate func feeOptionLabel(for index: Int) -> String {
+        let value = feeValue(for: index)
+        if viewModel.isUsingManualFeeFallback {
+            return "\(value) sat/vB"
+        }
+        return "\(feeTitle(for: index)) • \(value)"
+    }
+
+    fileprivate func selectedFeeText(_ selectedFee: Int) -> String {
+        if viewModel.isUsingManualFeeFallback {
+            return "Selected: \(selectedFee) sat/vB manual fee"
+        }
+        return "Selected: \(selectedFee) sat/vB fee"
     }
 
     @ViewBuilder
