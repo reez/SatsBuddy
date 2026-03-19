@@ -78,7 +78,7 @@ final class SlotHistoryViewModel {
                 await MainActor.run {
                     guard self.currentTaskID == taskID else { return }
                     self.slotBalance = balance.total.toSat()
-                    isSweepBalanceButtonDisabled = balance.confirmed.toSat() == .zero
+                    isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
                     Log.cktap.info(
                         "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
                     )
@@ -117,7 +117,7 @@ final class SlotHistoryViewModel {
                 await MainActor.run {
                     guard self.currentTaskID == taskID else { return }
                     self.slotBalance = balance.total.toSat()
-                    isSweepBalanceButtonDisabled = balance.confirmed.toSat() == .zero
+                    isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
                     Log.cktap.info(
                         "[\(traceID)] Loaded balance for slot \(slotNumber) despite transaction error: \(balance.total.toSat(), privacy: .private) sats"
                     )
@@ -142,6 +142,12 @@ final class SlotHistoryViewModel {
 
     func cancel() {
         currentTaskID = nil
+    }
+}
+
+private extension Balance {
+    var sweepBalanceDisabled: Bool {
+        confirmed.toSat() == .zero || total.toSat() == .zero
     }
 }
 
