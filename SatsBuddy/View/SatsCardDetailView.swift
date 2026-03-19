@@ -5,6 +5,7 @@
 //  Created by Matthew Ramsden on 9/3/25.
 //
 
+import BitcoinUI
 import Observation
 import SwiftUI
 
@@ -46,10 +47,31 @@ struct SatsCardDetailView: View {
             .padding()
         }
         .safeAreaInset(edge: .bottom) {
-            FooterView(updatedCard: updatedCard)
+            VStack(spacing: 8) {
+                Button {
+                    isShowingSend = true
+                } label: {
+                    Text("Sweep Balance")
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(
+                    BitcoinFilled(
+                        tintColor: .primary,
+                        textColor: Color(uiColor: .systemBackground),
+                        isCapsule: true
+                    )
+                )
                 .padding(.horizontal, 32)
-                .padding(.vertical, 12)
-                .background(.background)
+                .padding(.top, 12)
+                .disabled(!canSweepBalance)
+
+                FooterView(updatedCard: updatedCard)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+            }
+            .background(.background)
         }
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
@@ -61,17 +83,6 @@ struct SatsCardDetailView: View {
                     viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
                 }
             )
-        }
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    isShowingSend = true
-                } label: {
-                    Label("Send", systemImage: "paperplane")
-                        .labelStyle(.titleAndIcon)
-                }
-                .disabled(!canSendFromActiveSlot)
-            }
         }
         .toolbarTitleMenu {
             Button("Rename Card") {
@@ -233,6 +244,10 @@ extension SatsCardDetailView {
         }
 
         return !address.isEmpty
+    }
+
+    private var canSweepBalance: Bool {
+        canSendFromActiveSlot && (slotForDisplay.balance ?? 0) > 0
     }
 
     private func placeholderSlot(for card: SatsCardInfo) -> SlotInfo {
