@@ -42,5 +42,8 @@ enum FeeServiceError: Error {
 #if DEBUG
     extension FeeClient {
         static let mock = Self(fetchFees: { currentFeesMock })
+        static let failingMock = Self(fetchFees: {
+            throw URLError(.notConnectedToInternet)
+        })
     }
 #endif
