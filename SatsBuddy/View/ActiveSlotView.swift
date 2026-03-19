@@ -18,15 +18,68 @@ struct ActiveSlotView: View {
     let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
-    @State private var copied = false
-    @State private var isCardIdCopied = false
-    @State private var receiveSheetState: ReceiveSheetState?
-    @State private var isPreparingReceiveSheet = false
 
     var body: some View {
         VStack(spacing: 16) {
             Spacer()
 
+            BalanceHeaderView(
+                slot: slot,
+                price: price,
+                isLoading: isLoading,
+                balanceFormat: $balanceFormat,
+                errorMessage: viewModel.errorMessage
+            )
+
+            Spacer()
+
+            VStack(spacing: 0) {
+                ReceiveRow(displayAddress: displayAddress)
+
+                Divider()
+
+                CardIdRow(cardIdentifier: card.cardIdentifier)
+
+                Divider()
+
+                ExplorerRow(displayAddress: displayAddress)
+
+                Divider()
+                    .padding(.vertical, 8)
+
+                SlotNavigationRow(
+                    slotPositionText: slotPositionText,
+                    card: card,
+                    viewModel: viewModel,
+                    price: price
+                )
+
+                Divider()
+
+                RefreshRow(
+                    refreshTimestampText: refreshTimestampText,
+                    isScanning: isScanning,
+                    onRefresh: onRefresh
+                )
+            }
+            .animation(.smooth, value: isLoading)
+
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Subviews
+
+private struct BalanceHeaderView: View {
+    let slot: SlotInfo
+    let price: Price?
+    let isLoading: Bool
+    @Binding var balanceFormat: BalanceDisplayFormat
+    let errorMessage: String?
+
+    var body: some View {
+        VStack(spacing: 16) {
             HStack(spacing: 15) {
                 if balanceFormat.showsBitcoinSymbol {
                     Image(systemName: "bitcoinsign")
@@ -42,7 +95,7 @@ struct ActiveSlotView: View {
                             .fontWeight(.thin)
                     }
                 }
-                
+
                 Text(formattedBalance)
                     .contentTransition(.numericText(countsDown: true))
                     .opacity(slot.balance == nil ? 0.3 : 1)
@@ -50,7 +103,7 @@ struct ActiveSlotView: View {
                         .spring(response: 0.4, dampingFraction: 0.8),
                         value: balanceFormat
                     )
-                
+
                 Text(balanceFormat.displayText(price: price))
                     .foregroundStyle(.secondary)
                     .font(.title)
@@ -66,7 +119,7 @@ struct ActiveSlotView: View {
                         .spring(response: 0.3, dampingFraction: 0.7),
                         value: balanceFormat
                     )
-                
+
                 if isLoading {
                     ProgressView()
                         .scaleEffect(0.6)
@@ -89,8 +142,8 @@ struct ActiveSlotView: View {
                 }
             }
             .sensoryFeedback(.selection, trigger: balanceFormat)
-            
-            if let errorMessage = viewModel.errorMessage {
+
+            if let errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.red)
@@ -98,196 +151,255 @@ struct ActiveSlotView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
             }
+        }
+    }
 
-            Spacer()
+    private var formattedBalance: String {
+        let amount = slot.balance ?? 0
+        return balanceFormat.formatted(amount, price: price)
+    }
+}
 
-            VStack(spacing: 0) {
-                Button {
-                    guard let address = displayAddress else { return }
-                    isPreparingReceiveSheet = true
-                    receiveSheetState = ReceiveSheetState(address: address)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Receive")
-                            .foregroundStyle(.secondary)
-                        HStack(alignment: .center) {
-                            Text(displayAddress ?? "No address")
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
+private struct ReceiveRow: View {
+    let displayAddress: String?
 
-                            Spacer(minLength: 80)
+    @State private var isPreparingReceiveSheet = false
+    @State private var receiveSheetState: ReceiveSheetState?
+    @State private var copied = false
 
-                            if isPreparingReceiveSheet {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "qrcode")
-                                    .foregroundColor(.blue)
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-                .buttonStyle(.plain)
-                .disabled(displayAddress == nil)
+    var body: some View {
+        Button {
+            guard let address = displayAddress else { return }
+            isPreparingReceiveSheet = true
+            receiveSheetState = ReceiveSheetState(address: address)
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Receive")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    Text(displayAddress ?? "No address")
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
 
-                Divider()
+                    Spacer(minLength: 80)
 
-                // Card ID row
-                Button {
-                    UIPasteboard.general.string = card.cardIdentifier
-                    isCardIdCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        isCardIdCopied = false
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Card ID")
-                            .foregroundStyle(.secondary)
-                        HStack(alignment: .center) {
-                            Text(card.cardIdentifier)
-                                .truncationMode(.middle)
-                                .lineLimit(1)
-
-                            Spacer(minLength: 80)
-
-                            Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
-                                .font(.footnote)
-                                .fontWeight(.bold)
-                                .foregroundStyle(isCardIdCopied ? .green : .blue)
-                                .symbolEffect(.bounce, value: isCardIdCopied)
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-                .buttonStyle(.plain)
-                .sensoryFeedback(.success, trigger: isCardIdCopied) { _, newValue in
-                    newValue
-                }
-                .disabled(card.cardIdentifier.isEmpty)
-
-                Divider()
-
-                Button {
-                    guard let address = displayAddress else { return }
-                    if let url = URL(string: "https://mempool.space/address/\(address)") {
-                        UIApplication.shared.open(url)
-                    }
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Explorer")
-                            .foregroundStyle(.secondary)
-                        HStack(alignment: .center) {
-                            HStack {
-                                Image(systemName: "square.bottomhalf.filled")
-                                    .font(.body)
-                                Text("mempool.space")
-                                    .foregroundColor(.primary)
-                            }
-
-                            Spacer(minLength: 80)
-
-                            Image(systemName: "arrow.up.right")
-                                .font(.footnote)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .padding(.vertical, 8)
-                .buttonStyle(.plain)
-                .disabled(displayAddress == nil)
-
-                Divider()
-                    .padding(.vertical, 8)
-
-                NavigationLink {
-                    SlotsRowListView(
-                        totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
-                        slots: viewModel.slots,
-                        price: price,
-                        card: card
-                    )
-                    .navigationTitle("All Slots")
-                    .navigationBarTitleDisplayMode(.inline)
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Slot")
-                                .foregroundStyle(.secondary)
-                            Text(slotPositionText)
-                                .foregroundColor(.primary)
-                        }
-                        Spacer(minLength: 80)
-                        Image(systemName: "chevron.right")
+                    if isPreparingReceiveSheet {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "qrcode")
+                            .foregroundColor(.blue)
                             .font(.footnote)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.tertiary)
+                            .fontWeight(.bold)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .padding(.vertical, 8)
-                .disabled(card.totalSlots == nil)
-
-                Divider()
-
-                Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
-                    onRefresh()
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Card Refresh")
-                            .foregroundStyle(.secondary)
-                        HStack(alignment: .center) {
-                            Text(refreshTimestampText)
-                                .foregroundColor(.primary)
-
-                            Spacer(minLength: 80)
-
-                            if isScanning {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "wave.3.up")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.blue)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                }
-                .padding(.vertical, 8)
-                .buttonStyle(.plain)
-                .disabled(isScanning)
-            }
-            .animation(.smooth, value: isLoading)
-            .sheet(
-                item: $receiveSheetState,
-                onDismiss: {
-                    isPreparingReceiveSheet = false
-                }
-            ) { sheetState in
-                ReceiveView(
-                    address: sheetState.address,
-                    isCopied: $copied
-                )
-                .onAppear {
-                    isPreparingReceiveSheet = false
                 }
             }
-
-            Spacer()
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .disabled(displayAddress == nil)
+        .sheet(
+            item: $receiveSheetState,
+            onDismiss: { isPreparingReceiveSheet = false }
+        ) { sheetState in
+            ReceiveView(address: sheetState.address, isCopied: $copied)
+                .onAppear { isPreparingReceiveSheet = false }
         }
     }
 }
+
+private struct CardIdRow: View {
+    let cardIdentifier: String
+
+    @State private var isCardIdCopied = false
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = cardIdentifier
+            isCardIdCopied = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                isCardIdCopied = false
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Card ID")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    Text(cardIdentifier)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 80)
+
+                    Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .foregroundStyle(isCardIdCopied ? .green : .blue)
+                        .symbolEffect(.bounce, value: isCardIdCopied)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .sensoryFeedback(.success, trigger: isCardIdCopied) { _, newValue in
+            newValue
+        }
+        .disabled(cardIdentifier.isEmpty)
+    }
+}
+
+private struct ExplorerRow: View {
+    let displayAddress: String?
+
+    var body: some View {
+        Button {
+            guard let address = displayAddress else { return }
+            if let url = URL(string: "https://mempool.space/address/\(address)") {
+                UIApplication.shared.open(url)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Explorer")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    HStack {
+                        Image(systemName: "square.bottomhalf.filled")
+                            .font(.body)
+                        Text("mempool.space")
+                            .foregroundColor(.primary)
+                    }
+
+                    Spacer(minLength: 80)
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .disabled(displayAddress == nil)
+    }
+}
+
+private struct SlotNavigationRow: View {
+    let slotPositionText: String
+    let card: SatsCardInfo
+    let viewModel: SatsCardDetailViewModel
+    let price: Price?
+
+    var body: some View {
+        NavigationLink {
+            SlotsRowListView(
+                totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
+                slots: viewModel.slots,
+                price: price,
+                card: card
+            )
+            .navigationTitle("All Slots")
+            .navigationBarTitleDisplayMode(.inline)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Slot")
+                        .foregroundStyle(.secondary)
+                    Text(slotPositionText)
+                        .foregroundColor(.primary)
+                }
+                Spacer(minLength: 80)
+                Image(systemName: "chevron.right")
+                    .font(.footnote)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .padding(.vertical, 8)
+        .disabled(card.totalSlots == nil)
+    }
+}
+
+private struct RefreshRow: View {
+    let refreshTimestampText: String
+    let isScanning: Bool
+    let onRefresh: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
+            onRefresh()
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Card Refresh")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    Text(refreshTimestampText)
+                        .foregroundColor(.primary)
+
+                    Spacer(minLength: 80)
+
+                    if isScanning {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "wave.3.up")
+                            .font(.footnote)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.blue)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .disabled(isScanning)
+    }
+}
+
+// MARK: - Helpers
+
+private struct ReceiveSheetState: Identifiable {
+    let id = UUID()
+    let address: String
+}
+
+extension ActiveSlotView {
+    fileprivate var displayAddress: String? {
+        slot.address ?? card.address
+    }
+
+    fileprivate var displayPubkey: String {
+        slot.pubkey ?? card.pubkey
+    }
+
+    fileprivate var slotPositionText: String {
+        if let activeSlot = card.displayActiveSlotNumber,
+            let totalSlots = card.totalSlots
+        {
+            return "\(activeSlot)/\(totalSlots)"
+        }
+
+        if let totalSlots = card.totalSlots {
+            return "\(slot.displaySlotNumber)/\(totalSlots)"
+        }
+
+        return "--/--"
+    }
+
+    fileprivate var refreshTimestampText: String {
+        card.dateScanned.formatted(date: .abbreviated, time: .shortened)
+    }
+}
+
+// MARK: - Preview
 
 #if DEBUG
     #Preview {
@@ -335,41 +447,3 @@ struct ActiveSlotView: View {
         .padding()
     }
 #endif
-
-private struct ReceiveSheetState: Identifiable {
-    let id = UUID()
-    let address: String
-}
-
-extension ActiveSlotView {
-    private var formattedBalance: String {
-        let amount = slot.balance ?? 0
-        return balanceFormat.formatted(amount, price: price)
-    }
-
-    fileprivate var displayAddress: String? {
-        slot.address ?? card.address
-    }
-
-    fileprivate var displayPubkey: String {
-        slot.pubkey ?? card.pubkey
-    }
-
-    fileprivate var slotPositionText: String {
-        if let activeSlot = card.displayActiveSlotNumber,
-            let totalSlots = card.totalSlots
-        {
-            return "\(activeSlot)/\(totalSlots)"
-        }
-
-        if let totalSlots = card.totalSlots {
-            return "\(slot.displaySlotNumber)/\(totalSlots)"
-        }
-
-        return "--/--"
-    }
-
-    fileprivate var refreshTimestampText: String {
-        card.dateScanned.formatted(date: .abbreviated, time: .shortened)
-    }
-}
