@@ -344,6 +344,7 @@ private struct SlotNavigationRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
+        .foregroundColor(.secondary)
         .padding(.vertical, 8)
         .disabled(card.totalSlots == nil)
     }
