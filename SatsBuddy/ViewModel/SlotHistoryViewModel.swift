@@ -78,7 +78,7 @@ final class SlotHistoryViewModel {
                 await MainActor.run {
                     guard self.currentTaskID == taskID else { return }
                     self.slotBalance = balance.total.toSat()
-                    isSweepBalanceButtonDisabled = balance.confirmed.toSat() == .zero
+                    isSweepBalanceButtonDisabled = balance.total.toSat() == .zero
                     Log.cktap.info(
                         "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
                     )
