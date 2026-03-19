@@ -277,7 +277,7 @@ struct BdkClient {
     let getTransactionsForAddress:
         @Sendable (String, Network, Int) async throws -> [SlotTransaction]
     let buildPsbt: @Sendable (String, String, UInt64, Network) async throws -> Psbt
-    let broadcast: @Sendable (Transaction, Network) throws -> Void
+    let broadcast: @Sendable (Transaction, Network) async throws -> Void
 
     private init(
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
@@ -289,7 +289,7 @@ struct BdkClient {
         buildPsbt:
             @escaping @Sendable (String, String, UInt64, Network) async throws ->
             Psbt,
-        broadcast: @escaping @Sendable (Transaction, Network) throws -> Void
+        broadcast: @escaping @Sendable (Transaction, Network) async throws -> Void
     ) {
         self.deriveAddress = deriveAddress
         self.getBalanceFromAddress = getBalanceFromAddress
@@ -319,7 +319,7 @@ extension BdkClient {
             )
         },
         buildPsbt: { descriptor, destination, feeRate, network in
-            try await BdkService().buildPsbt(
+            try await BdkService.runBuildPsbtOffMain(
                 descriptorString: descriptor,
                 destinationAddress: destination,
                 feeRate: feeRate,
@@ -327,7 +327,7 @@ extension BdkClient {
             )
         },
         broadcast: { transaction, network in
-            try BdkService().brodacastTransaction(transaction, network: network)
+            try await BdkService.runBroadcastOffMain(transaction, network: network)
         }
     )
 }
@@ -400,6 +400,51 @@ extension BdkClient {
         )
     }
 #endif
+
+extension BdkService {
+    fileprivate static func runBuildPsbtOffMain(
+        descriptorString: String,
+        destinationAddress: String,
+        feeRate: UInt64,
+        network: Network
+    ) async throws -> Psbt {
+        let task = Task.detached(priority: .userInitiated) {
+            try await BdkService().buildPsbt(
+                descriptorString: descriptorString,
+                destinationAddress: destinationAddress,
+                feeRate: feeRate,
+                network: network
+            )
+        }
+
+        return try await withTaskCancellationHandler(
+            operation: {
+                try await task.value
+            },
+            onCancel: {
+                task.cancel()
+            }
+        )
+    }
+
+    fileprivate static func runBroadcastOffMain(
+        _ transaction: Transaction,
+        network: Network
+    ) async throws {
+        let task = Task.detached(priority: .userInitiated) {
+            try BdkService().brodacastTransaction(transaction, network: network)
+        }
+
+        try await withTaskCancellationHandler(
+            operation: {
+                try await task.value
+            },
+            onCancel: {
+                task.cancel()
+            }
+        )
+    }
+}
 
 private actor BdkWarmUp {
     static let shared = BdkWarmUp()
