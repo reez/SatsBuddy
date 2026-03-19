@@ -38,26 +38,10 @@ struct SatsCardDetailView: View {
                     onRefresh: {
                         cardViewModel.refreshCard(updatedCard)
                     },
+                    onSetupNextSlot: needsNextSlotSetup ? { isShowingSetupSheet = true } : nil,
                     price: cardViewModel.price
                 )
                 .padding(.horizontal)
-
-                if needsNextSlotSetup {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(
-                            "Active slot has no address. Set up the next slot to get a new sealed address."
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        Button {
-                            isShowingSetupSheet = true
-                        } label: {
-                            Label("Set up next slot", systemImage: "arrow.triangle.2.circlepath")
-                                .labelStyle(.titleAndIcon)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
             }
             .padding()
         }

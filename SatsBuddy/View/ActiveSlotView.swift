@@ -15,6 +15,7 @@ struct ActiveSlotView: View {
     let viewModel: SatsCardDetailViewModel
     let isScanning: Bool
     let onRefresh: () -> Void
+    let onSetupNextSlot: (() -> Void)?
     let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
@@ -34,7 +35,7 @@ struct ActiveSlotView: View {
             Spacer()
 
             VStack(spacing: 0) {
-                ReceiveRow(displayAddress: displayAddress)
+                ReceiveRow(displayAddress: displayAddress, onSetupNextSlot: onSetupNextSlot)
 
                 Divider()
 
@@ -162,49 +163,72 @@ private struct BalanceHeaderView: View {
 
 private struct ReceiveRow: View {
     let displayAddress: String?
+    let onSetupNextSlot: (() -> Void)?
 
     @State private var isPreparingReceiveSheet = false
     @State private var receiveSheetState: ReceiveSheetState?
     @State private var copied = false
 
     var body: some View {
-        Button {
-            guard let address = displayAddress else { return }
-            isPreparingReceiveSheet = true
-            receiveSheetState = ReceiveSheetState(address: address)
-        } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Receive")
-                    .foregroundStyle(.secondary)
-                HStack(alignment: .center) {
-                    Text(displayAddress ?? "No address")
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+        if displayAddress == nil, let onSetupNextSlot {
+            Button(action: onSetupNextSlot) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Receive")
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .center) {
+                        Text("Set up next slot")
+                            .foregroundColor(.primary)
 
-                    Spacer(minLength: 80)
+                        Spacer(minLength: 80)
 
-                    if isPreparingReceiveSheet {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    } else {
-                        Image(systemName: "qrcode")
+                        Image(systemName: "arrow.triangle.2.circlepath")
                             .foregroundColor(.blue)
                             .font(.footnote)
                             .fontWeight(.bold)
                     }
                 }
             }
-        }
-        .padding(.vertical, 8)
-        .buttonStyle(.plain)
-        .disabled(displayAddress == nil)
-        .sheet(
-            item: $receiveSheetState,
-            onDismiss: { isPreparingReceiveSheet = false }
-        ) { sheetState in
-            ReceiveView(address: sheetState.address, isCopied: $copied)
-                .onAppear { isPreparingReceiveSheet = false }
+            .padding(.vertical, 8)
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                guard let address = displayAddress else { return }
+                isPreparingReceiveSheet = true
+                receiveSheetState = ReceiveSheetState(address: address)
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Receive")
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .center) {
+                        Text(displayAddress ?? "No address")
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+
+                        Spacer(minLength: 80)
+
+                        if isPreparingReceiveSheet {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "qrcode")
+                                .foregroundColor(.blue)
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+            .buttonStyle(.plain)
+            .disabled(displayAddress == nil)
+            .sheet(
+                item: $receiveSheetState,
+                onDismiss: { isPreparingReceiveSheet = false }
+            ) { sheetState in
+                ReceiveView(address: sheetState.address, isCopied: $copied)
+                    .onAppear { isPreparingReceiveSheet = false }
+            }
         }
     }
 }
@@ -442,6 +466,7 @@ extension ActiveSlotView {
             viewModel: SatsCardDetailViewModel(),
             isScanning: false,
             onRefresh: {},
+            onSetupNextSlot: nil,
             price: price
         )
         .padding()
