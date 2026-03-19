@@ -462,7 +462,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             do {
                 setStatusMessage(.broadcastingTransaction)
-                try bdkClient.broadcast(signedTx, network)
+                try await bdkClient.broadcast(signedTx, network)
             } catch {
                 Log.nfc.error(
                     "[SendSign] broadcast error: \(error.localizedDescription, privacy: .public)"
