@@ -27,7 +27,8 @@ struct SatsCardDetailView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: .zero) {
             ActiveSlotView(
                 slot: slotForDisplay,
                 card: updatedCard,
@@ -39,6 +40,8 @@ struct SatsCardDetailView: View {
                 },
                 price: cardViewModel.price
             )
+            .padding(.horizontal)
+            
             if needsNextSlotSetup {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(
@@ -53,12 +56,14 @@ struct SatsCardDetailView: View {
                             .labelStyle(.titleAndIcon)
                     }
                 }
+                .padding(.horizontal)
             }
 
             FooterView(updatedCard: updatedCard)
-                .padding()
+                .padding(.horizontal)
         }
         .padding()
+        }
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $isShowingSend) {
