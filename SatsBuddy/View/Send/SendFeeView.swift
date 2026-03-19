@@ -36,35 +36,13 @@ struct SendFeeView: View {
                         .frame(maxWidth: .infinity)
                     } else {
                         if viewModel.isUsingManualFeeFallback {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Live fee estimates unavailable")
-                                    .font(.headline)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-
+                            VStack(spacing: 8) {
                                 Text(
-                                    "Choose a manual fee rate from 1, 2, 5, or 10 sat/vB, or retry the fee lookup. Lower fees may confirm slowly when the network is busy."
+                                    "Fee estimates unavailable. Using manual presets."
                                 )
-                                .font(.callout)
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                                Button {
-                                    Task {
-                                        await viewModel.getFees(forceRefresh: true)
-                                    }
-                                } label: {
-                                    Text("Retry fee lookup")
-                                        .bold()
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.all, 8)
-                                }
-                                .buttonStyle(
-                                    BitcoinOutlined(
-                                        tintColor: .primary,
-                                        isCapsule: true
-                                    )
-                                )
-                                .disabled(viewModel.isLoadingFees)
+                                .multilineTextAlignment(.center)
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -105,6 +83,24 @@ struct SendFeeView: View {
                             Text(selectedFeeText(selectedFee))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
+                        }
+
+                        if viewModel.isUsingManualFeeFallback {
+                            Button("Retry fee lookup") {
+                                Task {
+                                    await viewModel.getFees(forceRefresh: true)
+                                }
+                            }
+                            .font(.footnote.weight(.semibold))
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .stroke(Color(uiColor: .separator), lineWidth: 1)
+                            )
+                            .disabled(viewModel.isLoadingFees)
                         }
                     }
                 }
@@ -177,7 +173,7 @@ extension SendFeeView {
 
     fileprivate func feeSliderEdgeLabel(for index: Int) -> String {
         if viewModel.isUsingManualFeeFallback {
-            return "\(feeValue(for: index))"
+            return ""
         }
         return feeTitle(for: index)
     }
@@ -192,7 +188,7 @@ extension SendFeeView {
 
     fileprivate func selectedFeeText(_ selectedFee: Int) -> String {
         if viewModel.isUsingManualFeeFallback {
-            return "Selected: \(selectedFee) sat/vB manual fee"
+            return "Manual fee: \(selectedFee) sat/vB"
         }
         return "Selected: \(selectedFee) sat/vB fee"
     }
