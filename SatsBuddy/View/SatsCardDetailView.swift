@@ -29,40 +29,43 @@ struct SatsCardDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: .zero) {
-            ActiveSlotView(
-                slot: slotForDisplay,
-                card: updatedCard,
-                isLoading: viewModel.isLoading || isShowingPlaceholderSlot,
-                viewModel: viewModel,
-                isScanning: cardViewModel.isScanning,
-                onRefresh: {
-                    cardViewModel.refreshCard(updatedCard)
-                },
-                price: cardViewModel.price
-            )
-            .padding(.horizontal)
-            
-            if needsNextSlotSetup {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(
-                        "Active slot has no address. Set up the next slot to get a new sealed address."
-                    )
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    Button {
-                        isShowingSetupSheet = true
-                    } label: {
-                        Label("Set up next slot", systemImage: "arrow.triangle.2.circlepath")
-                            .labelStyle(.titleAndIcon)
-                    }
-                }
+                ActiveSlotView(
+                    slot: slotForDisplay,
+                    card: updatedCard,
+                    isLoading: viewModel.isLoading || isShowingPlaceholderSlot,
+                    viewModel: viewModel,
+                    isScanning: cardViewModel.isScanning,
+                    onRefresh: {
+                        cardViewModel.refreshCard(updatedCard)
+                    },
+                    price: cardViewModel.price
+                )
                 .padding(.horizontal)
-            }
 
-            FooterView(updatedCard: updatedCard)
-                .padding(.horizontal)
+                if needsNextSlotSetup {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(
+                            "Active slot has no address. Set up the next slot to get a new sealed address."
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        Button {
+                            isShowingSetupSheet = true
+                        } label: {
+                            Label("Set up next slot", systemImage: "arrow.triangle.2.circlepath")
+                                .labelStyle(.titleAndIcon)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+            .padding()
         }
-        .padding()
+        .safeAreaInset(edge: .bottom) {
+            FooterView(updatedCard: updatedCard)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 12)
+                .background(.background)
         }
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
