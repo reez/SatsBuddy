@@ -74,7 +74,7 @@ struct SatsCardDetailView: View {
                     } label: {
                         Image(systemName: "paperplane.fill")
                             .font(.footnote)
-                            .foregroundStyle(canSweepBalance ? Color(uiColor: .black) : .secondary)
+                            .foregroundStyle(canSweepBalance ? .primary : .secondary)
                             .frame(width: 30, height: 30)
                     }
                     .disabled(!canSweepBalance)
