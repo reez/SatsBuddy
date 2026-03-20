@@ -16,13 +16,16 @@ struct ActiveSlotView: View {
     let isScanning: Bool
     let onRefresh: () -> Void
     let onSetupNextSlot: (() -> Void)?
+    let onSweepBalance: (() -> Void)?
+    let canSweepBalance: Bool
+    @Binding var isSweepButtonHidden: Bool
     let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        VStack(alignment: .leading, spacing: 16) {
+            Spacer().frame(height: 8)
 
             BalanceHeaderView(
                 slot: slot,
@@ -32,7 +35,31 @@ struct ActiveSlotView: View {
                 errorMessage: viewModel.errorMessage
             )
 
-            Spacer()
+            if let onSweepBalance {
+                Button {
+                    onSweepBalance()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "paperplane.fill")
+                        
+                        Text("Sweep Balance")
+                            .bold()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
+                }
+                .foregroundStyle(.primary)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(.primary, lineWidth: 1)
+                }
+                .disabled(!canSweepBalance)
+                .onGeometryChange(for: Bool.self) { proxy in
+                    proxy.frame(in: .named("detailScroll")).maxY < 0
+                } action: { hidden in
+                    isSweepButtonHidden = hidden
+                }
+            }
 
             VStack(spacing: 0) {
                 ReceiveRow(displayAddress: displayAddress, onSetupNextSlot: onSetupNextSlot)
@@ -460,7 +487,7 @@ extension ActiveSlotView {
             jpy: 13_700_000
         )
 
-        return ActiveSlotView(
+        ActiveSlotView(
             slot: slot,
             card: card,
             isLoading: false,
@@ -468,6 +495,9 @@ extension ActiveSlotView {
             isScanning: false,
             onRefresh: {},
             onSetupNextSlot: nil,
+            onSweepBalance: {},
+            canSweepBalance: true,
+            isSweepButtonHidden: .constant(false),
             price: price
         )
         .padding()

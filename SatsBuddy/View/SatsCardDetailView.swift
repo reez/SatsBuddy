@@ -21,6 +21,7 @@ struct SatsCardDetailView: View {
     @State private var isShowingSetupSheet = false
     @State private var isShowingDeleteConfirm = false
     @State private var setupCvc: String = ""
+    @State private var showToolbarSweep = false
 
     private var updatedCard: SatsCardInfo {
         cardViewModel.scannedCards.first(where: { $0.cardIdentifier == card.cardIdentifier })
@@ -40,39 +41,20 @@ struct SatsCardDetailView: View {
                         cardViewModel.refreshCard(updatedCard)
                     },
                     onSetupNextSlot: needsNextSlotSetup ? { isShowingSetupSheet = true } : nil,
+                    onSweepBalance: canSendFromActiveSlot ? { isShowingSend = true } : nil,
+                    canSweepBalance: canSweepBalance,
+                    isSweepButtonHidden: $showToolbarSweep,
                     price: cardViewModel.price
                 )
                 .padding(.horizontal)
+
+                FooterView(updatedCard: updatedCard)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
             }
             .padding()
         }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 8) {
-                Button {
-                    isShowingSend = true
-                } label: {
-                    Text("Sweep Balance")
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(
-                    BitcoinFilled(
-                        tintColor: .primary,
-                        textColor: Color(uiColor: .systemBackground),
-                        isCapsule: true
-                    )
-                )
-                .padding(.horizontal, 32)
-                .padding(.top, 12)
-                .disabled(!canSweepBalance)
-
-                FooterView(updatedCard: updatedCard)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-            }
-            .background(.background)
-        }
+        .coordinateSpace(name: "detailScroll")
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $isShowingSend) {
@@ -83,6 +65,22 @@ struct SatsCardDetailView: View {
                     viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
                 }
             )
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if showToolbarSweep && canSendFromActiveSlot {
+                    Button {
+                        isShowingSend = true
+                    } label: {
+                        Image(systemName: "paperplane.fill")
+                            .font(.footnote)
+                            .foregroundStyle(canSweepBalance ? Color(uiColor: .black) : .secondary)
+                            .frame(width: 30, height: 30)
+                    }
+                    .disabled(!canSweepBalance)
+                    .animation(.easeInOut(duration: 0.2), value: showToolbarSweep)
+                }
+            }
         }
         .toolbarTitleMenu {
             Button("Rename Card") {
@@ -314,6 +312,7 @@ extension SatsCardDetailView {
         let timestamp = updatedCard.dateScanned.timeIntervalSinceReferenceDate
         return "\(updatedCard.cardIdentifier)|\(timestamp)"
     }
+
 }
 
 private struct RenameCardSheet: View {
