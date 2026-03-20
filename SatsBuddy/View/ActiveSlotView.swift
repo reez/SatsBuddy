@@ -15,271 +15,443 @@ struct ActiveSlotView: View {
     let viewModel: SatsCardDetailViewModel
     let isScanning: Bool
     let onRefresh: () -> Void
+    let onSetupNextSlot: (() -> Void)?
+    let onSweepBalance: (() -> Void)?
+    let canSweepBalance: Bool
+    @Binding var isSweepButtonHidden: Bool
     let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
-    @State private var copied = false
-    @State private var isCardIdCopied = false
-    @State private var receiveSheetState: ReceiveSheetState?
-    @State private var isPreparingReceiveSheet = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        VStack(alignment: .leading, spacing: 16) {
+            Spacer().frame(height: 8)
 
-            VStack(spacing: 32) {
-                HStack(spacing: 15) {
-                    if balanceFormat.showsBitcoinSymbol {
-                        Image(systemName: "bitcoinsign")
-                            .foregroundStyle(.secondary)
-                            .font(.title)
-                            .fontWeight(.thin)
-                    } else if balanceFormat == .fiat {
-                        let symbol = balanceFormat.displayPrefix(price: price)
-                        if !symbol.isEmpty {
-                            Text(symbol)
-                                .foregroundStyle(.secondary)
-                                .font(.title)
-                                .fontWeight(.thin)
-                        }
+            BalanceHeaderView(
+                slot: slot,
+                price: price,
+                isLoading: isLoading,
+                balanceFormat: $balanceFormat,
+                errorMessage: viewModel.errorMessage
+            )
+
+            if let onSweepBalance {
+                Button {
+                    onSweepBalance()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "paperplane.fill")
+                        
+                        Text("Sweep Balance")
+                            .bold()
                     }
-
-                    Text(formattedBalance)
-                        .contentTransition(.numericText(countsDown: true))
-                        .opacity(slot.balance == nil ? 0.3 : 1)
-                        .animation(
-                            .spring(response: 0.4, dampingFraction: 0.8),
-                            value: balanceFormat
-                        )
-
-                    Text(balanceFormat.displayText(price: price))
-                        .foregroundStyle(.secondary)
-                        .font(.title)
-                        .fontWeight(.thin)
-                        .transition(
-                            .asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity),
-                                removal: .move(edge: .leading).combined(with: .opacity)
-                            )
-                        )
-                        .id("format-\(balanceFormat)")
-                        .animation(
-                            .spring(response: 0.3, dampingFraction: 0.7),
-                            value: balanceFormat
-                        )
-
-                    if isLoading {
-                        ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(width: 20, height: 20)
-                            .opacity(isLoading ? 1 : 0)
-                            .accessibilityHidden(!isLoading)
-                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
                 }
-                .font(.largeTitle)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .fontWeight(.bold)
-                .fontDesign(.rounded)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .animation(.smooth, value: slot.balance)
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        let formats = BalanceDisplayFormat.allCases
-                        balanceFormat = formats[(balanceFormat.index + 1) % formats.count]
-                    }
+                .foregroundStyle(.primary)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(.primary, lineWidth: 1)
                 }
-                .sensoryFeedback(.selection, trigger: balanceFormat)
-
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal)
+                .disabled(!canSweepBalance)
+                .onGeometryChange(for: Bool.self) { proxy in
+                    proxy.frame(in: .named("detailScroll")).maxY < 0
+                } action: { hidden in
+                    isSweepButtonHidden = hidden
                 }
             }
 
-            Spacer()
+            VStack(spacing: 0) {
+                ReceiveRow(displayAddress: displayAddress, onSetupNextSlot: onSetupNextSlot)
 
-            List {
-                Section {
+                Divider()
 
-                    Button {
-                        guard let address = displayAddress else { return }
+                CardIdRow(cardIdentifier: card.cardIdentifier)
 
-                        isPreparingReceiveSheet = true
-                        receiveSheetState = ReceiveSheetState(address: address)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Receive")
-                                .foregroundStyle(.secondary)
-                            HStack(alignment: .center) {
-                                Text(displayAddress ?? "No address")
-                                    .foregroundColor(.primary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
+                Divider()
 
-                                Spacer(minLength: 80)
+                ExplorerRow(displayAddress: displayAddress)
 
-                                if isPreparingReceiveSheet {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "qrcode")
-                                        .foregroundColor(.blue)
-                                        .font(.footnote)
-                                        .fontWeight(.bold)
-                                }
-                            }
-                        }
-                    }
+                Divider()
                     .padding(.vertical, 8)
-                    .buttonStyle(.plain)
-                    .disabled(displayAddress == nil)
 
-                    // Card ID row
-                    Button {
-                        UIPasteboard.general.string = card.cardIdentifier
-                        isCardIdCopied = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                            isCardIdCopied = false
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Card ID")
-                                .foregroundStyle(.secondary)
-                            HStack(alignment: .center) {
-                                Text(card.cardIdentifier)
-                                    .truncationMode(.middle)
-                                    .lineLimit(1)
-
-                                Spacer(minLength: 80)
-
-                                Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(isCardIdCopied ? .green : .blue)
-                                    .symbolEffect(.bounce, value: isCardIdCopied)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 8)
-                    .buttonStyle(.plain)
-                    .sensoryFeedback(.success, trigger: isCardIdCopied) { _, newValue in
-                        newValue
-                    }
-                    .disabled(card.cardIdentifier.isEmpty)
-
-                    Button {
-                        guard let address = displayAddress else { return }
-                        if let url = URL(string: "https://mempool.space/address/\(address)") {
-                            UIApplication.shared.open(url)
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Explorer")
-                                .foregroundStyle(.secondary)
-                            HStack(alignment: .center) {
-                                HStack {
-                                    Image(systemName: "square.bottomhalf.filled")
-                                        .font(.body)
-                                    Text("mempool.space")
-                                        .foregroundColor(.primary)
-                                }
-
-                                Spacer(minLength: 80)
-
-                                Image(systemName: "arrow.up.right")
-                                    .font(.footnote)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                    }
-                    .padding(.vertical, 8)
-                    .buttonStyle(.plain)
-                    .disabled(displayAddress == nil)
-                }
-
-                Section {
-                    NavigationLink {
-                        SlotsRowListView(
-                            totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
-                            slots: viewModel.slots,
-                            price: price,
-                            card: card
-                        )
-                        .navigationTitle("All Slots")
-                        .navigationBarTitleDisplayMode(.inline)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Slot")
-                                .foregroundStyle(.secondary)
-                            Text(slotPositionText)
-                                .foregroundColor(.primary)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                    .disabled(card.totalSlots == nil)
-
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
-                        onRefresh()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Card Refresh")
-                                .foregroundStyle(.secondary)
-                            HStack(alignment: .center) {
-                                Text(refreshTimestampText)
-                                    .foregroundColor(.primary)
-
-                                Spacer(minLength: 80)
-
-                                if isScanning {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "wave.3.up")
-                                        .font(.footnote)
-                                        .fontWeight(.bold)
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                    }
-                    .padding(.vertical, 8)
-                    .buttonStyle(.plain)
-                    .disabled(isScanning)
-                }
-            }
-            .listStyle(.plain)
-            .animation(.smooth, value: isLoading)
-            .sheet(
-                item: $receiveSheetState,
-                onDismiss: {
-                    isPreparingReceiveSheet = false
-                }
-            ) { sheetState in
-                ReceiveView(
-                    address: sheetState.address,
-                    isCopied: $copied
+                SlotNavigationRow(
+                    slotPositionText: slotPositionText,
+                    card: card,
+                    viewModel: viewModel,
+                    price: price
                 )
-                .onAppear {
-                    isPreparingReceiveSheet = false
-                }
+
+                Divider()
+
+                RefreshRow(
+                    refreshTimestampText: refreshTimestampText,
+                    isScanning: isScanning,
+                    onRefresh: onRefresh
+                )
             }
+            .animation(.smooth, value: isLoading)
 
             Spacer()
         }
     }
 }
+
+// MARK: - Subviews
+
+private struct BalanceHeaderView: View {
+    let slot: SlotInfo
+    let price: Price?
+    let isLoading: Bool
+    @Binding var balanceFormat: BalanceDisplayFormat
+    let errorMessage: String?
+
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 15) {
+                if balanceFormat.showsBitcoinSymbol {
+                    Image(systemName: "bitcoinsign")
+                        .foregroundStyle(.secondary)
+                        .font(.title)
+                        .fontWeight(.thin)
+                } else if balanceFormat == .fiat {
+                    let symbol = balanceFormat.displayPrefix(price: price)
+                    if !symbol.isEmpty {
+                        Text(symbol)
+                            .foregroundStyle(.secondary)
+                            .font(.title)
+                            .fontWeight(.thin)
+                    }
+                }
+
+                Text(formattedBalance)
+                    .contentTransition(.numericText(countsDown: true))
+                    .opacity(slot.balance == nil ? 0.3 : 1)
+                    .animation(
+                        .spring(response: 0.4, dampingFraction: 0.8),
+                        value: balanceFormat
+                    )
+
+                Text(balanceFormat.displayText(price: price))
+                    .foregroundStyle(.secondary)
+                    .font(.title)
+                    .fontWeight(.thin)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        )
+                    )
+                    .id("format-\(balanceFormat)")
+                    .animation(
+                        .spring(response: 0.3, dampingFraction: 0.7),
+                        value: balanceFormat
+                    )
+
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .frame(width: 20, height: 20)
+                        .opacity(isLoading ? 1 : 0)
+                        .accessibilityHidden(!isLoading)
+                }
+            }
+            .font(.largeTitle)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            .fontWeight(.bold)
+            .fontDesign(.rounded)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(.smooth, value: slot.balance)
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    let formats = BalanceDisplayFormat.allCases
+                    balanceFormat = formats[(balanceFormat.index + 1) % formats.count]
+                }
+            }
+            .sensoryFeedback(.selection, trigger: balanceFormat)
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+            }
+        }
+    }
+
+    private var formattedBalance: String {
+        let amount = slot.balance ?? 0
+        return balanceFormat.formatted(amount, price: price)
+    }
+}
+
+private struct ReceiveRow: View {
+    let displayAddress: String?
+    let onSetupNextSlot: (() -> Void)?
+
+    @State private var isPreparingReceiveSheet = false
+    @State private var receiveSheetState: ReceiveSheetState?
+    @State private var copied = false
+
+    var body: some View {
+        if displayAddress == nil, let onSetupNextSlot {
+            Button(action: onSetupNextSlot) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Receive")
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .center) {
+                        Text("Set up next slot")
+                            .foregroundColor(.primary)
+
+                        Spacer(minLength: 80)
+
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .foregroundColor(.blue)
+                            .font(.footnote)
+                            .fontWeight(.bold)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                guard let address = displayAddress else { return }
+                isPreparingReceiveSheet = true
+                receiveSheetState = ReceiveSheetState(address: address)
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Receive")
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .center) {
+                        Text(displayAddress ?? "No address")
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+
+                        Spacer(minLength: 80)
+
+                        if isPreparingReceiveSheet {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "qrcode")
+                                .foregroundColor(.blue)
+                                .font(.footnote)
+                                .fontWeight(.bold)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+            .buttonStyle(.plain)
+            .disabled(displayAddress == nil)
+            .sheet(
+                item: $receiveSheetState,
+                onDismiss: { isPreparingReceiveSheet = false }
+            ) { sheetState in
+                ReceiveView(address: sheetState.address, isCopied: $copied)
+                    .onAppear { isPreparingReceiveSheet = false }
+            }
+        }
+    }
+}
+
+private struct CardIdRow: View {
+    let cardIdentifier: String
+
+    @State private var isCardIdCopied = false
+
+    var body: some View {
+        Button {
+            UIPasteboard.general.string = cardIdentifier
+            isCardIdCopied = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                isCardIdCopied = false
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Card ID")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    Text(cardIdentifier)
+                        .truncationMode(.middle)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 80)
+
+                    Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .foregroundStyle(isCardIdCopied ? .green : .blue)
+                        .symbolEffect(.bounce, value: isCardIdCopied)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .sensoryFeedback(.success, trigger: isCardIdCopied) { _, newValue in
+            newValue
+        }
+        .disabled(cardIdentifier.isEmpty)
+    }
+}
+
+private struct ExplorerRow: View {
+    let displayAddress: String?
+
+    var body: some View {
+        Button {
+            guard let address = displayAddress else { return }
+            if let url = URL(string: "https://mempool.space/address/\(address)") {
+                UIApplication.shared.open(url)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Explorer")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    HStack {
+                        Image(systemName: "square.bottomhalf.filled")
+                            .font(.body)
+                        Text("mempool.space")
+                            .foregroundColor(.primary)
+                    }
+
+                    Spacer(minLength: 80)
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .disabled(displayAddress == nil)
+    }
+}
+
+private struct SlotNavigationRow: View {
+    let slotPositionText: String
+    let card: SatsCardInfo
+    let viewModel: SatsCardDetailViewModel
+    let price: Price?
+
+    var body: some View {
+        NavigationLink {
+            SlotsRowListView(
+                totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
+                slots: viewModel.slots,
+                price: price,
+                card: card
+            )
+            .navigationTitle("All Slots")
+            .navigationBarTitleDisplayMode(.inline)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Slot")
+                        .foregroundStyle(.secondary)
+                    Text(slotPositionText)
+                        .foregroundColor(.primary)
+                }
+                Spacer(minLength: 80)
+                Image(systemName: "chevron.right")
+                    .font(.footnote)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .foregroundColor(.secondary)
+        .padding(.vertical, 8)
+        .disabled(card.totalSlots == nil)
+    }
+}
+
+private struct RefreshRow: View {
+    let refreshTimestampText: String
+    let isScanning: Bool
+    let onRefresh: () -> Void
+
+    var body: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.7)
+            onRefresh()
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Card Refresh")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .center) {
+                    Text(refreshTimestampText)
+                        .foregroundColor(.primary)
+
+                    Spacer(minLength: 80)
+
+                    if isScanning {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "wave.3.up")
+                            .font(.footnote)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.blue)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .disabled(isScanning)
+    }
+}
+
+// MARK: - Helpers
+
+private struct ReceiveSheetState: Identifiable {
+    let id = UUID()
+    let address: String
+}
+
+extension ActiveSlotView {
+    fileprivate var displayAddress: String? {
+        slot.address ?? card.address
+    }
+
+    fileprivate var displayPubkey: String {
+        slot.pubkey ?? card.pubkey
+    }
+
+    fileprivate var slotPositionText: String {
+        if let activeSlot = card.displayActiveSlotNumber,
+            let totalSlots = card.totalSlots
+        {
+            return "\(activeSlot)/\(totalSlots)"
+        }
+
+        if let totalSlots = card.totalSlots {
+            return "\(slot.displaySlotNumber)/\(totalSlots)"
+        }
+
+        return "--/--"
+    }
+
+    fileprivate var refreshTimestampText: String {
+        card.dateScanned.formatted(date: .abbreviated, time: .shortened)
+    }
+}
+
+// MARK: - Preview
 
 #if DEBUG
     #Preview {
@@ -315,53 +487,19 @@ struct ActiveSlotView: View {
             jpy: 13_700_000
         )
 
-        return ActiveSlotView(
+        ActiveSlotView(
             slot: slot,
             card: card,
             isLoading: false,
             viewModel: SatsCardDetailViewModel(),
             isScanning: false,
             onRefresh: {},
+            onSetupNextSlot: nil,
+            onSweepBalance: {},
+            canSweepBalance: true,
+            isSweepButtonHidden: .constant(false),
             price: price
         )
         .padding()
     }
 #endif
-
-private struct ReceiveSheetState: Identifiable {
-    let id = UUID()
-    let address: String
-}
-
-extension ActiveSlotView {
-    private var formattedBalance: String {
-        let amount = slot.balance ?? 0
-        return balanceFormat.formatted(amount, price: price)
-    }
-
-    fileprivate var displayAddress: String? {
-        slot.address ?? card.address
-    }
-
-    fileprivate var displayPubkey: String {
-        slot.pubkey ?? card.pubkey
-    }
-
-    fileprivate var slotPositionText: String {
-        if let activeSlot = card.displayActiveSlotNumber,
-            let totalSlots = card.totalSlots
-        {
-            return "\(activeSlot)/\(totalSlots)"
-        }
-
-        if let totalSlots = card.totalSlots {
-            return "\(slot.displaySlotNumber)/\(totalSlots)"
-        }
-
-        return "--/--"
-    }
-
-    fileprivate var refreshTimestampText: String {
-        card.dateScanned.formatted(date: .abbreviated, time: .shortened)
-    }
-}
