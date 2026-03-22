@@ -21,25 +21,35 @@ Download on [TestFlight](https://testflight.apple.com/join/Pq7KwWzB).
 ### Prerequisites
 
 - Xcode (and Xcode Command Line Tools)
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 - Git
 
 You can verify the required tools are installed with:
 
 ```bash
 xcodebuild -version
+xcodegen --version
 git --version
+```
+
+Install XcodeGen via Homebrew if needed:
+
+```bash
+brew install xcodegen
 ```
 
 ### Repository Setup
 
-Clone SatsBuddy and open the project:
+Clone SatsBuddy, generate the Xcode project, and open it:
 
 ```bash
-cd ~/Documents
 git clone https://github.com/reez/SatsBuddy.git
 cd SatsBuddy
+xcodegen generate
 open SatsBuddy.xcodeproj
 ```
+
+The `.xcodeproj` is not checked into version control — it is generated from `project.yml` and the xcconfig files in `Configs/`. You need to run `xcodegen generate` after cloning and whenever source files are added or removed.
 
 SatsBuddy resolves `CKTap` from the remote `rust-cktap` Swift Package (`v0.2.2`).
 
