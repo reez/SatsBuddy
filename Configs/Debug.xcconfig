@@ -1,0 +1,22 @@
+// Debug.xcconfig
+
+#include "Base.xcconfig"
+
+// Debug Info
+DEBUG_INFORMATION_FORMAT = dwarf
+MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE
+
+// Optimization
+GCC_OPTIMIZATION_LEVEL = 0
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+GCC_DYNAMIC_NO_PIC = NO
+
+// Architecture
+ONLY_ACTIVE_ARCH = YES
+
+// Testing
+ENABLE_TESTABILITY = YES
+
+// Preprocessor
+GCC_PREPROCESSOR_DEFINITIONS = DEBUG=1 $(inherited)
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(inherited)

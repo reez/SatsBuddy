@@ -1,0 +1,57 @@
+name: SatsBuddy
+
+options:
+  xcodeVersion: "16.3"
+  deploymentTarget:
+    iOS: "18.5"
+  defaultConfig: Release
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  configs:
+    Debug:
+      xcconfig: Configs/Debug.xcconfig
+    Release:
+      xcconfig: Configs/Release.xcconfig
+
+packages:
+  bdk-swift:
+    url: https://github.com/bitcoindevkit/bdk-swift
+    exactVersion: "2.3.1"
+  rust-cktap:
+    url: https://github.com/bitcoindevkit/rust-cktap
+    exactVersion: "0.2.2"
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess
+    exactVersion: "4.2.2"
+  BitcoinUI:
+    url: https://github.com/reez/BitcoinUI
+    branch: main
+  CodeScanner:
+    url: https://github.com/twostraws/CodeScanner.git
+    exactVersion: "2.5.2"
+
+targets:
+  SatsBuddy:
+    type: application
+    platform: iOS
+    configFiles:
+      Debug: Configs/SatsBuddy.xcconfig
+      Release: Configs/SatsBuddy.xcconfig
+    sources:
+      - path: SatsBuddy
+        excludes:
+          - Info.plist
+    resources:
+      - path: README.md
+    dependencies:
+      - package: bdk-swift
+        product: BitcoinDevKit
+      - package: rust-cktap
+        product: CKTap
+      - package: KeychainAccess
+      - package: BitcoinUI
+      - package: CodeScanner
