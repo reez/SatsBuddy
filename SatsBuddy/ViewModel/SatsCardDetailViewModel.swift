@@ -26,6 +26,20 @@ class SatsCardDetailViewModel {
 
     @MainActor
     func loadSlotDetails(for card: SatsCardInfo, traceID: String? = nil) {
+        startBalanceFetch(for: card, traceID: traceID)
+    }
+
+    @MainActor
+    func refreshBalance(for card: SatsCardInfo, traceID: String? = nil) async {
+        let task = startBalanceFetch(for: card, traceID: traceID)
+        await task?.value
+    }
+
+    @MainActor
+    @discardableResult
+    private func startBalanceFetch(for card: SatsCardInfo, traceID: String? = nil)
+        -> Task<Void, Never>?
+    {
         errorMessage = nil
         isLoading = true
         isSweepBalanceButtonDisabled = true
@@ -46,7 +60,7 @@ class SatsCardDetailViewModel {
         currentFetchToken = fetchToken
 
         // Kick off balance fetching on a background task so navigation isn't blocked.
-        balanceFetchTask = Task(priority: .userInitiated) { [weak self] in
+        let task = Task(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             await self.fetchBalanceForActiveSlot(
                 card: card,
@@ -55,10 +69,12 @@ class SatsCardDetailViewModel {
                 fetchToken: fetchToken
             )
         }
+        balanceFetchTask = task
 
         Log.cktap.debug(
             "[\(traceID)] loadSlotDetails returning on main after \(String(format: "%.3f", Date().timeIntervalSince(loadStart)))s"
         )
+        return task
     }
 
     private func fetchBalanceForActiveSlot(
