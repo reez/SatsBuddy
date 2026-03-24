@@ -245,7 +245,7 @@ extension SatsCardDetailView {
     }
 
     private var canSweepBalance: Bool {
-        canSendFromActiveSlot && (slotForDisplay.balance ?? 0) > 0
+        canSendFromActiveSlot && !viewModel.isSweepBalanceButtonDisabled
     }
 
     private func placeholderSlot(for card: SatsCardInfo) -> SlotInfo {

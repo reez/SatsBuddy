@@ -1,3 +1,4 @@
+import BitcoinDevKit
 import Foundation
 import XCTest
 
@@ -55,5 +56,65 @@ final class ModelValueTests: XCTestCase {
 
         XCTAssertEqual(preferredRate.code, "USD")
         XCTAssertEqual(preferredRate.rate, price.usd)
+    }
+
+    func testSweepBalanceDisabledWhenTotalBalanceIsZero() {
+        XCTAssertTrue(Self.makeBalance(totalSats: 0, confirmedSats: 0).sweepBalanceDisabled)
+    }
+
+    func testSweepBalanceDisabledWhenOnlyPendingFundsRemain() {
+        XCTAssertTrue(Self.makeBalance(totalSats: 15_000, confirmedSats: 0).sweepBalanceDisabled)
+    }
+
+    func testSweepBalanceEnabledWhenConfirmedFundsRemain() {
+        XCTAssertFalse(
+            Self.makeBalance(totalSats: 15_000, confirmedSats: 15_000).sweepBalanceDisabled
+        )
+    }
+
+    @MainActor
+    func testDetailViewModelDisablesSweepWhenOnlyPendingFundsRemain() async {
+        let slot = makeSlotInfo(balance: nil)
+        let card = makeSatsCard(slots: [slot])
+        let viewModel = SatsCardDetailViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    Self.makeBalance(totalSats: 15_000, confirmedSats: 0)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        viewModel.loadSlotDetails(for: card, traceID: "TEST")
+
+        await waitUntil {
+            !viewModel.isLoading
+        }
+
+        XCTAssertEqual(viewModel.slots.first?.balance, 15_000)
+        XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
+    }
+
+    private static func makeBalance(totalSats: UInt64, confirmedSats: UInt64) -> Balance {
+        let total = Amount.fromSat(satoshi: totalSats)
+        let confirmed = Amount.fromSat(satoshi: confirmedSats)
+        let zero = Amount.fromSat(satoshi: 0)
+
+        return Balance(
+            immature: zero,
+            trustedPending: zero,
+            untrustedPending: zero,
+            confirmed: confirmed,
+            trustedSpendable: confirmed,
+            total: total
+        )
     }
 }

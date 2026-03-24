@@ -63,6 +63,56 @@ final class SlotHistoryViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
     }
 
+    func testLoadHistoryDisablesSweepWhenTotalBalanceIsZero() async {
+        let slot = makeSlotInfo(address: "bc1qzero", balance: 123)
+        let viewModel = SlotHistoryViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    Self.makeBalance(totalSats: 0, confirmedSats: 0)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        await viewModel.loadHistory(for: slot)
+
+        XCTAssertEqual(viewModel.slotBalance, 0)
+        XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
+    }
+
+    func testLoadHistoryDisablesSweepWhenBalanceIsUnconfirmedOnly() async {
+        let slot = makeSlotInfo(address: "bc1qunconfirmed", balance: 123)
+        let viewModel = SlotHistoryViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    Self.makeBalance(totalSats: 10_000, confirmedSats: 0)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        await viewModel.loadHistory(for: slot)
+
+        XCTAssertEqual(viewModel.slotBalance, 10_000)
+        XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
+    }
+
     func testLoadHistoryPreservesBalanceWhenTransactionsFail() async {
         let slot = makeSlotInfo(address: "bc1qfallback", balance: 321)
         let viewModel = SlotHistoryViewModel(
