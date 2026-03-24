@@ -25,10 +25,21 @@ jobs:
             require 'rubygems'
 
             candidates = Dir.glob('/Applications/Xcode*.app')
-            app = candidates.max_by do |path|
-              version = File.basename(path)[/Xcode[_ ]?([0-9.]+)/, 1]
-              version ? Gem::Version.new(version) : Gem::Version.new('0')
+            versioned = candidates.each_with_object([]) do |path, result|
+              version = File.basename(path, '.app')[/\AXcode[_ ]([0-9]+(?:\.[0-9]+)*)\z/, 1]
+              next unless version
+
+              result << [Gem::Version.new(version), path]
             end
+
+            app =
+              if versioned.any?
+                versioned.max_by(&:first).last
+              elsif candidates.include?('/Applications/Xcode.app')
+                '/Applications/Xcode.app'
+              else
+                candidates.sort.last
+              end
 
             puts app if app
             RUBY
