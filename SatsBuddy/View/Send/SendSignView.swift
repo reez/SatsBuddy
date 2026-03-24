@@ -42,9 +42,10 @@ struct SendSignView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("CVC")
                     .font(.headline)
-                SecureField("Enter card CVC", text: $viewModel.cvc)
+                TextField("Enter card CVC", text: $viewModel.cvc)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
+                    .autocorrectionDisabled()
                     .focused($cvcFocused)
                     .padding()
                     .background(Color(.secondarySystemBackground))
