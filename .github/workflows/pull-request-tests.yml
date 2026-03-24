@@ -10,109 +10,30 @@ concurrency:
 
 jobs:
   unit-tests:
-    runs-on: macos-latest
+    runs-on: macos-26
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode
+      - name: Select Xcode Version
+        run: sudo xcode-select -switch /Applications/Xcode_26.0.app
+
+      - name: List Devices
+        run: xcrun xctrace list devices 2>&1
+
+      - name: Build
         run: |
-          set -eo pipefail
-
-          xcode_app=$(
-            ruby <<'RUBY'
-            require 'rubygems'
-
-            candidates = Dir.glob('/Applications/Xcode*.app')
-            versioned = candidates.each_with_object([]) do |path, result|
-              version = File.basename(path, '.app')[/\AXcode[_ ]([0-9]+(?:\.[0-9]+)*)\z/, 1]
-              next unless version
-
-              result << [Gem::Version.new(version), path]
-            end
-
-            app =
-              if versioned.any?
-                versioned.max_by(&:first).last
-              elsif candidates.include?('/Applications/Xcode.app')
-                '/Applications/Xcode.app'
-              else
-                candidates.sort.last
-              end
-
-            puts app if app
-            RUBY
-          )
-
-          if [ -z "$xcode_app" ]; then
-            echo "No Xcode installation found in /Applications" >&2
-            exit 1
-          fi
-
-          sudo xcode-select -switch "$xcode_app/Contents/Developer"
-          xcodebuild -version
-
-      - name: Select Simulator
-        id: simulator
-        run: |
-          set -eo pipefail
-
-          destination=$(
-            ruby <<'RUBY'
-            require 'json'
-            require 'rubygems'
-
-            preferred_names = [
-              'iPhone 17',
-              'iPhone 16e',
-              'iPhone 16',
-              'iPhone 15',
-            ]
-
-            devices_by_runtime = JSON.parse(`xcrun simctl list devices available -j`).fetch('devices')
-            candidates = devices_by_runtime.flat_map do |runtime, devices|
-              version = runtime[/iOS-(.+)$/, 1]&.tr('-', '.')
-              next [] unless version
-
-              devices.select { |device| device['isAvailable'] }.map do |device|
-                {
-                  'name' => device['name'],
-                  'version' => version,
-                }
-              end
-            end
-
-            def pick_device(candidates, name)
-              candidates
-                .select { |candidate| candidate['name'] == name }
-                .max_by { |candidate| Gem::Version.new(candidate['version']) }
-            end
-
-            device = nil
-            preferred_names.each do |name|
-              device = pick_device(candidates, name)
-              break if device
-            end
-
-            device ||= candidates
-              .select { |candidate| candidate['name'].start_with?('iPhone') }
-              .max_by { |candidate| [Gem::Version.new(candidate['version']), candidate['name']] }
-
-            abort('No available iPhone simulator found.') unless device
-
-            puts "platform=iOS Simulator,name=#{device['name']},OS=#{device['version']}"
-            RUBY
-          )
-
-          echo "destination=$destination" >> "$GITHUB_OUTPUT"
-          echo "Using destination: $destination"
-
-      - name: Run Unit Tests
-        run: |
-          set -eo pipefail
-
-          xcodebuild test \
+          xcodebuild build-for-testing \
             -project SatsBuddy.xcodeproj \
             -scheme SatsBuddy \
-            -destination "${{ steps.simulator.outputs.destination }}"
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
+
+      - name: Run Tests
+        run: |
+          xcodebuild test-without-building \
+            -project SatsBuddy.xcodeproj \
+            -scheme SatsBuddy \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
