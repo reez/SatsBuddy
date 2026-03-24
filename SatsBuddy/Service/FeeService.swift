@@ -24,7 +24,7 @@ private struct FeeService {
 
 struct FeeClient {
     let fetchFees: () async throws -> RecommendedFees
-    private init(fetchFees: @escaping () async throws -> RecommendedFees) {
+    init(fetchFees: @escaping () async throws -> RecommendedFees) {
         self.fetchFees = fetchFees
     }
 }
@@ -45,9 +45,5 @@ enum FeeServiceError: Error {
         static let failingMock = Self(fetchFees: {
             throw URLError(.notConnectedToInternet)
         })
-
-        static func test(fetchFees: @escaping () async throws -> RecommendedFees) -> Self {
-            Self(fetchFees: fetchFees)
-        }
     }
 #endif

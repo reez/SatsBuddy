@@ -25,7 +25,7 @@ private struct PriceService {
 struct PriceClient {
     let fetchPrice: () async throws -> Price
 
-    private init(fetchPrice: @escaping () async throws -> Price) {
+    init(fetchPrice: @escaping () async throws -> Price) {
         self.fetchPrice = fetchPrice
     }
 }
@@ -38,10 +38,6 @@ extension PriceClient {
     extension PriceClient {
         static let mock = Self(fetchPrice: { currentPriceMock })
         static let mockZero = Self(fetchPrice: { currentPriceMockZero })
-
-        static func test(fetchPrice: @escaping () async throws -> Price) -> Self {
-            Self(fetchPrice: fetchPrice)
-        }
     }
 #endif
 

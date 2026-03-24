@@ -38,13 +38,19 @@ final class SlotHistoryViewModelTests: XCTestCase {
         ]
         let slot = makeSlotInfo(address: "bc1qhistory", balance: 999)
         let viewModel = SlotHistoryViewModel(
-            bdkClient: .test(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
                 getBalanceFromAddress: { _, _ in
                     Self.makeBalance(totalSats: 84_000, confirmedSats: 84_000)
                 },
+                warmUp: {},
                 getTransactionsForAddress: { _, _, _ in
                     expectedTransactions
-                }
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
             )
         )
 
@@ -60,13 +66,19 @@ final class SlotHistoryViewModelTests: XCTestCase {
     func testLoadHistoryPreservesBalanceWhenTransactionsFail() async {
         let slot = makeSlotInfo(address: "bc1qfallback", balance: 321)
         let viewModel = SlotHistoryViewModel(
-            bdkClient: .test(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
                 getBalanceFromAddress: { _, _ in
                     Self.makeBalance(totalSats: 21_000, confirmedSats: 21_000)
                 },
+                warmUp: {},
                 getTransactionsForAddress: { _, _, _ in
                     throw TestError.expected("Transaction load failed")
-                }
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
             )
         )
 

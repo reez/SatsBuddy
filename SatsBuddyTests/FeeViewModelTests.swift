@@ -13,7 +13,7 @@ final class FeeViewModelTests: XCTestCase {
             minimumFee: 1
         )
         let viewModel = FeeViewModel(
-            feeClient: .test(fetchFees: { expectedFees })
+            feeClient: FeeClient(fetchFees: { expectedFees })
         )
 
         await viewModel.getFees()
@@ -28,7 +28,7 @@ final class FeeViewModelTests: XCTestCase {
 
     func testGetFeesFailureUsesManualFallback() async {
         let viewModel = FeeViewModel(
-            feeClient: .test(fetchFees: {
+            feeClient: FeeClient(fetchFees: {
                 throw TestError.expected("offline")
             })
         )
@@ -63,7 +63,7 @@ final class FeeViewModelTests: XCTestCase {
 
         let probe = Probe()
         let viewModel = FeeViewModel(
-            feeClient: .test(fetchFees: {
+            feeClient: FeeClient(fetchFees: {
                 await probe.fetch()
             })
         )
@@ -106,7 +106,7 @@ final class FeeViewModelTests: XCTestCase {
         )
         let probe = Probe(responses: [first, second])
         let viewModel = FeeViewModel(
-            feeClient: .test(fetchFees: {
+            feeClient: FeeClient(fetchFees: {
                 await probe.fetch()
             })
         )

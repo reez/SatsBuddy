@@ -32,7 +32,7 @@ final class SatsCardViewModelTests: XCTestCase {
             jpy: 14_200_000
         )
         let viewModel = makeViewModel(
-            priceClient: .test(fetchPrice: { expectedPrice })
+            priceClient: PriceClient(fetchPrice: { expectedPrice })
         )
 
         viewModel.priceErrorMessage = "stale error"
@@ -45,7 +45,7 @@ final class SatsCardViewModelTests: XCTestCase {
 
     func testRefreshPriceFailureStoresLocalizedErrorMessage() async {
         let viewModel = makeViewModel(
-            priceClient: .test(fetchPrice: {
+            priceClient: PriceClient(fetchPrice: {
                 throw TestError.expected("Price fetch failed")
             })
         )
@@ -101,15 +101,16 @@ final class SatsCardViewModelTests: XCTestCase {
 
     private func makeViewModel(
         cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder(),
-        priceClient: PriceClient = .test(fetchPrice: { currentPriceMock })
+        priceClient: PriceClient = PriceClient(fetchPrice: { currentPriceMock })
     ) -> SatsCardViewModel {
-        let cardsStore = CardsKeychainClient.test(
+        let cardsStore = CardsKeychainClient(
             loadCards: {
                 cardsStoreRecorder.loadedCards
             },
             saveCards: { cards in
                 cardsStoreRecorder.savedSnapshots.append(cards)
-            }
+            },
+            deleteCards: {}
         )
 
         return SatsCardViewModel(

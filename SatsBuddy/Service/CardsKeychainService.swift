@@ -52,7 +52,7 @@ struct CardsKeychainClient {
     let saveCards: ([SatsCardInfo]) throws -> Void
     let deleteCards: () throws -> Void
 
-    private init(
+    init(
         loadCards: @escaping () throws -> [SatsCardInfo],
         saveCards: @escaping ([SatsCardInfo]) throws -> Void,
         deleteCards: @escaping () throws -> Void
@@ -78,17 +78,5 @@ extension CardsKeychainClient {
             saveCards: { _ in },
             deleteCards: {}
         )
-
-        static func test(
-            loadCards: @escaping () throws -> [SatsCardInfo],
-            saveCards: @escaping ([SatsCardInfo]) throws -> Void,
-            deleteCards: @escaping () throws -> Void = {}
-        ) -> Self {
-            Self(
-                loadCards: loadCards,
-                saveCards: saveCards,
-                deleteCards: deleteCards
-            )
-        }
     }
 #endif
