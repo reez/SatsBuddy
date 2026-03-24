@@ -52,7 +52,7 @@ struct CardsKeychainClient {
     let saveCards: ([SatsCardInfo]) throws -> Void
     let deleteCards: () throws -> Void
 
-    private init(
+    init(
         loadCards: @escaping () throws -> [SatsCardInfo],
         saveCards: @escaping ([SatsCardInfo]) throws -> Void,
         deleteCards: @escaping () throws -> Void

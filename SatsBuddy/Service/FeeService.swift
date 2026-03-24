@@ -24,7 +24,7 @@ private struct FeeService {
 
 struct FeeClient {
     let fetchFees: () async throws -> RecommendedFees
-    private init(fetchFees: @escaping () async throws -> RecommendedFees) {
+    init(fetchFees: @escaping () async throws -> RecommendedFees) {
         self.fetchFees = fetchFees
     }
 }

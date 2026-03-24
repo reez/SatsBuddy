@@ -1,0 +1,39 @@
+name: Pull Request Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pull-request-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -switch /Applications/Xcode_26.0.app
+
+      - name: List Devices
+        run: xcrun xctrace list devices 2>&1
+
+      - name: Build
+        run: |
+          xcodebuild build-for-testing \
+            -project SatsBuddy.xcodeproj \
+            -scheme SatsBuddy \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
+
+      - name: Run Tests
+        run: |
+          xcodebuild test-without-building \
+            -project SatsBuddy.xcodeproj \
+            -scheme SatsBuddy \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1'

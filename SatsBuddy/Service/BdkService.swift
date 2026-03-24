@@ -279,7 +279,7 @@ struct BdkClient {
     let buildPsbt: @Sendable (String, String, UInt64, Network) async throws -> Psbt
     let broadcast: @Sendable (Transaction, Network) async throws -> Void
 
-    private init(
+    init(
         deriveAddress: @escaping @Sendable (String, Network) throws -> String,
         getBalanceFromAddress: @escaping @Sendable (String, Network) async throws -> Balance,
         warmUp: @escaping @Sendable () async -> Void,
@@ -398,6 +398,7 @@ extension BdkClient {
                 )
             }
         )
+
     }
 #endif
 
