@@ -15,6 +15,7 @@ class SatsCardDetailViewModel {
     var slots: [SlotInfo] = []
     var isLoading = false
     var errorMessage: String?
+    var isSweepBalanceButtonDisabled = true
     private let bdkClient: BdkClient
     private var currentFetchToken: UUID?
     private var balanceFetchTask: Task<Void, Never>?
@@ -27,6 +28,7 @@ class SatsCardDetailViewModel {
     func loadSlotDetails(for card: SatsCardInfo, traceID: String? = nil) {
         errorMessage = nil
         isLoading = true
+        isSweepBalanceButtonDisabled = true
 
         slots = card.slots
 
@@ -82,6 +84,7 @@ class SatsCardDetailViewModel {
             await MainActor.run {
                 if self.currentFetchToken == fetchToken {
                     self.isLoading = false
+                    self.isSweepBalanceButtonDisabled = true
                 }
             }
             return
@@ -106,11 +109,13 @@ class SatsCardDetailViewModel {
                     let activeSlotIndex = self.slots.firstIndex(where: { $0.isActive })
                 else {
                     self.isLoading = false
+                    self.isSweepBalanceButtonDisabled = true
                     return false
                 }
 
                 self.slots[activeSlotIndex].balance = balance.total.toSat()
                 self.isLoading = false
+                self.isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
                 return true
             }
 
@@ -134,6 +139,7 @@ class SatsCardDetailViewModel {
                 guard self.currentFetchToken == fetchToken else { return }
                 self.errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
                 self.isLoading = false
+                self.isSweepBalanceButtonDisabled = true
             }
             Log.cktap.error(
                 "[\(traceID)] Total time before failure: \(totalDurationString)s"

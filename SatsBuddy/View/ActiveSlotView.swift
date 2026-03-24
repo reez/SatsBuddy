@@ -41,18 +41,22 @@ struct ActiveSlotView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "paperplane.fill")
-                        
+
                         Text("Sweep Balance")
                             .bold()
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
                 }
-                .foregroundStyle(.primary)
+                .foregroundStyle(canSweepBalance ? .primary : .secondary)
                 .overlay {
                     RoundedRectangle(cornerRadius: 24)
-                        .stroke(.primary, lineWidth: 1)
+                        .stroke(
+                            canSweepBalance ? Color.primary : Color.secondary.opacity(0.35),
+                            lineWidth: 1
+                        )
                 }
+                .opacity(canSweepBalance ? 1 : 0.65)
                 .disabled(!canSweepBalance)
                 .onGeometryChange(for: Bool.self) { proxy in
                     proxy.frame(in: .named("detailScroll")).maxY < 0

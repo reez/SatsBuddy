@@ -145,7 +145,7 @@ final class SlotHistoryViewModel {
     }
 }
 
-private extension Balance {
+extension Balance {
     var sweepBalanceDisabled: Bool {
         confirmed.toSat() == .zero || total.toSat() == .zero
     }
