@@ -12,6 +12,7 @@ struct SendReviewView: View {
     @Environment(\.colorScheme) var colorScheme
     let address: String
     let amount: String
+    let sweptBalance: UInt64?
     let fee: Int
     let onContinue: () -> Void
 
@@ -54,7 +55,7 @@ struct SendReviewView: View {
                             HStack {
                                 Text("Amount")
                                 Spacer()
-                                Text(amount)
+                                Text(displayAmount)
                             }
                             .padding(.top, 8)
                             .fontWeight(.semibold)
@@ -73,6 +74,12 @@ struct SendReviewView: View {
                                         1
                                 )
                         )
+
+                        if sweptBalance != nil {
+                            Text("Final amount sent is current slot balance minus network fee.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding()
 
@@ -103,11 +110,19 @@ struct SendReviewView: View {
     }
 }
 
+extension SendReviewView {
+    fileprivate var displayAmount: String {
+        guard let sweptBalance else { return amount }
+        return "\(amount) (\(sweptBalance.formatted(.number)) sats)"
+    }
+}
+
 #Preview {
     SendReviewView(
         address:
             "tb1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
-        amount: "100000",
+        amount: "ALL",
+        sweptBalance: 100_000,
         fee: 17,
         onContinue: {}
     )
