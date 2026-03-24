@@ -54,6 +54,12 @@ struct SatsCardDetailView: View {
             }
             .padding()
         }
+        .refreshable {
+            await viewModel.refreshBalance(
+                for: updatedCard,
+                traceID: String(UUID().uuidString.prefix(6))
+            )
+        }
         .coordinateSpace(name: "detailScroll")
         .navigationTitle(updatedCard.displayName)
         .navigationBarTitleDisplayMode(.inline)
