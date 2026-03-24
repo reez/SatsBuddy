@@ -1,58 +1,31 @@
 # SatsBuddy
 
-*Experimental*
+*Experimental iPhone companion for SATSCARD.*
 
-An iPhone app companion for SATSCARD.
+[Download on TestFlight](https://testflight.apple.com/join/Pq7KwWzB).
 
-Download on [TestFlight](https://testflight.apple.com/join/Pq7KwWzB).
+## What It Does
+
+- Scan and save SATSCARDs over NFC
+- View slot details, receive addresses, and balances
+- Set up the next slot or sweep funds from the active slot
 
 ## Dependencies
 
 - [bdk-swift](https://github.com/bitcoindevkit/bdk-swift)
-
 - [BitcoinUI](https://github.com/reez/BitcoinUI)
-
+- [CodeScanner](https://github.com/twostraws/CodeScanner.git)
 - [KeychainAccess](https://github.com/kishikawakatsumi/KeychainAccess)
-
 - [rust-cktap](https://github.com/bitcoindevkit/rust-cktap)
-
-## Running SatsBuddy Locally
-
-### Prerequisites
-
-- Xcode (and Xcode Command Line Tools)
-- Git
-
-You can verify the required tools are installed with:
-
-```bash
-xcodebuild -version
-git --version
-```
-
-### Repository Setup
-
-Clone SatsBuddy and open the project:
-
-```bash
-cd ~/Documents
-git clone https://github.com/reez/SatsBuddy.git
-cd SatsBuddy
-open SatsBuddy.xcodeproj
-```
-
-SatsBuddy resolves `CKTap` from the remote `rust-cktap` Swift Package (`v0.2.2`).
 
 ## SwiftUI Previews
 
-This project links native / FFI-heavy dependencies (CKTap, BitcoinDevKit).
-On some Xcode versions, SwiftUI previews may crash using the default preview
-execution mode, even though the app runs correctly in the simulator.
+This project links native and FFI-heavy dependencies (`CKTap`, `BitcoinDevKit`).
+On some Xcode versions, SwiftUI previews may crash in the default execution mode
+even when the app itself runs normally.
 
-To fix this:
-From inside a SwiftUI View code file,
-Select Editor -> Canvas -> Enable “Use Legacy Previews Execution”
-After enabling this option, SwiftUI previews should render normally.
+If that happens, open a SwiftUI view file and enable
+`Editor > Canvas > Use Legacy Previews Execution`.
 
 ## About
 
