@@ -124,8 +124,9 @@ struct SatsCardDetailView: View {
             NavigationStack {
                 Form {
                     Section("Set up next slot") {
-                        SecureField("Card CVC", text: $setupCvc)
+                        TextField("Card CVC", text: $setupCvc)
                             .keyboardType(.numberPad)
+                            .textContentType(.oneTimeCode)
                     }
                     Section {
                         Button("Continue") {
