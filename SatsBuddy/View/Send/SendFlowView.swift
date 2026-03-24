@@ -58,6 +58,7 @@ struct SendFlowView: View {
                 SendReviewView(
                     address: address,
                     amount: "ALL",
+                    sweptBalance: slot.balance,
                     fee: fee
                 ) {
                     step = .sign(address: address, fee: fee)
