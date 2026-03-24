@@ -45,5 +45,9 @@ enum FeeServiceError: Error {
         static let failingMock = Self(fetchFees: {
             throw URLError(.notConnectedToInternet)
         })
+
+        static func test(fetchFees: @escaping () async throws -> RecommendedFees) -> Self {
+            Self(fetchFees: fetchFees)
+        }
     }
 #endif
