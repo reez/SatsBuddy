@@ -637,6 +637,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     }
 
     private func handleRecoverableFailure(_ error: Error) {
+        clearCvcIfNeeded(for: error)
         let message = userFacingMessage(for: error, includeRetryInstruction: true)
         finishAfterSessionInvalidation(
             phase: .raw(message),
@@ -646,12 +647,19 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     }
 
     private func handleTerminalFailure(_ error: Error) {
+        clearCvcIfNeeded(for: error)
         let message = userFacingMessage(for: error, includeRetryInstruction: false)
         finishAfterSessionInvalidation(
             phase: .failed(message),
             nextState: .error(message),
             alertMessage: message
         )
+    }
+
+    private func clearCvcIfNeeded(for error: Error) {
+        guard let cktapError = cktapError(from: error) else { return }
+        guard case .Card(.BadAuth) = cktapError else { return }
+        cvc = ""
     }
 
     private func finishAfterSessionInvalidation(
