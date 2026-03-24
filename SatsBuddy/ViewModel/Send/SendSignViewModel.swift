@@ -80,9 +80,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             case .checkingCard:
                 return "Checking SATSCARD status…"
             case .waitingForSecurityDelay(let seconds):
-                let unit = seconds == 1 ? "second" : "seconds"
-                return
-                    "Card security delay active. Keep the SATSCARD near your iPhone for about \(seconds) \(unit) while it cools off."
+                return SendSignViewModel.securityDelayMessage(seconds: seconds)
             case .readingSlotDetails:
                 return "Reading slot details…"
             case .unsealingActiveSlot:
@@ -116,8 +114,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             case .checkingCard:
                 return "Checking SATSCARD status…"
             case .waitingForSecurityDelay(let seconds):
-                let unit = seconds == 1 ? "second" : "seconds"
-                return "Cooling off for about \(seconds) \(unit)…"
+                return "Cooling off: \(seconds)s remaining…"
             case .readingSlotDetails:
                 return "Reading slot details…"
             case .unsealingActiveSlot:
@@ -415,11 +412,10 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
             latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
             if let authDelay = latestAuthDelaySeconds, authDelay > 0 {
-                setStatusMessage(.waitingForSecurityDelay(seconds: authDelay))
                 Log.nfc.info(
                     "[SendSign] Auth delay active for \(authDelay) seconds. Waiting for cooldown…"
                 )
-                try await satsCard.wait()
+                try await waitForSecurityDelay(satsCard: satsCard, seconds: authDelay)
                 liveStatus = await satsCard.status()
                 latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
             }
@@ -549,6 +545,37 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
 
         return psbtSigned
+    }
+
+    private func waitForSecurityDelay(
+        satsCard: CKTap.SatsCard,
+        seconds: Int
+    ) async throws {
+        let countdownTask = startSecurityDelayCountdown(seconds: seconds)
+        defer { countdownTask.cancel() }
+
+        setStatusMessage(.waitingForSecurityDelay(seconds: seconds))
+        try await satsCard.wait()
+    }
+
+    private func startSecurityDelayCountdown(seconds: Int) -> Task<Void, Never> {
+        Task { [weak self] in
+            guard let self else { return }
+
+            var remainingSeconds = seconds
+            while !Task.isCancelled && remainingSeconds > 0 {
+                await MainActor.run {
+                    self.setStatusMessage(.waitingForSecurityDelay(seconds: remainingSeconds))
+                }
+
+                if remainingSeconds == 1 {
+                    break
+                }
+
+                try? await Task.sleep(for: .seconds(1))
+                remainingSeconds -= 1
+            }
+        }
     }
 
     private func dumpOrUnseal(
@@ -775,6 +802,10 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
 
         return nil
+    }
+
+    nonisolated private static func securityDelayMessage(seconds: Int) -> String {
+        "Card security delay active. Keep the SATSCARD near your iPhone for \(seconds) \(seconds == 1 ? "more second" : "more seconds") while it cools off."
     }
 
     private func setStatusMessage(_ phase: StatusPhase) {
