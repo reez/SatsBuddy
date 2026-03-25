@@ -206,6 +206,23 @@ final class SatsCardViewModelTests: XCTestCase {
         XCTAssertEqual(mapped, SatsCardViewModel.SetupNextSlotError.noUnusedSlots)
     }
 
+    func testSetupNextSlotAuthenticityFailurePreservesVerificationMessage() {
+        let viewModel = makeViewModel()
+        let authenticityError = SatsCardAuthenticityError.notGenuine
+
+        let mapped = viewModel.setupNextSlotError(
+            from: authenticityError,
+            authDelay: nil
+        )
+
+        XCTAssertEqual(
+            mapped,
+            .raw(
+                "This SATSCARD did not verify as genuine. Do not send funds to this card or sign with it."
+            )
+        )
+    }
+
     private func makeViewModel(
         cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder(),
         priceClient: PriceClient = PriceClient(fetchPrice: { currentPriceMock })

@@ -43,6 +43,7 @@ final class CkTapCardService {
 
         switch cardType {
         case .satsCard(let card):
+            try await SatsCardAuthenticityVerifier.verify(card)
             let next = try await card.newSlot(cvc: cvc)
             Log.cktap.info("newSlot completed -> next active slot \(next)")
             return try await readSatsCard(card)
@@ -70,6 +71,7 @@ final class CkTapCardService {
 
         switch cardType {
         case .satsCard(let card):
+            try await SatsCardAuthenticityVerifier.verify(card)
             return try await readSatsCard(card)
 
         case .tapSigner(_):
