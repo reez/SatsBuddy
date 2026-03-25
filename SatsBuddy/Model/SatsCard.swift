@@ -105,7 +105,16 @@ struct SatsCardInfo: Identifiable, Codable {
     /// Stable hardware identifier exposed by CKTap, used to merge scans.
     var cardIdentifier: String { cardIdent ?? pubkey }
 
+    var isExhausted: Bool {
+        guard let activeSlot, let totalSlots else { return false }
+        return activeSlot >= totalSlots
+    }
+
     var displayActiveSlotNumber: Int? {
-        activeSlot.map { Int($0) + 1 }
+        guard let activeSlot else { return nil }
+        if let totalSlots, activeSlot >= totalSlots {
+            return nil
+        }
+        return Int(activeSlot) + 1
     }
 }
