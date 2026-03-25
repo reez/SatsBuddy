@@ -207,7 +207,7 @@ private struct ReceiveRow: View {
                     Text("Receive")
                         .foregroundStyle(.secondary)
                     HStack(alignment: .center) {
-                        Text("Set up next slot")
+                        Text("Activate next slot")
                             .foregroundColor(.primary)
 
                         Spacer(minLength: 80)

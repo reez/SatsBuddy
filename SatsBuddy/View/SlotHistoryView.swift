@@ -174,12 +174,14 @@ private struct TransactionsSectionView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text(error)
                             .foregroundStyle(.red)
-                        Button("Retry") {
-                            Task {
-                                await viewModel.loadHistory(for: slot, network: network)
+                        if viewModel.canRetryCurrentError {
+                            Button("Retry") {
+                                Task {
+                                    await viewModel.loadHistory(for: slot, network: network)
+                                }
                             }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
                     }
                 }
             } else if viewModel.transactions.isEmpty {

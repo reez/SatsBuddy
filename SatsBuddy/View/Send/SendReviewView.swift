@@ -116,7 +116,7 @@ struct SendReviewView: View {
 
 extension SendReviewView {
     static let nextSlotSetupDisclosure =
-        "After the sweep, the next slot stays empty until you set it up before receiving again."
+        "After the sweep, the next slot won't be ready to receive until you activate it."
 
     static func sweepDisclosure(for slotDisplayNumber: Int) -> String {
         "Continuing will permanently unseal Slot \(slotDisplayNumber) and move this SATSCARD to the next slot."
