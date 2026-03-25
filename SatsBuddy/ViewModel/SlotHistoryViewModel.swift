@@ -21,7 +21,6 @@ final class SlotHistoryViewModel {
     var errorMessage: String?
     var canRetryCurrentError = false
     var isSweepBalanceButtonDisabled = true
-    var slot: SlotInfo?
 
     init(bdkClient: BdkClient = .live) {
         self.bdkClient = bdkClient
@@ -40,7 +39,7 @@ final class SlotHistoryViewModel {
             }
             return
         }
-        self.slot = slot
+
         let slotNumber = slot.slotNumber
         let taskID = UUID()
         let traceID = String(UUID().uuidString.prefix(6))
@@ -77,7 +76,25 @@ final class SlotHistoryViewModel {
                 "[\(traceID)] Loaded \(fetched.count) transactions for slot \(slotNumber) address \(address, privacy: .private(mask: .hash))"
             )
 
-            await getBalance(for: address, network: network)
+            do {
+                let balance = try await bdkClient.getBalanceFromAddress(address, network)
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.slotBalance = balance.total.toSat()
+                    isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
+                    Log.cktap.info(
+                        "[\(traceID)] Loaded balance for slot \(slotNumber): \(balance.total.toSat(), privacy: .private) sats"
+                    )
+                }
+            } catch {
+                Log.cktap.error(
+                    "[\(traceID)] Failed to fetch balance: \(error.localizedDescription, privacy: .public)"
+                )
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.isSweepBalanceButtonDisabled = true
+                }
+            }
 
             await MainActor.run {
                 if self.currentTaskID == taskID {
@@ -99,29 +116,30 @@ final class SlotHistoryViewModel {
                 "[\(traceID)] Failed to fetch transactions: \(error.localizedDescription, privacy: .public)"
             )
 
-            await getBalance(for: address, network: network)
+            do {
+                let balance = try await bdkClient.getBalanceFromAddress(address, network)
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.slotBalance = balance.total.toSat()
+                    isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
+                    Log.cktap.info(
+                        "[\(traceID)] Loaded balance for slot \(slotNumber) despite transaction error: \(balance.total.toSat(), privacy: .private) sats"
+                    )
+                }
+            } catch {
+                Log.cktap.error(
+                    "[\(traceID)] Failed to fetch balance after transaction error: \(error.localizedDescription, privacy: .public)"
+                )
+                await MainActor.run {
+                    guard self.currentTaskID == taskID else { return }
+                    self.isSweepBalanceButtonDisabled = true
+                }
+            }
 
             await MainActor.run {
                 if self.currentTaskID == taskID {
                     self.isLoading = false
                 }
-            }
-        }
-    }
-
-    func getBalance(for address: String, network: Network) async {
-        do {
-            let balance = try await bdkClient.getBalanceFromAddress(address, network)
-            await MainActor.run {
-                self.slotBalance = balance.total.toSat()
-                self.isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
-            }
-        } catch {
-            Log.cktap.error(
-                "getBalance failed: \(error.localizedDescription, privacy: .public)"
-            )
-            await MainActor.run {
-                self.isSweepBalanceButtonDisabled = true
             }
         }
     }
