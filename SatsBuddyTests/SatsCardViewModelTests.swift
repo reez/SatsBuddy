@@ -158,6 +158,25 @@ final class SatsCardViewModelTests: XCTestCase {
         XCTAssertEqual(recorder.savedSnapshots.first?.first?.activeSlot, 1)
     }
 
+    func testValidatedRefreshCardInfoRejectsWrongCardIdentifier() {
+        let viewModel = makeViewModel()
+        let scannedCard = makeSatsCard(cardIdent: "CARD-1")
+        let wrongCard = makeSatsCard(
+            id: UUID(uuidString: "20000000-0000-0000-0000-000000000022")!,
+            pubkey: "other-pubkey",
+            cardIdent: "CARD-2"
+        )
+
+        XCTAssertThrowsError(
+            try viewModel.validatedRefreshCardInfo(
+                wrongCard,
+                expectedCardIdentifier: scannedCard.cardIdentifier
+            )
+        ) { error in
+            XCTAssertEqual(error as? SatsCardViewModel.RefreshCardError, .wrongCard)
+        }
+    }
+
     private func makeViewModel(
         cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder(),
         priceClient: PriceClient = PriceClient(fetchPrice: { currentPriceMock })
