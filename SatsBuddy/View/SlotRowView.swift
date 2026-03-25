@@ -214,6 +214,22 @@ private struct SlotSummaryHeader: View {
                     .font(.body)
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
+                
+                Text(balanceFormat.displayText(price: PriceStore.shared.price))
+                    .foregroundStyle(.secondary)
+                    .font(.body)
+                    .fontWeight(.thin)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        )
+                    )
+                    .id("format-\(balanceFormat)")
+                    .animation(
+                        .spring(response: 0.3, dampingFraction: 0.7),
+                        value: balanceFormat
+                    )
             }
         }
     }
