@@ -99,6 +99,65 @@ final class SatsCardViewModelTests: XCTestCase {
         XCTAssertSatsCardArraysEqual(recorder.savedSnapshots.first ?? [], [secondCard])
     }
 
+    func testApplyCardSnapshotMergesRefreshedCardAndPersistsResult() {
+        let existingCard = makeSatsCard(
+            id: UUID(uuidString: "20000000-0000-0000-0000-000000000099")!,
+            address: "bc1qold",
+            pubkey: "pubkey-existing",
+            cardIdent: "CARD-EXISTING",
+            activeSlot: 0,
+            totalSlots: 10,
+            slots: [
+                makeSlotInfo(
+                    slotNumber: 0,
+                    isActive: true,
+                    isUsed: true,
+                    address: "bc1qold",
+                    balance: 21_000
+                )
+            ],
+            label: "Travel Card"
+        )
+        let refreshedCard = makeSatsCard(
+            address: nil,
+            pubkey: "pubkey-existing",
+            cardIdent: "CARD-EXISTING",
+            activeSlot: 1,
+            totalSlots: 10,
+            slots: [
+                makeSlotInfo(
+                    slotNumber: 0,
+                    isActive: false,
+                    isUsed: true,
+                    address: "bc1qold"
+                ),
+                makeSlotInfo(
+                    slotNumber: 1,
+                    isActive: true,
+                    isUsed: true,
+                    address: nil
+                ),
+            ],
+            label: nil
+        )
+        let recorder = CardsStoreRecorder(loadedCards: [existingCard])
+        let viewModel = makeViewModel(cardsStoreRecorder: recorder)
+
+        let mergedCard = viewModel.applyCardSnapshot(refreshedCard)
+
+        XCTAssertEqual(mergedCard.id, existingCard.id)
+        XCTAssertEqual(mergedCard.label, existingCard.label)
+        XCTAssertEqual(mergedCard.activeSlot, 1)
+        XCTAssertNil(mergedCard.address)
+        XCTAssertEqual(mergedCard.slots.count, 2)
+        XCTAssertEqual(viewModel.scannedCards.first?.id, existingCard.id)
+        XCTAssertEqual(viewModel.scannedCards.first?.label, existingCard.label)
+        XCTAssertEqual(viewModel.scannedCards.first?.activeSlot, 1)
+        XCTAssertEqual(recorder.savedSnapshots.count, 1)
+        XCTAssertEqual(recorder.savedSnapshots.first?.first?.id, existingCard.id)
+        XCTAssertEqual(recorder.savedSnapshots.first?.first?.activeSlot, 1)
+    }
+
     private func makeViewModel(
         cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder(),
         priceClient: PriceClient = PriceClient(fetchPrice: { currentPriceMock })

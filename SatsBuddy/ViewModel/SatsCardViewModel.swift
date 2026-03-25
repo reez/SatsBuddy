@@ -410,6 +410,15 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         persistCards()
     }
 
+    @MainActor
+    @discardableResult
+    func applyCardSnapshot(_ card: SatsCardInfo) -> SatsCardInfo {
+        let mergedCard = mergeCardInfo(with: card)
+        _ = CardsStore.upsert(&scannedCards, with: mergedCard)
+        persistCards()
+        return mergedCard
+    }
+
     private func loadPersistedCards() {
         do {
             scannedCards = try cardsStore.loadCards()

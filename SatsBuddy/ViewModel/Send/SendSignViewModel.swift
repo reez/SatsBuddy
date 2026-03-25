@@ -55,6 +55,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         case unsealingActiveSlot
         case signingTransaction
         case broadcastingTransaction
+        case syncingCardState
         case broadcasted(txid: String?)
         case nfcCancelled
         case noTagFound
@@ -89,6 +90,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return "Finalizing signed transaction…"
             case .broadcastingTransaction:
                 return "Broadcasting transaction…"
+            case .syncingCardState:
+                return "Syncing SATSCARD state…"
             case .broadcasted:
                 return "Transaction broadcasted successfully."
             case .nfcCancelled:
@@ -123,6 +126,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return "Finalizing signed transaction…"
             case .broadcastingTransaction:
                 return "Broadcasting transaction…"
+            case .syncingCardState:
+                return "Syncing SATSCARD state…"
             case .broadcasted:
                 return "Transaction broadcasted successfully"
             default:
@@ -144,6 +149,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     var signedTxid: String?
     var psbtError: String?
     var txHex: String?
+    var refreshedCardInfo: SatsCardInfo?
     var state: State = .idle
     var isBusy: Bool {
         switch state {
@@ -198,6 +204,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         psbt = nil
         psbtBase64 = nil
         psbtError = nil
+        refreshedCardInfo = nil
         setStatusMessage(.preparingSweep)
 
         do {
@@ -267,6 +274,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
         pendingInvalidationOutcome = nil
         latestAuthDelaySeconds = nil
+        refreshedCardInfo = nil
         let previousSession = session
         session = nil
         previousSession?.invalidate()
@@ -467,6 +475,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return
             }
 
+            setStatusMessage(.syncingCardState)
+            refreshedCardInfo = await refreshCardInfo(transport: transport)
             cvc = ""
             state = .done
             setStatusMessage(.broadcasted(txid: signedTxid))
@@ -482,6 +492,18 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 "[SendSign] handleTag error: \(error.localizedDescription, privacy: .public)"
             )
             handleRecoverableFailure(error)
+        }
+    }
+
+    private func refreshCardInfo(transport: CkTransport) async -> SatsCardInfo? {
+        do {
+            return try await CkTapCardService(addressDeriver: bdkClient, network: network)
+                .readCardInfo(transport: transport)
+        } catch {
+            Log.cktap.error(
+                "[SendSign] Card refresh after broadcast failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
+            )
+            return nil
         }
     }
 
