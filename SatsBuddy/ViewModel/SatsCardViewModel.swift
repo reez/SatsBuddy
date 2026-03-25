@@ -95,7 +95,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                         "Incorrect CVC. Wait \(cooldownSeconds) \(cooldownSeconds == 1 ? "second" : "seconds"), then try again."
                 }
                 return
-                    "Incorrect CVC. Check the 6-digit code on the back of the card and try again."
+                    "Incorrect CVC. Check the 6-digit code on the back of your SATSCARD and try again."
             case .rateLimited(let cooldownSeconds):
                 if let cooldownSeconds {
                     return

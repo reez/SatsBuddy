@@ -719,7 +719,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         if let dumpError = error as? DumpError {
             switch dumpError {
             case .SlotSealed:
-                return "This slot is still sealed. Enter the correct CVC and try again."
+                return
+                    "This slot is still sealed. Enter your SATSCARD CVC to unseal it before signing."
             case .SlotUnused:
                 return
                     "This slot has not been used yet. Refresh the card details and choose a funded slot."
@@ -737,7 +738,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             switch signPsbtError {
             case .SlotNotUnsealed:
                 return
-                    "This slot needs to be unsealed before it can sign. Enter the correct CVC and try again."
+                    "This slot needs to be unsealed before it can sign. Enter your SATSCARD CVC to unseal it before signing."
             case .PubkeyMismatch:
                 return "Tapped card slot does not match the prepared transaction."
             case .MissingUtxo, .MissingPubkey, .InvalidPath, .InvalidScript, .WitnessProgram:
