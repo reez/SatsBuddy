@@ -71,7 +71,19 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
     enum Operation {
         case scan
+        case refresh(card: SatsCardInfo)
         case setupNextSlot(card: SatsCardInfo, cvc: String)
+    }
+
+    enum RefreshCardError: LocalizedError, Equatable {
+        case wrongCard
+
+        var errorDescription: String? {
+            switch self {
+            case .wrongCard:
+                return "Wrong SATSCARD detected. Tap the original card and try again."
+            }
+        }
     }
 
     private enum SetupNextSlotError: LocalizedError {
@@ -126,6 +138,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             case .scan:
                 self.lastStatusMessage = "Scanning for Card..."
                 session.alertMessage = "Hold near SATSCARD."
+            case .refresh:
+                let message = "Hold your iPhone near the original SATSCARD to refresh it."
+                self.lastStatusMessage = message
+                session.alertMessage = "Hold near SATSCARD."
             case .setupNextSlot:
                 let message = "Hold your iPhone near the SATSCARD to activate the next slot."
                 self.lastStatusMessage = message
@@ -165,6 +181,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 switch invalidatedOperation {
                 case .scan:
                     self.lastStatusMessage = "Scan cancelled."
+                case .refresh:
+                    self.lastStatusMessage = "Card refresh cancelled."
                 case .setupNextSlot:
                     self.lastStatusMessage = "Next slot activation cancelled."
                 }
@@ -258,14 +276,21 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     self?.tagSession?.alertMessage = "Checking SATSCARD…"
                 }
 
+                let operation = self.currentOperation
                 do {
                     if Task.isCancelled { return }
                     let transport = NFCTransport(tag: iso7816Tag)
                     if Task.isCancelled { return }
                     let cardInfo: SatsCardInfo
-                    switch self.currentOperation {
+                    switch operation {
                     case .scan:
                         cardInfo = try await self.ckTapClient.readCardInfo(transport)
+                    case .refresh(let target):
+                        let refreshedCard = try await self.ckTapClient.readCardInfo(transport)
+                        cardInfo = try self.validatedRefreshCardInfo(
+                            refreshedCard,
+                            expectedCardIdentifier: target.cardIdentifier
+                        )
                     case .setupNextSlot(let target, let cvc):
                         Log.cktap.info(
                             "Starting new slot setup for card \(target.cardIdentifier, privacy: .private(mask: .hash))"
@@ -281,10 +306,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     await MainActor.run {
                         let mergedCard = self.mergeCardInfo(with: cardInfo)
                         let updated = CardsStore.upsert(&self.scannedCards, with: mergedCard)
-                        switch self.currentOperation {
+                        switch operation {
                         case .scan:
                             self.lastStatusMessage =
                                 updated ? "Card updated with latest data 🔄" : "New card added ✅"
+                        case .refresh:
+                            self.lastStatusMessage = "Card refreshed ✅"
                         case .setupNextSlot:
                             self.lastStatusMessage = "Next slot activated ✅"
                         }
@@ -306,10 +333,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     )
                     let detailMessage = self.userFacingMessage(
                         for: error,
-                        operation: self.currentOperation
+                        operation: operation
                     )
                     let alertMessage: String
-                    switch self.currentOperation {
+                    switch operation {
                     case .scan:
                         if error is CkTapCardError {
                             alertMessage = "Unsupported tag."
@@ -326,6 +353,28 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                             }
                         } else {
                             alertMessage = "Scan failed."
+                        }
+                    case .refresh:
+                        if let refreshError = error as? RefreshCardError {
+                            switch refreshError {
+                            case .wrongCard:
+                                alertMessage = "Wrong SATSCARD."
+                            }
+                        } else if error is CkTapCardError {
+                            alertMessage = "Unsupported tag."
+                        } else if self.extractTransportMessage(from: error) != nil {
+                            alertMessage = "Connection lost."
+                        } else if let ckTapError = self.extractCkTapError(from: error) {
+                            switch ckTapError {
+                            case .UnknownCardType:
+                                alertMessage = "Unsupported tag."
+                            case .CborDe, .CborValue:
+                                alertMessage = "Read failed."
+                            case .Transport, .Card:
+                                alertMessage = "Refresh failed."
+                            }
+                        } else {
+                            alertMessage = "Refresh failed."
                         }
                     case .setupNextSlot:
                         switch self.setupNextSlotError(from: error, authDelay: nil) {
@@ -437,7 +486,31 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     }
 
     func refreshCard(_ card: SatsCardInfo) {
-        beginNFCSession()
+        guard NFCTagReaderSession.readingAvailable else {
+            Log.nfc.error("NFC reading not available on this device")
+            lastStatusMessage = "NFC not available on this device"
+            return
+        }
+
+        currentNFCReadTask?.cancel()
+        currentNFCReadTask = nil
+        currentNFCReadTaskToken = nil
+        preserveStatusOnCurrentSessionInvalidation = false
+        let previousSession = tagSession
+        tagSession = nil
+        previousSession?.invalidate()
+
+        currentOperation = .refresh(card: card)
+        let message = "Hold your iPhone near the original SATSCARD to refresh it."
+        lastStatusMessage = message
+        tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
+        tagSession?.alertMessage = "Hold near SATSCARD."
+        tagSession?.begin()
+
+        Log.nfc.info(
+            "NFC session started (refresh card \(card.cardIdentifier, privacy: .private(mask: .hash)))"
+        )
+        Haptics.selection()
     }
 
     @MainActor
@@ -613,7 +686,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
     private func userFacingMessage(for error: Error, operation: Operation) -> String {
         switch operation {
-        case .scan:
+        case .scan, .refresh:
             if let localizedError = error as? LocalizedError,
                 let description = localizedError.errorDescription
             {
@@ -631,6 +704,20 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             return setupNextSlotError(from: error, authDelay: nil).errorDescription
                 ?? "Error: \(error.localizedDescription)"
         }
+    }
+
+    func validatedRefreshCardInfo(
+        _ cardInfo: SatsCardInfo,
+        expectedCardIdentifier: String
+    ) throws -> SatsCardInfo {
+        guard cardInfo.cardIdentifier == expectedCardIdentifier else {
+            Log.cktap.error(
+                "Wrong SATSCARD for refresh: expected=\(expectedCardIdentifier, privacy: .private(mask: .hash)) actual=\(cardInfo.cardIdentifier, privacy: .private(mask: .hash))"
+            )
+            throw RefreshCardError.wrongCard
+        }
+
+        return cardInfo
     }
 
     private func setupNextSlotError(from error: Error, authDelay: UInt8?) -> SetupNextSlotError {
