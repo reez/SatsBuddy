@@ -49,6 +49,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         case enterCvc
         case nfcUnavailable
         case waitingForCard
+        case verifyingCard
         case checkingCard
         case waitingForSecurityDelay(seconds: Int)
         case readingSlotDetails
@@ -79,6 +80,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return "NFC not available on this device."
             case .waitingForCard:
                 return "Hold your iPhone near the SATSCARD."
+            case .verifyingCard:
+                return "Verifying SATSCARD…"
             case .checkingCard:
                 return "Checking SATSCARD status…"
             case .waitingForSecurityDelay(let seconds):
@@ -115,6 +118,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             switch self {
             case .waitingForCard:
                 return "Hold near SATSCARD."
+            case .verifyingCard:
+                return "Verifying SATSCARD…"
             case .checkingCard:
                 return "Checking SATSCARD…"
             case .waitingForSecurityDelay(let seconds):
@@ -401,6 +406,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
 
             state = .preparingPsbt
+            setStatusMessage(.verifyingCard)
+            try await SatsCardAuthenticityVerifier.verify(satsCard)
             setStatusMessage(.checkingCard)
 
             var liveStatus = await satsCard.status()
@@ -664,7 +671,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         clearCvcIfNeeded(for: error)
         let message = userFacingMessage(for: error, includeRetryInstruction: true)
         let alertMessage: String
-        if let cktapError = cktapError(from: error) {
+        if let authenticityError = error as? SatsCardAuthenticityError {
+            alertMessage = authenticityError.alertMessage
+        } else if let cktapError = cktapError(from: error) {
             switch cktapError {
             case .Card(let cardError):
                 switch cardError {
@@ -733,7 +742,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         clearCvcIfNeeded(for: error)
         let message = userFacingMessage(for: error, includeRetryInstruction: false)
         let alertMessage: String
-        if let cktapError = cktapError(from: error) {
+        if let authenticityError = error as? SatsCardAuthenticityError {
+            alertMessage = authenticityError.alertMessage
+        } else if let cktapError = cktapError(from: error) {
             switch cktapError {
             case .Card(let cardError):
                 switch cardError {
@@ -828,6 +839,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         for error: Error,
         includeRetryInstruction: Bool
     ) -> String {
+        if let authenticityError = error as? SatsCardAuthenticityError,
+            let description = authenticityError.errorDescription
+        {
+            return description
+        }
+
         if let cktapError = cktapError(from: error) {
             return userFacingMessage(
                 for: cktapError,
