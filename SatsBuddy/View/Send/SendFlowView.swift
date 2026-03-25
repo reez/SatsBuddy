@@ -60,6 +60,7 @@ struct SendFlowView: View {
                     amount: "ALL",
                     sweptBalance: slot.balance,
                     slotDisplayNumber: slot.displaySlotNumber,
+                    advancesToNextSlot: slot.isActive,
                     fee: fee
                 ) {
                     step = .sign(address: address, fee: fee)
