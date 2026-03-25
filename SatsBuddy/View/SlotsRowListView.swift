@@ -52,33 +52,6 @@ struct SlotsRowListView: View {
     }
 }
 
-private struct SlotsCard<Content: View>: View {
-    private let content: Content
-    private let contentPadding: CGFloat
-
-    init(contentPadding: CGFloat = 20, @ViewBuilder content: () -> Content) {
-        self.content = content()
-        self.contentPadding = contentPadding
-    }
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-
-        content
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(contentPadding)
-            .background(
-                shape
-                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
-            )
-            .overlay(
-                shape
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-            .clipShape(shape)
-    }
-}
-
 #Preview {
     let sampleSlots: [SlotInfo] = [
         SlotInfo(
