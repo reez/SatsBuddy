@@ -68,11 +68,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             case .preparingSweep:
                 return "Preparing sweep transaction…"
             case .readyToSignAndBroadcast:
-                return "Transaction ready. Enter CVC and tap your card to sign and broadcast."
+                return
+                    "Transaction ready. Enter your SATSCARD CVC, then tap your card to sign and broadcast."
             case .stillPreparing:
                 return "Still preparing transaction…"
             case .enterCvc:
-                return "Enter CVC to continue."
+                return "Enter your SATSCARD CVC to continue."
             case .nfcUnavailable:
                 return "NFC not available on this device."
             case .waitingForCard:
@@ -745,18 +746,19 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         case .Card(let cardError):
             switch cardError {
             case .BadAuth:
-                return "Incorrect CVC. Check the code printed on the SATSCARD and try again."
+                return
+                    "Incorrect CVC. Check the 6-digit code on the back of your SATSCARD and try again."
             case .NeedsAuth:
-                return "Enter the SATSCARD's CVC to continue."
+                return "Enter your SATSCARD CVC to continue."
             case .RateLimited:
                 let seconds = max(latestAuthDelaySeconds ?? 15, 1)
                 let unit = seconds == 1 ? "second" : "seconds"
                 if includeRetryInstruction {
                     return
-                        "Too many incorrect CVC attempts. Keep the SATSCARD near your iPhone for about \(seconds) \(unit) while it cools off, then try again with the correct CVC."
+                        "Too many incorrect CVC attempts. Wait about \(seconds) \(unit), then try again with the correct CVC."
                 }
                 return
-                    "Too many incorrect CVC attempts. The SATSCARD needs about \(seconds) \(unit) to cool off."
+                    "Too many incorrect CVC attempts. Wait about \(seconds) \(unit) before trying again."
             case .InvalidState:
                 return
                     "The SATSCARD is not in the right state for that action. Refresh the card details and try again."
@@ -813,7 +815,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     }
 
     nonisolated private static func securityDelayMessage(seconds: Int) -> String {
-        "Card security delay active. Keep the SATSCARD near your iPhone for \(seconds) \(seconds == 1 ? "more second" : "more seconds") while it cools off."
+        "Security delay active. Keep the SATSCARD near your iPhone for about \(seconds) \(seconds == 1 ? "second" : "seconds")."
     }
 
     private func setStatusMessage(_ phase: StatusPhase) {

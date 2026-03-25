@@ -92,18 +92,19 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             case .incorrectCvc(let cooldownSeconds):
                 if let cooldownSeconds {
                     return
-                        "Incorrect CVC. SATSCARD is cooling down for \(cooldownSeconds) \(cooldownSeconds == 1 ? "second" : "seconds") before you can try again."
+                        "Incorrect CVC. Wait \(cooldownSeconds) \(cooldownSeconds == 1 ? "second" : "seconds"), then try again."
                 }
-                return "Incorrect CVC. Check the card's CVC and try again."
+                return
+                    "Incorrect CVC. Check the 6-digit code on the back of the card and try again."
             case .rateLimited(let cooldownSeconds):
                 if let cooldownSeconds {
                     return
-                        "SATSCARD is cooling down for \(cooldownSeconds) \(cooldownSeconds == 1 ? "second" : "seconds") after incorrect CVC attempts. Wait for it to finish, then try again."
+                        "Too many incorrect CVC attempts. Wait \(cooldownSeconds) \(cooldownSeconds == 1 ? "second" : "seconds"), then try again."
                 }
                 return
-                    "SATSCARD is cooling down after incorrect CVC attempts. Wait a moment, then try again."
+                    "Too many incorrect CVC attempts. Wait a moment, then try again."
             case .enterCvc:
-                return "Enter the card's CVC to set up the next slot."
+                return "Enter your SATSCARD CVC to set up the next slot."
             case .noUnusedSlots:
                 return "This SATSCARD has no unused slots left."
             case .transportInterrupted:
@@ -349,7 +350,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     func startSetupNextSlot(for card: SatsCardInfo, cvc: String) {
         let trimmed = cvc.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            lastStatusMessage = "Enter CVC to set up next slot."
+            lastStatusMessage = "Enter your SATSCARD CVC to set up the next slot."
             return
         }
 
