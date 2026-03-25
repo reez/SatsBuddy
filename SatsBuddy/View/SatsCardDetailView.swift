@@ -131,7 +131,7 @@ struct SatsCardDetailView: View {
         .sheet(isPresented: $isShowingSetupSheet, onDismiss: { setupCvc = "" }) {
             NavigationStack {
                 Form {
-                    Section("Set up next slot") {
+                    Section("Activate next slot") {
                         TextField("Card CVC", text: $setupCvc)
                             .keyboardType(.numberPad)
                             .textContentType(.oneTimeCode)
@@ -147,7 +147,7 @@ struct SatsCardDetailView: View {
                         }
                     }
                 }
-                .navigationTitle("Next Slot")
+                .navigationTitle("Activate Next Slot")
             }
         }
         .onAppear {

@@ -10,10 +10,14 @@ final class SlotHistoryViewModelTests: XCTestCase {
 
         await viewModel.loadHistory(for: slot)
 
-        XCTAssertEqual(viewModel.errorMessage, "No address available for this slot.")
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            "This slot isn't ready yet. Go back and activate it before receiving."
+        )
         XCTAssertEqual(viewModel.transactions, [])
         XCTAssertEqual(viewModel.slotBalance, 1_234)
         XCTAssertFalse(viewModel.isLoading)
+        XCTAssertFalse(viewModel.canRetryCurrentError)
         XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
     }
 
@@ -138,6 +142,7 @@ final class SlotHistoryViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.transactions, [])
         XCTAssertEqual(viewModel.slotBalance, 21_000)
         XCTAssertFalse(viewModel.isLoading)
+        XCTAssertTrue(viewModel.canRetryCurrentError)
         XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
     }
 

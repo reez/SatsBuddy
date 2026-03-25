@@ -81,7 +81,7 @@ final class ModelValueTests: XCTestCase {
         )
         XCTAssertEqual(
             SendReviewView.nextSlotSetupDisclosure,
-            "After the sweep, the next slot stays empty until you set it up before receiving again."
+            "After the sweep, the next slot won't be ready to receive until you activate it."
         )
     }
 

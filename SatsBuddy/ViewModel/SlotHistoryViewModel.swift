@@ -19,6 +19,7 @@ final class SlotHistoryViewModel {
     var slotBalance: UInt64?
     var isLoading = false
     var errorMessage: String?
+    var canRetryCurrentError = false
     var isSweepBalanceButtonDisabled = true
 
     init(bdkClient: BdkClient = .live) {
@@ -29,10 +30,11 @@ final class SlotHistoryViewModel {
         guard let address = slot.address, !address.isEmpty else {
             await MainActor.run {
                 self.currentTaskID = nil
-                self.errorMessage = "No address available for this slot."
+                self.errorMessage = self.missingAddressMessage(for: slot)
                 self.transactions = []
                 self.slotBalance = slot.balance
                 self.isLoading = false
+                self.canRetryCurrentError = false
                 self.isSweepBalanceButtonDisabled = true
             }
             return
@@ -47,6 +49,7 @@ final class SlotHistoryViewModel {
             self.currentTaskID = taskID
             self.isLoading = true
             self.errorMessage = nil
+            self.canRetryCurrentError = false
             self.isSweepBalanceButtonDisabled = true
         }
 
@@ -102,6 +105,7 @@ final class SlotHistoryViewModel {
             let didSetError = await MainActor.run { () -> Bool in
                 guard self.currentTaskID == taskID else { return false }
                 self.errorMessage = "Unable to load transactions."
+                self.canRetryCurrentError = true
                 self.isSweepBalanceButtonDisabled = true
                 return true
             }
@@ -142,6 +146,18 @@ final class SlotHistoryViewModel {
 
     func cancel() {
         currentTaskID = nil
+    }
+
+    private func missingAddressMessage(for slot: SlotInfo) -> String {
+        if !slot.isUsed {
+            return "This slot has not been used yet."
+        }
+
+        if slot.isActive {
+            return "This slot isn't ready yet. Go back and activate it before receiving."
+        }
+
+        return "No address available for this slot."
     }
 }
 

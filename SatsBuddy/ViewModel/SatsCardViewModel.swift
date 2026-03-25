@@ -103,7 +103,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 return
                     "Too many incorrect CVC attempts. Wait a moment, then try again."
             case .enterCvc:
-                return "Enter your SATSCARD CVC to set up the next slot."
+                return "Enter your SATSCARD CVC to activate the next slot."
             case .noUnusedSlots:
                 return "This SATSCARD has no unused slots left."
             case .transportInterrupted:
@@ -111,7 +111,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     "Connection to the SATSCARD was interrupted. Keep the card steady and try again."
             case .slotAdvancedRefreshRequired:
                 return
-                    "Next slot was created, but SatsBuddy could not refresh the card details. Refresh the card before trying again."
+                    "Next slot was activated, but SatsBuddy could not refresh the card details. Refresh the card before trying again."
             case .raw(let message):
                 return message
             }
@@ -127,7 +127,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 self.lastStatusMessage = "Scanning for Card..."
                 session.alertMessage = "Hold near SATSCARD."
             case .setupNextSlot:
-                let message = "Hold your iPhone near the SATSCARD to set up the next slot."
+                let message = "Hold your iPhone near the SATSCARD to activate the next slot."
                 self.lastStatusMessage = message
                 session.alertMessage = "Hold near SATSCARD."
             }
@@ -166,7 +166,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 case .scan:
                     self.lastStatusMessage = "Scan cancelled."
                 case .setupNextSlot:
-                    self.lastStatusMessage = "Next slot setup cancelled."
+                    self.lastStatusMessage = "Next slot activation cancelled."
                 }
                 Haptics.error()
             } else if let nfcError = error as? NFCReaderError,
@@ -286,7 +286,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                             self.lastStatusMessage =
                                 updated ? "Card updated with latest data 🔄" : "New card added ✅"
                         case .setupNextSlot:
-                            self.lastStatusMessage = "Next slot ready ✅"
+                            self.lastStatusMessage = "Next slot activated ✅"
                         }
                         self.isScanning = false
                         self.persistCards()
@@ -344,7 +344,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                         case .slotAdvancedRefreshRequired:
                             alertMessage = "Refresh failed."
                         case .raw:
-                            alertMessage = "Setup failed."
+                            alertMessage = "Activation failed."
                         }
                     }
                     await MainActor.run { [weak self] in
@@ -397,7 +397,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     func startSetupNextSlot(for card: SatsCardInfo, cvc: String) {
         let trimmed = cvc.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            lastStatusMessage = "Enter your SATSCARD CVC to set up the next slot."
+            lastStatusMessage = "Enter your SATSCARD CVC to activate the next slot."
             return
         }
 
@@ -416,7 +416,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         previousSession?.invalidate()
 
         currentOperation = .setupNextSlot(card: card, cvc: trimmed)
-        let message = "Hold your iPhone near the SATSCARD to set up the next slot."
+        let message = "Hold your iPhone near the SATSCARD to activate the next slot."
         lastStatusMessage = message
         tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         tagSession?.alertMessage = "Hold near SATSCARD."
@@ -541,8 +541,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         }
 
         await updateStatus(
-            "Setting up the next slot…",
-            alertMessage: "Setting up slot…"
+            "Activating the next slot…",
+            alertMessage: "Activating slot…"
         )
 
         let nextSlot: UInt8
@@ -577,8 +577,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         do {
             try await satsCard.wait()
             await updateStatus(
-                "Cooldown complete. Setting up the next slot…",
-                alertMessage: "Setting up slot…"
+                "Cooldown complete. Activating the next slot…",
+                alertMessage: "Activating slot…"
             )
         } catch {
             throw setupNextSlotError(from: error, authDelay: UInt8(seconds))
