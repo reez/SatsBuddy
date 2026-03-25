@@ -41,7 +41,7 @@ struct SatsCardDetailView: View {
                         cardViewModel.refreshCard(updatedCard)
                     },
                     onSetupNextSlot: needsNextSlotSetup ? { isShowingSetupSheet = true } : nil,
-                    onSweepBalance: canSendFromActiveSlot ? { isShowingSend = true } : nil,
+                    onSweepBalance: canSendFromDisplayedSlot ? { isShowingSend = true } : nil,
                     canSweepBalance: canSweepBalance,
                     isSweepButtonHidden: $showToolbarSweep,
                     price: cardViewModel.price
@@ -76,7 +76,7 @@ struct SatsCardDetailView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                if showToolbarSweep && canSendFromActiveSlot {
+                if showToolbarSweep && canSendFromDisplayedSlot {
                     Button {
                         isShowingSend = true
                     } label: {
@@ -232,19 +232,26 @@ extension SatsCardDetailView {
         viewModel.slots.first(where: { $0.isActive })
     }
 
+    private var exhaustedSlot: SlotInfo? {
+        guard updatedCard.isExhausted else { return nil }
+        return viewModel.slots.last(where: { $0.isUsed })
+            ?? updatedCard.slots.last(where: { $0.isUsed })
+    }
+
     private var slotForDisplay: SlotInfo {
-        activeSlot ?? placeholderSlot(for: updatedCard)
+        activeSlot ?? exhaustedSlot ?? placeholderSlot(for: updatedCard)
     }
 
     private var isShowingPlaceholderSlot: Bool {
-        activeSlot == nil
+        activeSlot == nil && exhaustedSlot == nil
     }
 
     private var needsNextSlotSetup: Bool {
-        slotForDisplay.isActive && slotForDisplay.isUsed && slotForDisplay.address == nil
+        !updatedCard.isExhausted && slotForDisplay.isActive && slotForDisplay.isUsed
+            && slotForDisplay.address == nil
     }
 
-    private var canSendFromActiveSlot: Bool {
+    private var canSendFromDisplayedSlot: Bool {
         guard let address = slotForDisplay.address?.trimmingCharacters(in: .whitespacesAndNewlines)
         else {
             return false
@@ -254,19 +261,25 @@ extension SatsCardDetailView {
     }
 
     private var canSweepBalance: Bool {
-        canSendFromActiveSlot && !viewModel.isSweepBalanceButtonDisabled
+        canSendFromDisplayedSlot && !viewModel.isSweepBalanceButtonDisabled
     }
 
     private func placeholderSlot(for card: SatsCardInfo) -> SlotInfo {
         SlotInfo(
-            slotNumber: card.activeSlot ?? 0,
-            isActive: true,
-            isUsed: card.isActive,
+            slotNumber: placeholderSlotNumber(for: card),
+            isActive: !card.isExhausted,
+            isUsed: card.activeSlot != nil || card.address != nil,
             pubkey: card.pubkey,
             pubkeyDescriptor: nil,
             address: card.address,
             balance: nil
         )
+    }
+
+    private func placeholderSlotNumber(for card: SatsCardInfo) -> UInt8 {
+        guard let activeSlot = card.activeSlot else { return 0 }
+        guard let totalSlots = card.totalSlots, totalSlots > 0 else { return activeSlot }
+        return min(activeSlot, totalSlots - 1)
     }
 
     private func prepareLabelForEditing() {

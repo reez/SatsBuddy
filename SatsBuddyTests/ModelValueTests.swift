@@ -37,6 +37,13 @@ final class ModelValueTests: XCTestCase {
         XCTAssertEqual(slot.displaySlotNumber, 5)
     }
 
+    func testDisplayActiveSlotNumberIsNilWhenCardIsExhausted() {
+        let exhaustedCard = makeSatsCard(activeSlot: 10, totalSlots: 10)
+
+        XCTAssertTrue(exhaustedCard.isExhausted)
+        XCTAssertNil(exhaustedCard.displayActiveSlotNumber)
+    }
+
     func testPreferredCurrencyCodeUsesSupportedLocaleCurrency() {
         let price = currentPriceMock
 
