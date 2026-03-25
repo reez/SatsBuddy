@@ -1,3 +1,4 @@
+import CKTap
 import Foundation
 import XCTest
 
@@ -175,6 +176,34 @@ final class SatsCardViewModelTests: XCTestCase {
         ) { error in
             XCTAssertEqual(error as? SatsCardViewModel.RefreshCardError, .wrongCard)
         }
+    }
+
+    func testSetupNextSlotInvalidStateMapsToNotReadyWhenSlotsRemain() {
+        let viewModel = makeViewModel()
+
+        let error = CkTapError.Card(err: CardError.InvalidState)
+        let mapped = viewModel.setupNextSlotError(
+            from: error,
+            authDelay: nil,
+            activeSlot: 4,
+            totalSlots: 10
+        )
+
+        XCTAssertEqual(mapped, SatsCardViewModel.SetupNextSlotError.cardNotReadyForNextSlot)
+    }
+
+    func testSetupNextSlotInvalidStateMapsToNoUnusedSlotsWhenCardIsExhausted() {
+        let viewModel = makeViewModel()
+
+        let error = CkTapError.Card(err: CardError.InvalidState)
+        let mapped = viewModel.setupNextSlotError(
+            from: error,
+            authDelay: nil,
+            activeSlot: 10,
+            totalSlots: 10
+        )
+
+        XCTAssertEqual(mapped, SatsCardViewModel.SetupNextSlotError.noUnusedSlots)
     }
 
     private func makeViewModel(

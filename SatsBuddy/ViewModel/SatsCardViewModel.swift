@@ -86,11 +86,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         }
     }
 
-    private enum SetupNextSlotError: LocalizedError {
+    enum SetupNextSlotError: LocalizedError, Equatable {
         case wrongCard
         case incorrectCvc(cooldownSeconds: Int?)
         case rateLimited(cooldownSeconds: Int?)
         case enterCvc
+        case cardNotReadyForNextSlot
         case noUnusedSlots
         case transportInterrupted
         case slotAdvancedRefreshRequired
@@ -116,6 +117,9 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     "Too many incorrect CVC attempts. Wait a moment, then try again."
             case .enterCvc:
                 return "Enter your SATSCARD CVC to activate the next slot."
+            case .cardNotReadyForNextSlot:
+                return
+                    "This SATSCARD is not ready to activate the next slot yet. If the current slot is still sealed, sweep it first and try again."
             case .noUnusedSlots:
                 return "This SATSCARD has no unused slots left."
             case .transportInterrupted:
@@ -386,6 +390,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                             alertMessage = "Security delay."
                         case .enterCvc:
                             alertMessage = "Enter SATSCARD CVC."
+                        case .cardNotReadyForNextSlot:
+                            alertMessage = "Wrong SATSCARD state."
                         case .noUnusedSlots:
                             alertMessage = "No slots left."
                         case .transportInterrupted:
@@ -623,7 +629,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             nextSlot = try await satsCard.newSlot(cvc: cvc)
         } catch {
             let postAttemptStatus = await satsCard.status()
-            throw setupNextSlotError(from: error, authDelay: postAttemptStatus.authDelay)
+            throw setupNextSlotError(
+                from: error,
+                authDelay: postAttemptStatus.authDelay,
+                activeSlot: postAttemptStatus.activeSlot,
+                totalSlots: postAttemptStatus.numSlots
+            )
         }
 
         Log.cktap.info("newSlot completed -> next active slot \(nextSlot)")
@@ -720,7 +731,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         return cardInfo
     }
 
-    private func setupNextSlotError(from error: Error, authDelay: UInt8?) -> SetupNextSlotError {
+    func setupNextSlotError(
+        from error: Error,
+        authDelay: UInt8?,
+        activeSlot: UInt8? = nil,
+        totalSlots: UInt8? = nil
+    ) -> SetupNextSlotError {
         if let setupError = error as? SetupNextSlotError {
             return setupError
         }
@@ -740,7 +756,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             case .NeedsAuth:
                 return .enterCvc
             case .InvalidState:
-                return .noUnusedSlots
+                return Self.hasUnusedSlots(activeSlot: activeSlot, totalSlots: totalSlots)
+                    ? .cardNotReadyForNextSlot : .noUnusedSlots
             default:
                 break
             }
@@ -797,6 +814,11 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     private static func cooldownSeconds(from authDelay: UInt8?) -> Int? {
         guard let authDelay, authDelay > 0 else { return nil }
         return Int(authDelay)
+    }
+
+    static func hasUnusedSlots(activeSlot: UInt8?, totalSlots: UInt8?) -> Bool {
+        guard let activeSlot, let totalSlots else { return true }
+        return activeSlot < totalSlots
     }
 
     private func updateStatus(_ message: String, alertMessage: String? = nil) async {
