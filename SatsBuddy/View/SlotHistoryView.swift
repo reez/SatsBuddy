@@ -111,7 +111,7 @@ struct SlotHistoryView: View {
             SendFlowView(
                 slot: slot,
                 card: card,
-                onBroadcastSuccess: {
+                onBroadcastSuccess: { _ in
                     isRefreshingBalanceAfterBroadcast = true
                     Task {
                         await viewModel.loadHistory(for: slotDetails, network: network)

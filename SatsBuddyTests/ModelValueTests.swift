@@ -72,6 +72,19 @@ final class ModelValueTests: XCTestCase {
         )
     }
 
+    func testSendReviewSweepDisclosureMentionsUnsealAndNextSlot() {
+        let disclosure = SendReviewView.sweepDisclosure(for: 3)
+
+        XCTAssertEqual(
+            disclosure,
+            "Continuing will permanently unseal Slot 3 and move this SATSCARD to the next slot."
+        )
+        XCTAssertEqual(
+            SendReviewView.nextSlotSetupDisclosure,
+            "After the sweep, the next slot stays empty until you set it up before receiving again."
+        )
+    }
+
     @MainActor
     func testDetailViewModelDisablesSweepWhenOnlyPendingFundsRemain() async {
         let slot = makeSlotInfo(balance: nil)

@@ -13,6 +13,7 @@ struct SendReviewView: View {
     let address: String
     let amount: String
     let sweptBalance: UInt64?
+    let slotDisplayNumber: Int
     let fee: Int
     let onContinue: () -> Void
 
@@ -75,11 +76,14 @@ struct SendReviewView: View {
                                 )
                         )
 
-                        if sweptBalance != nil {
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("Final amount sent is current slot balance minus network fee.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+                            Text(Self.sweepDisclosure(for: slotDisplayNumber))
+                            Text(Self.nextSlotSetupDisclosure)
                         }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding()
 
@@ -111,6 +115,13 @@ struct SendReviewView: View {
 }
 
 extension SendReviewView {
+    static let nextSlotSetupDisclosure =
+        "After the sweep, the next slot stays empty until you set it up before receiving again."
+
+    static func sweepDisclosure(for slotDisplayNumber: Int) -> String {
+        "Continuing will permanently unseal Slot \(slotDisplayNumber) and move this SATSCARD to the next slot."
+    }
+
     fileprivate var displayAmount: String {
         guard let sweptBalance else { return amount }
         return "\(amount) (\(sweptBalance.formatted(.number)) sats)"
@@ -123,6 +134,7 @@ extension SendReviewView {
             "tb1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
         amount: "ALL",
         sweptBalance: 100_000,
+        slotDisplayNumber: 3,
         fee: 17,
         onContinue: {}
     )
