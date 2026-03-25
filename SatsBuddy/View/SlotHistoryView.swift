@@ -17,7 +17,6 @@ import SwiftUI
 struct SlotHistoryView: View {
     let slot: SlotInfo
     let network: Network
-    let price: Price?
     let card: SatsCardInfo
     @State private var viewModel: SlotHistoryViewModel
     @State private var slotDetails: SlotInfo
@@ -27,13 +26,11 @@ struct SlotHistoryView: View {
     init(
         slot: SlotInfo,
         network: Network = .bitcoin,
-        price: Price?,
         viewModel: SlotHistoryViewModel = SlotHistoryViewModel(),
         card: SatsCardInfo
     ) {
         self.slot = slot
         self.network = network
-        self.price = price
         self.card = card
         _slotDetails = State(initialValue: slot)
         _viewModel = State(initialValue: viewModel)
@@ -43,7 +40,7 @@ struct SlotHistoryView: View {
         VStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    SlotRowView(slot: slotDetails, price: price)
+                    SlotRowView(slot: slotDetails)
                         .overlay(alignment: .topTrailing) {
                             if isRefreshingBalanceAfterBroadcast {
                                 ProgressView()
@@ -58,7 +55,6 @@ struct SlotHistoryView: View {
                         slot: slotDetails,
                         network: network,
                         viewModel: viewModel,
-                        price: price,
                         onOpenMempool: { openOnMempool(txid: $0) }
                     )
                 }
@@ -152,7 +148,6 @@ private struct TransactionsSectionView: View {
     let slot: SlotInfo
     let network: Network
     @Bindable var viewModel: SlotHistoryViewModel
-    let price: Price?
     let onOpenMempool: (String) -> Void
 
     var body: some View {
@@ -199,7 +194,6 @@ private struct TransactionsSectionView: View {
                         } label: {
                             TransactionRowView(
                                 transaction: transaction,
-                                price: price,
                                 onOpenMempool: onOpenMempool
                             )
                         }
@@ -221,7 +215,6 @@ private struct TransactionsSectionView: View {
 
 private struct TransactionRowView: View {
     let transaction: SlotTransaction
-    let price: Price?
     let onOpenMempool: (String) -> Void
 
     var body: some View {
@@ -229,7 +222,7 @@ private struct TransactionRowView: View {
 
             VStack(alignment: .leading, spacing: 12) {
 
-                TransactionAmountView(amount: transaction.amount, price: price)
+                TransactionAmountView(amount: transaction.amount)
 
                 Text(timestampLabel)
                     .font(.caption2)
@@ -275,7 +268,7 @@ private struct TransactionRowView: View {
 private struct TransactionAmountView: View {
     let amount: Int64
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
-    let price: Price?
+    private var price: Price? { PriceStore.shared.price }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -328,37 +321,16 @@ private struct HistoryCard<Content: View>: View {
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 125_000
         )
-        let price = Price(
-            time: 1_734_000_000,
-            usd: 89_000,
-            eur: 82_000,
-            gbp: 70_000,
-            cad: 120_000,
-            chf: 80_000,
-            aud: 130_000,
-            jpy: 13_700_000
-        )
 
         NavigationStack {
             SlotHistoryView(
                 slot: slot,
-                price: price,
                 viewModel: SlotHistoryViewModel.previewMock(),
                 card: SatsCardInfo(version: "1", pubkey: "1234")
             )
         }
     }
     #Preview {
-        let price = Price(
-            time: 1_734_000_000,
-            usd: 89_000,
-            eur: 82_000,
-            gbp: 70_000,
-            cad: 120_000,
-            chf: 80_000,
-            aud: 130_000,
-            jpy: 13_700_000
-        )
-        return TransactionAmountView(amount: Int64(2500), price: price)
+        TransactionAmountView(amount: Int64(2500))
     }
 #endif

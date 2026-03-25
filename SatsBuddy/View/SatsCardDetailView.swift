@@ -43,8 +43,7 @@ struct SatsCardDetailView: View {
                     onSetupNextSlot: needsNextSlotSetup ? { isShowingSetupSheet = true } : nil,
                     onSweepBalance: canSendFromDisplayedSlot ? { isShowingSend = true } : nil,
                     canSweepBalance: canSweepBalance,
-                    isSweepButtonHidden: $showToolbarSweep,
-                    price: cardViewModel.price
+                    isSweepButtonHidden: $showToolbarSweep
                 )
                 .padding(.horizontal)
 
@@ -151,7 +150,7 @@ struct SatsCardDetailView: View {
             }
         }
         .onAppear {
-            cardViewModel.refreshPrice()
+            PriceStore.shared.refreshPrice()
             cardViewModel.detailLoadingCardIdentifier = updatedCard.cardIdentifier
         }
         .onChange(of: viewModel.isLoading) { _, isLoading in
@@ -220,8 +219,7 @@ struct SatsCardDetailView: View {
             viewModel: SatsCardDetailViewModel(),
             cardViewModel: SatsCardViewModel(
                 ckTapService: .mock,
-                cardsStore: .mock,
-                priceClient: .mock
+                cardsStore: .mock
             )
         )
     }

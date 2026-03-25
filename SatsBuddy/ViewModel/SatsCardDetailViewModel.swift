@@ -163,6 +163,25 @@ class SatsCardDetailViewModel {
         }
     }
 
+    func balance(for slot: SlotInfo) -> UInt64? {
+        slots.first(where: { $0.slotNumber == slot.slotNumber })?.balance
+    }
+
+    func getBalance(for address: String, network: Network) async {
+        do {
+            let balance = try await bdkClient.getBalanceFromAddress(address, network)
+            await MainActor.run {
+                if let index = self.slots.firstIndex(where: { $0.address == address }) {
+                    self.slots[index].balance = balance.total.toSat()
+                }
+            }
+        } catch {
+            Log.cktap.error(
+                "getBalance failed: \(error.localizedDescription, privacy: .public)"
+            )
+        }
+    }
+
     private func activeSlotAddress(for card: SatsCardInfo) -> String? {
         if let slotAddress = card.slots.first(where: { $0.isActive })?.address?
             .trimmingCharacters(in: .whitespacesAndNewlines),

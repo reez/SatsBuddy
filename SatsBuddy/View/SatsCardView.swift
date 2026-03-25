@@ -94,8 +94,7 @@ struct SatsCardView: View {
             },
             cardViewModel: SatsCardViewModel(
                 ckTapService: .mock,
-                cardsStore: .mock,
-                priceClient: .mock
+                cardsStore: .mock
             ),
             isDetailLoading: false
         )

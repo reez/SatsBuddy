@@ -9,23 +9,22 @@ import SwiftUI
 
 struct SlotSummaryRowView: View {
     let slot: SlotInfo
+    let viewModel: SatsCardDetailViewModel
 
     var body: some View {
-        SlotSummaryHeader(slot: slot, showsChevron: true)
+        SlotSummaryHeader(slot: slot, showsChevron: true, viewModel: viewModel)
     }
 }
 
 struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
-    //    @State private var addressCopied = false
     private let footer: Footer
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var isAddressCopied: Bool = false
-    let price: Price?
+    private var price: Price? { PriceStore.shared.price }
 
-    init(slot: SlotInfo, price: Price?, @ViewBuilder footer: () -> Footer) {
+    init(slot: SlotInfo, @ViewBuilder footer: () -> Footer) {
         self.slot = slot
-        self.price = price
         self.footer = footer()
     }
 
@@ -112,16 +111,6 @@ extension SlotRowView {
 }
 
 #Preview {
-    let price = Price(
-        time: 1_734_000_000,
-        usd: 89_000,
-        eur: 82_000,
-        gbp: 70_000,
-        cad: 120_000,
-        chf: 80_000,
-        aud: 130_000,
-        jpy: 13_700_000
-    )
     SlotRowView(
         slot: .init(
             slotNumber: UInt8(1),
@@ -131,15 +120,14 @@ extension SlotRowView {
             pubkeyDescriptor: nil,
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 21_000
-        ),
-        price: price
+        )
     )
     .padding()
 }
 
 extension SlotRowView where Footer == EmptyView {
-    init(slot: SlotInfo, price: Price?) {
-        self.init(slot: slot, price: price) { EmptyView() }
+    init(slot: SlotInfo) {
+        self.init(slot: slot) { EmptyView() }
     }
 }
 
@@ -161,30 +149,71 @@ private struct SlotSummaryHeader: View {
     let slot: SlotInfo
     let showsChevron: Bool
     let showsSlotTitle: Bool
+    let viewModel: SatsCardDetailViewModel
+    @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
-    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true) {
+    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true, viewModel: SatsCardDetailViewModel) {
         self.slot = slot
         self.showsChevron = showsChevron
         self.showsSlotTitle = showsSlotTitle
+        self.viewModel = viewModel
     }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            if showsSlotTitle {
-                Text("Slot \(slot.displaySlotNumber)")
-                    .font(.body)
-                    .fontWeight(.medium)
+            VStack(alignment: .leading) {
+                if showsSlotTitle {
+                    Text("Slot \(slot.displaySlotNumber)")
+                        .font(.body)
+                        .fontWeight(.medium)
+                }
+                
+                buildBalanceIfNeeded()
+                
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Spacer()
 
             SlotStatusBadges(slot: slot)
-
-            Spacer()
 
             if showsChevron {
                 Image(systemName: "chevron.right")
                     .font(.footnote)
                     .fontWeight(.bold)
                     .foregroundStyle(.tertiary)
+            }
+        }
+        .task {
+            if let address = slot.address {
+                await viewModel.getBalance(for: address, network: .bitcoin)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func buildBalanceIfNeeded() -> some View {
+        HStack {
+            if let balance = viewModel.balance(for: slot), balance > .zero {
+                if balanceFormat.showsBitcoinSymbol {
+                    Image(systemName: "bitcoinsign")
+                        .foregroundStyle(.secondary)
+                        .font(.body)
+                        .fontWeight(.thin)
+                } else if balanceFormat == .fiat {
+                    let symbol = balanceFormat.displayPrefix(price: PriceStore.shared.price)
+                    if !symbol.isEmpty {
+                        Text(symbol)
+                            .foregroundStyle(.secondary)
+                            .font(.body)
+                            .fontWeight(.thin)
+                    }
+                }
+                
+                Text(balanceFormat.formatted(balance, price: PriceStore.shared.price))
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
             }
         }
     }

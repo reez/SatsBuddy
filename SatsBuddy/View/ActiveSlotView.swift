@@ -19,7 +19,6 @@ struct ActiveSlotView: View {
     let onSweepBalance: (() -> Void)?
     let canSweepBalance: Bool
     @Binding var isSweepButtonHidden: Bool
-    let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
@@ -29,7 +28,6 @@ struct ActiveSlotView: View {
 
             BalanceHeaderView(
                 slot: slot,
-                price: price,
                 isLoading: isLoading,
                 balanceFormat: $balanceFormat,
                 errorMessage: viewModel.errorMessage
@@ -82,8 +80,7 @@ struct ActiveSlotView: View {
                 SlotNavigationRow(
                     slotPositionText: slotPositionText,
                     card: card,
-                    viewModel: viewModel,
-                    price: price
+                    viewModel: viewModel
                 )
 
                 Divider()
@@ -105,10 +102,10 @@ struct ActiveSlotView: View {
 
 private struct BalanceHeaderView: View {
     let slot: SlotInfo
-    let price: Price?
     let isLoading: Bool
     @Binding var balanceFormat: BalanceDisplayFormat
     let errorMessage: String?
+    private var price: Price? { PriceStore.shared.price }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -346,15 +343,14 @@ private struct SlotNavigationRow: View {
     let slotPositionText: String
     let card: SatsCardInfo
     let viewModel: SatsCardDetailViewModel
-    let price: Price?
 
     var body: some View {
         NavigationLink {
             SlotsRowListView(
                 totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
                 slots: viewModel.slots,
-                price: price,
-                card: card
+                card: card,
+                viewModel: viewModel
             )
             .navigationTitle("All Slots")
             .navigationBarTitleDisplayMode(.inline)
@@ -480,17 +476,6 @@ extension ActiveSlotView {
             slots: [slot],
             isActive: true
         )
-        let price = Price(
-            time: 1_734_000_000,
-            usd: 89_000,
-            eur: 82_000,
-            gbp: 70_000,
-            cad: 120_000,
-            chf: 80_000,
-            aud: 130_000,
-            jpy: 13_700_000
-        )
-
         ActiveSlotView(
             slot: slot,
             card: card,
@@ -501,8 +486,7 @@ extension ActiveSlotView {
             onSetupNextSlot: nil,
             onSweepBalance: {},
             canSweepBalance: true,
-            isSweepButtonHidden: .constant(false),
-            price: price
+            isSweepButtonHidden: .constant(false)
         )
         .padding()
     }

@@ -10,8 +10,8 @@ import SwiftUI
 struct SlotsRowListView: View {
     let totalSlots: UInt8
     let slots: [SlotInfo]
-    let price: Price?
     let card: SatsCardInfo
+    let viewModel: SatsCardDetailViewModel
 
     var body: some View {
         ScrollView {
@@ -25,11 +25,10 @@ struct SlotsRowListView: View {
                         NavigationLink {
                             SlotHistoryView(
                                 slot: slot,
-                                price: price,
                                 card: card
                             )
                         } label: {
-                            SlotSummaryRowView(slot: slot)
+                            SlotSummaryRowView(slot: slot, viewModel: viewModel)
                                 .padding(.vertical, 32)
                                 .contentShape(Rectangle())
                         }
@@ -80,17 +79,8 @@ struct SlotsRowListView: View {
         SlotsRowListView(
             totalSlots: 10,
             slots: sampleSlots,
-            price: Price(
-                time: 1_734_000_000,
-                usd: 89_000,
-                eur: 82_000,
-                gbp: 70_000,
-                cad: 120_000,
-                chf: 80_000,
-                aud: 130_000,
-                jpy: 13_700_000
-            ),
-            card: SatsCardInfo(version: "1", pubkey: "1234")
+            card: SatsCardInfo(version: "1", pubkey: "1234"),
+            viewModel: SatsCardDetailViewModel(bdkClient: .mock)
         )
     }
 }
