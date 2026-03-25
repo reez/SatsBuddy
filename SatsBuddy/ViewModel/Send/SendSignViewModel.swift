@@ -114,27 +114,28 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         var nfcAlertMessage: String? {
             switch self {
             case .waitingForCard:
-                return "Hold your iPhone near the SATSCARD."
+                return "Hold near SATSCARD."
             case .checkingCard:
-                return "Checking SATSCARD status…"
+                return "Checking SATSCARD…"
             case .waitingForSecurityDelay(let seconds):
-                return "Cooling off: \(seconds)s remaining…"
+                return "Security delay: \(seconds)s"
             case .readingSlotDetails:
-                return "Reading slot details…"
+                return "Reading slot…"
             case .unsealingActiveSlot:
-                return "Unsealing active slot…"
+                return "Unsealing slot…"
             case .signingTransaction:
-                return "Finalizing signed transaction…"
+                return "Signing transaction…"
             case .broadcastingTransaction:
-                return "Broadcasting transaction…"
+                return "Broadcasting…"
             case .syncingCardState:
-                return "Syncing SATSCARD state…"
+                return "Syncing SATSCARD…"
             case .broadcasted:
-                return "Transaction broadcasted successfully"
+                return "Broadcast complete."
             default:
                 return nil
             }
         }
+
     }
 
     let address: String
@@ -280,10 +281,10 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         session = nil
         previousSession?.invalidate()
         session = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
-        session?.begin()
 
         state = .tapping
         setStatusMessage(.waitingForCard)
+        session?.begin()
         Log.nfc.info("[SendSign] NFC session started for signing")
     }
 
@@ -337,7 +338,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             finishAfterSessionInvalidation(
                 phase: .noTagFound,
                 nextState: .ready,
-                alertMessage: "No SATSCARD detected."
+                alertMessage: "No SATSCARD."
             )
             return
         }
@@ -352,7 +353,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     self.finishAfterSessionInvalidation(
                         phase: .connectionFailed,
                         nextState: .ready,
-                        alertMessage: "Connection failed."
+                        alertMessage: "Connection lost."
                     )
                 }
                 return
@@ -662,20 +663,138 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private func handleRecoverableFailure(_ error: Error) {
         clearCvcIfNeeded(for: error)
         let message = userFacingMessage(for: error, includeRetryInstruction: true)
+        let alertMessage: String
+        if let cktapError = cktapError(from: error) {
+            switch cktapError {
+            case .Card(let cardError):
+                switch cardError {
+                case .BadAuth:
+                    alertMessage = "Incorrect CVC."
+                case .NeedsAuth:
+                    alertMessage = "Enter SATSCARD CVC."
+                case .RateLimited:
+                    alertMessage = "Security delay."
+                case .InvalidState:
+                    alertMessage = "Wrong SATSCARD state."
+                case .UnluckyNumber:
+                    alertMessage = "Try again."
+                case .BadArguments, .UnknownCommand, .InvalidCommand, .WeakNonce, .BadCbor,
+                    .BackupFirst:
+                    alertMessage = "Sign failed."
+                }
+            case .Transport:
+                alertMessage = "Connection lost."
+            case .CborDe, .CborValue:
+                alertMessage = "Read failed."
+            case .UnknownCardType:
+                alertMessage = "Unsupported tag."
+            }
+        } else if let dumpError = error as? DumpError {
+            switch dumpError {
+            case .SlotSealed:
+                alertMessage = "Incorrect CVC."
+            case .SlotUnused:
+                alertMessage = "Unused slot."
+            case .SlotTampered:
+                alertMessage = "Wrong slot."
+            case .Key:
+                alertMessage = "Read failed."
+            case .CkTap:
+                alertMessage = "Sign failed."
+            }
+        } else if let signPsbtError = error as? SignPsbtError {
+            switch signPsbtError {
+            case .SlotNotUnsealed:
+                alertMessage = "Unseal required."
+            case .PubkeyMismatch:
+                alertMessage = "Wrong slot."
+            case .MissingUtxo, .MissingPubkey, .InvalidPath, .InvalidScript, .WitnessProgram:
+                alertMessage = "Sign failed."
+            case .SighashError, .SignatureError, .PsbtEncoding, .Base64Encoding:
+                alertMessage = "Sign failed."
+            case .CkTap:
+                alertMessage = "Sign failed."
+            }
+        } else if let nfcError = error as? NFCReaderError,
+            nfcError.code == .readerSessionInvalidationErrorUserCanceled
+        {
+            alertMessage = "NFC cancelled."
+        } else {
+            alertMessage = "Sign failed."
+        }
         finishAfterSessionInvalidation(
             phase: .raw(message),
             nextState: .ready,
-            alertMessage: message
+            alertMessage: alertMessage
         )
     }
 
     private func handleTerminalFailure(_ error: Error) {
         clearCvcIfNeeded(for: error)
         let message = userFacingMessage(for: error, includeRetryInstruction: false)
+        let alertMessage: String
+        if let cktapError = cktapError(from: error) {
+            switch cktapError {
+            case .Card(let cardError):
+                switch cardError {
+                case .BadAuth:
+                    alertMessage = "Incorrect CVC."
+                case .NeedsAuth:
+                    alertMessage = "Enter SATSCARD CVC."
+                case .RateLimited:
+                    alertMessage = "Security delay."
+                case .InvalidState:
+                    alertMessage = "Wrong SATSCARD state."
+                case .UnluckyNumber:
+                    alertMessage = "Try again."
+                case .BadArguments, .UnknownCommand, .InvalidCommand, .WeakNonce, .BadCbor,
+                    .BackupFirst:
+                    alertMessage = "Sign failed."
+                }
+            case .Transport:
+                alertMessage = "Connection lost."
+            case .CborDe, .CborValue:
+                alertMessage = "Read failed."
+            case .UnknownCardType:
+                alertMessage = "Unsupported tag."
+            }
+        } else if let dumpError = error as? DumpError {
+            switch dumpError {
+            case .SlotSealed:
+                alertMessage = "Incorrect CVC."
+            case .SlotUnused:
+                alertMessage = "Unused slot."
+            case .SlotTampered:
+                alertMessage = "Wrong slot."
+            case .Key:
+                alertMessage = "Read failed."
+            case .CkTap:
+                alertMessage = "Sign failed."
+            }
+        } else if let signPsbtError = error as? SignPsbtError {
+            switch signPsbtError {
+            case .SlotNotUnsealed:
+                alertMessage = "Unseal required."
+            case .PubkeyMismatch:
+                alertMessage = "Wrong slot."
+            case .MissingUtxo, .MissingPubkey, .InvalidPath, .InvalidScript, .WitnessProgram:
+                alertMessage = "Sign failed."
+            case .SighashError, .SignatureError, .PsbtEncoding, .Base64Encoding:
+                alertMessage = "Sign failed."
+            case .CkTap:
+                alertMessage = "Sign failed."
+            }
+        } else if let nfcError = error as? NFCReaderError,
+            nfcError.code == .readerSessionInvalidationErrorUserCanceled
+        {
+            alertMessage = "NFC cancelled."
+        } else {
+            alertMessage = "Sign failed."
+        }
         finishAfterSessionInvalidation(
             phase: .failed(message),
             nextState: .error(message),
-            alertMessage: message
+            alertMessage: alertMessage
         )
     }
 

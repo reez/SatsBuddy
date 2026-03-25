@@ -15,7 +15,6 @@ import os
 
 @Observable
 class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
-
     var tagSession: NFCTagReaderSession?
     var lastStatusMessage: String = "Tap + to scan card"
     var isScanning: Bool = false
@@ -117,18 +116,20 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 return message
             }
         }
+
     }
 
     func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
         Log.nfc.info("NFC session became active")
-        DispatchQueue.main.async {
+        Task { @MainActor in
             switch self.currentOperation {
             case .scan:
                 self.lastStatusMessage = "Scanning for Card..."
+                session.alertMessage = "Hold near SATSCARD."
             case .setupNextSlot:
                 let message = "Hold your iPhone near the SATSCARD to set up the next slot."
                 self.lastStatusMessage = message
-                session.alertMessage = message
+                session.alertMessage = "Hold near SATSCARD."
             }
             self.isScanning = true
         }
@@ -186,14 +187,17 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             let message = "Could not detect tag."
             Task { @MainActor in
                 self.lastStatusMessage = message
-                self.tagSession?.alertMessage = message
+                self.tagSession?.alertMessage = "No SATSCARD."
                 Haptics.error()
             }
-            invalidateSessionPreservingStatus(session, errorMessage: message)
+            invalidateSessionPreservingStatus(session, errorMessage: "No SATSCARD.")
             return
         }
 
-        Task { @MainActor in self.lastStatusMessage = "Card detected, connecting..." }
+        Task { @MainActor in
+            self.lastStatusMessage = "Card detected, connecting..."
+            self.tagSession?.alertMessage = "Connecting…"
+        }
 
         Log.nfc.debug("Connecting to first tag…")
         session.connect(to: firstTag) { [weak self] (error: Swift.Error?) in
@@ -206,10 +210,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             if let error = error {
                 Log.nfc.error("Tag connect error: \(error.localizedDescription, privacy: .public)")
                 let message = "Connection failed."
-                self.invalidateSessionPreservingStatus(session, errorMessage: message)
+                self.invalidateSessionPreservingStatus(session, errorMessage: "Connection lost.")
                 Task { @MainActor in
                     self.lastStatusMessage = message
-                    self.tagSession?.alertMessage = message
+                    self.tagSession?.alertMessage = "Connection lost."
                     Haptics.error()
                 }
                 return
@@ -236,12 +240,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     Log.nfc.error("Tag is not ISO7816 compatible")
                     await MainActor.run { [weak self] in
                         self?.lastStatusMessage = "Card not compatible."
-                        self?.tagSession?.alertMessage = "Card not compatible."
+                        self?.tagSession?.alertMessage = "Unsupported tag."
                     }
                     if !Task.isCancelled {
                         self.invalidateSessionPreservingStatus(
                             session,
-                            errorMessage: "Card not compatible."
+                            errorMessage: "Unsupported tag."
                         )
                     }
                     return
@@ -251,6 +255,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
                 await MainActor.run { [weak self] in
                     self?.lastStatusMessage = "Card connected, getting status..."
+                    self?.tagSession?.alertMessage = "Checking SATSCARD…"
                 }
 
                 do {
@@ -299,13 +304,52 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     Log.cktap.error(
                         "CKTap error: \(error.localizedDescription, privacy: .private(mask: .hash))"
                     )
-                    let message = self.userFacingMessage(
+                    let detailMessage = self.userFacingMessage(
                         for: error,
                         operation: self.currentOperation
                     )
+                    let alertMessage: String
+                    switch self.currentOperation {
+                    case .scan:
+                        if error is CkTapCardError {
+                            alertMessage = "Unsupported tag."
+                        } else if self.extractTransportMessage(from: error) != nil {
+                            alertMessage = "Connection lost."
+                        } else if let ckTapError = self.extractCkTapError(from: error) {
+                            switch ckTapError {
+                            case .UnknownCardType:
+                                alertMessage = "Unsupported tag."
+                            case .CborDe, .CborValue:
+                                alertMessage = "Read failed."
+                            case .Transport, .Card:
+                                alertMessage = "Scan failed."
+                            }
+                        } else {
+                            alertMessage = "Scan failed."
+                        }
+                    case .setupNextSlot:
+                        switch self.setupNextSlotError(from: error, authDelay: nil) {
+                        case .wrongCard:
+                            alertMessage = "Wrong SATSCARD."
+                        case .incorrectCvc:
+                            alertMessage = "Incorrect CVC."
+                        case .rateLimited:
+                            alertMessage = "Security delay."
+                        case .enterCvc:
+                            alertMessage = "Enter SATSCARD CVC."
+                        case .noUnusedSlots:
+                            alertMessage = "No slots left."
+                        case .transportInterrupted:
+                            alertMessage = "Connection lost."
+                        case .slotAdvancedRefreshRequired:
+                            alertMessage = "Refresh failed."
+                        case .raw:
+                            alertMessage = "Setup failed."
+                        }
+                    }
                     await MainActor.run { [weak self] in
-                        self?.lastStatusMessage = message
-                        self?.tagSession?.alertMessage = message
+                        self?.lastStatusMessage = detailMessage
+                        self?.tagSession?.alertMessage = alertMessage
                         if let setupError = error as? SetupNextSlotError,
                             case .slotAdvancedRefreshRequired = setupError
                         {
@@ -315,7 +359,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                         }
                     }
                     if !Task.isCancelled {
-                        self.invalidateSessionPreservingStatus(session, errorMessage: message)
+                        self.invalidateSessionPreservingStatus(
+                            session,
+                            errorMessage: alertMessage
+                        )
                     }
                 }
             }
@@ -340,7 +387,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
         currentOperation = .scan
         tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
-        tagSession?.alertMessage = "Hold your iPhone near the SatsCard."
+        tagSession?.alertMessage = "Hold near SATSCARD."
         tagSession?.begin()
 
         Log.nfc.info("NFC session started")
@@ -369,10 +416,10 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         previousSession?.invalidate()
 
         currentOperation = .setupNextSlot(card: card, cvc: trimmed)
-        tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
         let message = "Hold your iPhone near the SATSCARD to set up the next slot."
         lastStatusMessage = message
-        tagSession?.alertMessage = message
+        tagSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self, queue: nil)
+        tagSession?.alertMessage = "Hold near SATSCARD."
         tagSession?.begin()
 
         Log.nfc.info("NFC session started (setup next slot)")
@@ -471,7 +518,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     ) async throws -> SatsCardInfo {
         await updateStatus(
             "Checking SATSCARD status…",
-            alertMessage: "Checking SATSCARD status…"
+            alertMessage: "Checking SATSCARD…"
         )
 
         let cardType = try await CKTap.toCktap(transport: transport)
@@ -495,7 +542,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
         await updateStatus(
             "Setting up the next slot…",
-            alertMessage: "Setting up the next slot…"
+            alertMessage: "Setting up slot…"
         )
 
         let nextSlot: UInt8
@@ -510,7 +557,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
         await updateStatus(
             "Refreshing card details…",
-            alertMessage: "Refreshing card details…"
+            alertMessage: "Refreshing card…"
         )
 
         do {
@@ -531,7 +578,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             try await satsCard.wait()
             await updateStatus(
                 "Cooldown complete. Setting up the next slot…",
-                alertMessage: "Cooldown complete. Setting up the next slot…"
+                alertMessage: "Setting up slot…"
             )
         } catch {
             throw setupNextSlotError(from: error, authDelay: UInt8(seconds))
@@ -545,20 +592,23 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
             while !Task.isCancelled && remainingSeconds > 0 {
                 let message = self.cooldownCountdownMessage(seconds: remainingSeconds)
-                await self.updateStatus(message, alertMessage: message)
+                await self.updateStatus(
+                    message,
+                    alertMessage: "Security delay: \(remainingSeconds)s"
+                )
 
                 if remainingSeconds == 1 {
                     break
                 }
 
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                try? await Task.sleep(for: .seconds(1))
                 remainingSeconds -= 1
             }
         }
     }
 
     private func cooldownCountdownMessage(seconds: Int) -> String {
-        "SATSCARD security cooldown: keep the card near your iPhone for \(seconds) \(seconds == 1 ? "more second" : "more seconds")."
+        "Security delay active. Keep the SATSCARD near your iPhone for about \(seconds) \(seconds == 1 ? "second" : "seconds")."
     }
 
     private func userFacingMessage(for error: Error, operation: Operation) -> String {
