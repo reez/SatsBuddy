@@ -79,8 +79,8 @@ final class ModelValueTests: XCTestCase {
         )
     }
 
-    func testSendReviewSweepDisclosureMentionsUnsealAndNextSlot() {
-        let disclosure = SendReviewView.sweepDisclosure(for: 3)
+    func testSendReviewSweepDisclosureMentionsUnsealAndNextSlotForCurrentSlot() {
+        let disclosure = SendReviewView.sweepDisclosure(for: 3, advancesToNextSlot: true)
 
         XCTAssertEqual(
             disclosure,
@@ -89,6 +89,15 @@ final class ModelValueTests: XCTestCase {
         XCTAssertEqual(
             SendReviewView.nextSlotSetupDisclosure,
             "After the sweep, the next slot won't be ready to receive until you activate it."
+        )
+    }
+
+    func testSendReviewSweepDisclosureForHistoricalSlotDoesNotMentionAdvancingCard() {
+        let disclosure = SendReviewView.sweepDisclosure(for: 3, advancesToNextSlot: false)
+
+        XCTAssertEqual(
+            disclosure,
+            "Slot 3 is already unsealed. Continuing will sweep funds from that slot without changing the SATSCARD's current slot."
         )
     }
 
