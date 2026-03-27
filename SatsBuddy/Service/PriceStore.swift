@@ -11,8 +11,6 @@ import os
 
 @Observable
 final class PriceStore {
-    static let shared = PriceStore()
-
     var price: Price?
     var errorMessage: String?
 

@@ -18,6 +18,7 @@ struct SlotHistoryView: View {
     let slot: SlotInfo
     let network: Network
     let card: SatsCardInfo
+    let priceStore: PriceStore
     @State private var viewModel: SlotHistoryViewModel
     @State private var slotDetails: SlotInfo
     @State private var isShowingSend = false
@@ -27,11 +28,13 @@ struct SlotHistoryView: View {
         slot: SlotInfo,
         network: Network = .bitcoin,
         viewModel: SlotHistoryViewModel = SlotHistoryViewModel(),
-        card: SatsCardInfo
+        card: SatsCardInfo,
+        priceStore: PriceStore
     ) {
         self.slot = slot
         self.network = network
         self.card = card
+        self.priceStore = priceStore
         _slotDetails = State(initialValue: slot)
         _viewModel = State(initialValue: viewModel)
     }
@@ -40,7 +43,7 @@ struct SlotHistoryView: View {
         VStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    SlotRowView(slot: slotDetails)
+                    SlotRowView(slot: slotDetails, priceStore: priceStore)
                         .overlay(alignment: .topTrailing) {
                             if isRefreshingBalanceAfterBroadcast {
                                 ProgressView()
@@ -55,6 +58,7 @@ struct SlotHistoryView: View {
                         slot: slotDetails,
                         network: network,
                         viewModel: viewModel,
+                        priceStore: priceStore,
                         onOpenMempool: { openOnMempool(txid: $0) }
                     )
                 }
@@ -148,6 +152,7 @@ private struct TransactionsSectionView: View {
     let slot: SlotInfo
     let network: Network
     @Bindable var viewModel: SlotHistoryViewModel
+    let priceStore: PriceStore
     let onOpenMempool: (String) -> Void
 
     var body: some View {
@@ -194,6 +199,7 @@ private struct TransactionsSectionView: View {
                         } label: {
                             TransactionRowView(
                                 transaction: transaction,
+                                priceStore: priceStore,
                                 onOpenMempool: onOpenMempool
                             )
                         }
@@ -215,6 +221,7 @@ private struct TransactionsSectionView: View {
 
 private struct TransactionRowView: View {
     let transaction: SlotTransaction
+    let priceStore: PriceStore
     let onOpenMempool: (String) -> Void
 
     var body: some View {
@@ -222,7 +229,7 @@ private struct TransactionRowView: View {
 
             VStack(alignment: .leading, spacing: 12) {
 
-                TransactionAmountView(amount: transaction.amount)
+                TransactionAmountView(amount: transaction.amount, priceStore: priceStore)
 
                 Text(timestampLabel)
                     .font(.caption2)
@@ -267,8 +274,9 @@ private struct TransactionRowView: View {
 
 private struct TransactionAmountView: View {
     let amount: Int64
+    let priceStore: PriceStore
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
-    private var price: Price? { PriceStore.shared.price }
+    private var price: Price? { priceStore.price }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -326,11 +334,12 @@ private struct HistoryCard<Content: View>: View {
             SlotHistoryView(
                 slot: slot,
                 viewModel: SlotHistoryViewModel.previewMock(),
-                card: SatsCardInfo(version: "1", pubkey: "1234")
+                card: SatsCardInfo(version: "1", pubkey: "1234"),
+                priceStore: PriceStore()
             )
         }
     }
     #Preview {
-        TransactionAmountView(amount: Int64(2500))
+        TransactionAmountView(amount: Int64(2500), priceStore: PriceStore())
     }
 #endif

@@ -12,6 +12,7 @@ struct SlotsRowListView: View {
     let slots: [SlotInfo]
     let card: SatsCardInfo
     let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
 
     var body: some View {
         ScrollView {
@@ -25,10 +26,11 @@ struct SlotsRowListView: View {
                         NavigationLink {
                             SlotHistoryView(
                                 slot: slot,
-                                card: card
+                                card: card,
+                                priceStore: priceStore
                             )
                         } label: {
-                            SlotSummaryRowView(slot: slot, viewModel: viewModel)
+                            SlotSummaryRowView(slot: slot, viewModel: viewModel, priceStore: priceStore)
                                 .padding(.vertical, 32)
                                 .contentShape(Rectangle())
                         }
@@ -80,7 +82,8 @@ struct SlotsRowListView: View {
             totalSlots: 10,
             slots: sampleSlots,
             card: SatsCardInfo(version: "1", pubkey: "1234"),
-            viewModel: SatsCardDetailViewModel(bdkClient: .mock)
+            viewModel: SatsCardDetailViewModel(bdkClient: .mock),
+            priceStore: PriceStore()
         )
     }
 }

@@ -13,6 +13,7 @@ struct ActiveSlotView: View {
     let card: SatsCardInfo
     let isLoading: Bool
     let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
     let isScanning: Bool
     let onRefresh: () -> Void
     let onSetupNextSlot: (() -> Void)?
@@ -30,7 +31,8 @@ struct ActiveSlotView: View {
                 slot: slot,
                 isLoading: isLoading,
                 balanceFormat: $balanceFormat,
-                errorMessage: viewModel.errorMessage
+                errorMessage: viewModel.errorMessage,
+                priceStore: priceStore
             )
 
             if let onSweepBalance {
@@ -80,7 +82,8 @@ struct ActiveSlotView: View {
                 SlotNavigationRow(
                     slotPositionText: slotPositionText,
                     card: card,
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    priceStore: priceStore
                 )
 
                 Divider()
@@ -105,7 +108,8 @@ private struct BalanceHeaderView: View {
     let isLoading: Bool
     @Binding var balanceFormat: BalanceDisplayFormat
     let errorMessage: String?
-    private var price: Price? { PriceStore.shared.price }
+    let priceStore: PriceStore
+    private var price: Price? { priceStore.price }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -343,6 +347,7 @@ private struct SlotNavigationRow: View {
     let slotPositionText: String
     let card: SatsCardInfo
     let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
 
     var body: some View {
         NavigationLink {
@@ -350,7 +355,8 @@ private struct SlotNavigationRow: View {
                 totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
                 slots: viewModel.slots,
                 card: card,
-                viewModel: viewModel
+                viewModel: viewModel,
+                priceStore: priceStore
             )
             .navigationTitle("All Slots")
             .navigationBarTitleDisplayMode(.inline)
@@ -481,6 +487,7 @@ extension ActiveSlotView {
             card: card,
             isLoading: false,
             viewModel: SatsCardDetailViewModel(),
+            priceStore: PriceStore(),
             isScanning: false,
             onRefresh: {},
             onSetupNextSlot: nil,

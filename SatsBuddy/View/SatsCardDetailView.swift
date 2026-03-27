@@ -13,6 +13,7 @@ struct SatsCardDetailView: View {
     let card: SatsCardInfo
     @State var viewModel: SatsCardDetailViewModel
     @Bindable var cardViewModel: SatsCardViewModel
+    let priceStore: PriceStore
     @Environment(\.dismiss) private var dismiss
     @State private var traceID = String(UUID().uuidString.prefix(6))
     @State private var labelText: String = ""
@@ -36,6 +37,7 @@ struct SatsCardDetailView: View {
                     card: updatedCard,
                     isLoading: viewModel.isLoading || isShowingPlaceholderSlot,
                     viewModel: viewModel,
+                    priceStore: priceStore,
                     isScanning: cardViewModel.isScanning,
                     onRefresh: {
                         cardViewModel.refreshCard(updatedCard)
@@ -150,7 +152,7 @@ struct SatsCardDetailView: View {
             }
         }
         .onAppear {
-            PriceStore.shared.refreshPrice()
+            priceStore.refreshPrice()
             cardViewModel.detailLoadingCardIdentifier = updatedCard.cardIdentifier
         }
         .onChange(of: viewModel.isLoading) { _, isLoading in
@@ -220,7 +222,8 @@ struct SatsCardDetailView: View {
             cardViewModel: SatsCardViewModel(
                 ckTapService: .mock,
                 cardsStore: .mock
-            )
+            ),
+            priceStore: PriceStore()
         )
     }
 #endif

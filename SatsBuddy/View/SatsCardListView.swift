@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SatsCardListView: View {
     @State var viewModel: SatsCardViewModel
+    let priceStore: PriceStore
 
     var body: some View {
         NavigationStack {
@@ -29,7 +30,8 @@ struct SatsCardListView: View {
                                     SatsCardDetailView(
                                         card: card,
                                         viewModel: .init(),
-                                        cardViewModel: viewModel
+                                        cardViewModel: viewModel,
+                                        priceStore: priceStore
                                     )
                                 } label: {
                                     SatsCardView(
@@ -123,6 +125,6 @@ struct SatsCardListView: View {
                 isActive: true
             )
         ]
-        return SatsCardListView(viewModel: vm)
+        return SatsCardListView(viewModel: vm, priceStore: PriceStore())
     }
 #endif

@@ -10,21 +10,24 @@ import SwiftUI
 struct SlotSummaryRowView: View {
     let slot: SlotInfo
     let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
 
     var body: some View {
-        SlotSummaryHeader(slot: slot, showsChevron: true, viewModel: viewModel)
+        SlotSummaryHeader(slot: slot, showsChevron: true, viewModel: viewModel, priceStore: priceStore)
     }
 }
 
 struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
+    let priceStore: PriceStore
     private let footer: Footer
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var isAddressCopied: Bool = false
-    private var price: Price? { PriceStore.shared.price }
+    private var price: Price? { priceStore.price }
 
-    init(slot: SlotInfo, @ViewBuilder footer: () -> Footer) {
+    init(slot: SlotInfo, priceStore: PriceStore, @ViewBuilder footer: () -> Footer) {
         self.slot = slot
+        self.priceStore = priceStore
         self.footer = footer()
     }
 
@@ -120,14 +123,15 @@ extension SlotRowView {
             pubkeyDescriptor: nil,
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 21_000
-        )
+        ),
+        priceStore: PriceStore()
     )
     .padding()
 }
 
 extension SlotRowView where Footer == EmptyView {
-    init(slot: SlotInfo) {
-        self.init(slot: slot) { EmptyView() }
+    init(slot: SlotInfo, priceStore: PriceStore) {
+        self.init(slot: slot, priceStore: priceStore) { EmptyView() }
     }
 }
 
@@ -150,13 +154,15 @@ private struct SlotSummaryHeader: View {
     let showsChevron: Bool
     let showsSlotTitle: Bool
     let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
-    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true, viewModel: SatsCardDetailViewModel) {
+    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true, viewModel: SatsCardDetailViewModel, priceStore: PriceStore) {
         self.slot = slot
         self.showsChevron = showsChevron
         self.showsSlotTitle = showsSlotTitle
         self.viewModel = viewModel
+        self.priceStore = priceStore
     }
 
     var body: some View {
@@ -201,7 +207,7 @@ private struct SlotSummaryHeader: View {
                         .font(.body)
                         .fontWeight(.thin)
                 } else if balanceFormat == .fiat {
-                    let symbol = balanceFormat.displayPrefix(price: PriceStore.shared.price)
+                    let symbol = balanceFormat.displayPrefix(price: priceStore.price)
                     if !symbol.isEmpty {
                         Text(symbol)
                             .foregroundStyle(.secondary)
@@ -210,12 +216,12 @@ private struct SlotSummaryHeader: View {
                     }
                 }
                 
-                Text(balanceFormat.formatted(balance, price: PriceStore.shared.price))
+                Text(balanceFormat.formatted(balance, price: priceStore.price))
                     .font(.body)
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
                 
-                Text(balanceFormat.displayText(price: PriceStore.shared.price))
+                Text(balanceFormat.displayText(price: priceStore.price))
                     .foregroundStyle(.secondary)
                     .font(.body)
                     .fontWeight(.thin)
