@@ -12,6 +12,7 @@
 		3205429CB279D92EB77EF045 /* CardsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2D4D75541C6BE7B514F143 /* CardsStoreTests.swift */; };
 		67331506D4886C568D8F8FED /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4AC5C31F8AE2442FC9EBA8F /* TestSupport.swift */; };
 		6B4370B895AA7E93F396EDA9 /* SlotHistoryViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D21E20AA31FFE36EFC756C /* SlotHistoryViewModelTests.swift */; };
+		77B3C2CA2F76C2FA001A6F97 /* PriceStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B3C2C92F76C2FA001A6F97 /* PriceStoreTests.swift */; };
 		895B27F4E3C2B0DA5ABE3C9B /* SatsCardViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407D7DAB313D564E0D4E5E35 /* SatsCardViewModelTests.swift */; };
 		99EFCAFB7EB028A5A0F0253A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 70B804D47EFF5F4F80B44A30 /* Foundation.framework */; };
 		AE2B3E6B2E85968F0046F873 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = AE2B3E6A2E85968F0046F873 /* KeychainAccess */; };
@@ -38,6 +39,7 @@
 		407D7DAB313D564E0D4E5E35 /* SatsCardViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SatsCardViewModelTests.swift; path = SatsBuddyTests/SatsCardViewModelTests.swift; sourceTree = "<group>"; };
 		4A2D4D75541C6BE7B514F143 /* CardsStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CardsStoreTests.swift; path = SatsBuddyTests/CardsStoreTests.swift; sourceTree = "<group>"; };
 		70B804D47EFF5F4F80B44A30 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		77B3C2C92F76C2FA001A6F97 /* PriceStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceStoreTests.swift; sourceTree = "<group>"; };
 		8124BA935E5E83F0D5A1C7BA /* FeeViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FeeViewModelTests.swift; path = SatsBuddyTests/FeeViewModelTests.swift; sourceTree = "<group>"; };
 		97D21E20AA31FFE36EFC756C /* SlotHistoryViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SlotHistoryViewModelTests.swift; path = SatsBuddyTests/SlotHistoryViewModelTests.swift; sourceTree = "<group>"; };
 		AE2B975B2E43ADDF002051EC /* SatsBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SatsBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -103,6 +105,7 @@
 		4E484444A7E8EFF3DAAD88C8 /* SatsBuddyTests */ = {
 			isa = PBXGroup;
 			children = (
+				77B3C2C92F76C2FA001A6F97 /* PriceStoreTests.swift */,
 				4A2D4D75541C6BE7B514F143 /* CardsStoreTests.swift */,
 				8124BA935E5E83F0D5A1C7BA /* FeeViewModelTests.swift */,
 				2AFD110A4FECFF28E42FB3D8 /* ModelValueTests.swift */,
@@ -264,6 +267,7 @@
 				3205429CB279D92EB77EF045 /* CardsStoreTests.swift in Sources */,
 				D7F85A72F72279E8040CEF5E /* FeeViewModelTests.swift in Sources */,
 				1AFAB31627BE9B8130EC10CA /* ModelValueTests.swift in Sources */,
+				77B3C2CA2F76C2FA001A6F97 /* PriceStoreTests.swift in Sources */,
 				895B27F4E3C2B0DA5ABE3C9B /* SatsCardViewModelTests.swift in Sources */,
 				6B4370B895AA7E93F396EDA9 /* SlotHistoryViewModelTests.swift in Sources */,
 				67331506D4886C568D8F8FED /* TestSupport.swift in Sources */,

@@ -200,7 +200,7 @@ private struct SlotSummaryHeader: View {
     @ViewBuilder
     private func buildBalanceIfNeeded() -> some View {
         HStack {
-            if let balance = viewModel.balance(for: slot), balance > .zero {
+            if let balance = viewModel.balance(for: slot) {
                 if balanceFormat.showsBitcoinSymbol {
                     Image(systemName: "bitcoinsign")
                         .foregroundStyle(.secondary)
