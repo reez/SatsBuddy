@@ -163,8 +163,8 @@ class SatsCardDetailViewModel {
         }
     }
 
-    func balance(for slot: SlotInfo) -> UInt64? {
-        slots.first(where: { $0.slotNumber == slot.slotNumber })?.balance
+    func balance(for slot: SlotInfo) -> UInt64 {
+        slots.first(where: { $0.slotNumber == slot.slotNumber })?.balance ?? .zero
     }
 
     func getBalance(for address: String, network: Network) async {

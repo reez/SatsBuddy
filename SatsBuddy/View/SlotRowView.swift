@@ -200,43 +200,42 @@ private struct SlotSummaryHeader: View {
     @ViewBuilder
     private func buildBalanceIfNeeded() -> some View {
         HStack {
-            if let balance = viewModel.balance(for: slot) {
-                if balanceFormat.showsBitcoinSymbol {
-                    Image(systemName: "bitcoinsign")
-                        .foregroundStyle(.secondary)
-                        .font(.body)
-                        .fontWeight(.thin)
-                } else if balanceFormat == .fiat {
-                    let symbol = balanceFormat.displayPrefix(price: priceStore.price)
-                    if !symbol.isEmpty {
-                        Text(symbol)
-                            .foregroundStyle(.secondary)
-                            .font(.body)
-                            .fontWeight(.thin)
-                    }
-                }
-                
-                Text(balanceFormat.formatted(balance, price: priceStore.price))
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
-                
-                Text(balanceFormat.displayText(price: priceStore.price))
+            let balance = viewModel.balance(for: slot)
+            if balanceFormat.showsBitcoinSymbol {
+                Image(systemName: "bitcoinsign")
                     .foregroundStyle(.secondary)
                     .font(.body)
                     .fontWeight(.thin)
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        )
-                    )
-                    .id("format-\(balanceFormat)")
-                    .animation(
-                        .spring(response: 0.3, dampingFraction: 0.7),
-                        value: balanceFormat
-                    )
+            } else if balanceFormat == .fiat {
+                let symbol = balanceFormat.displayPrefix(price: priceStore.price)
+                if !symbol.isEmpty {
+                    Text(symbol)
+                        .foregroundStyle(.secondary)
+                        .font(.body)
+                        .fontWeight(.thin)
+                }
             }
+            
+            Text(balanceFormat.formatted(balance, price: priceStore.price))
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+            
+            Text(balanceFormat.displayText(price: priceStore.price))
+                .foregroundStyle(.secondary)
+                .font(.body)
+                .fontWeight(.thin)
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    )
+                )
+                .id("format-\(balanceFormat)")
+                .animation(
+                    .spring(response: 0.3, dampingFraction: 0.7),
+                    value: balanceFormat
+                )
         }
     }
 }
