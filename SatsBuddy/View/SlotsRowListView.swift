@@ -10,8 +10,9 @@ import SwiftUI
 struct SlotsRowListView: View {
     let totalSlots: UInt8
     let slots: [SlotInfo]
-    let price: Price?
     let card: SatsCardInfo
+    let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
 
     var body: some View {
         ScrollView {
@@ -25,11 +26,11 @@ struct SlotsRowListView: View {
                         NavigationLink {
                             SlotHistoryView(
                                 slot: slot,
-                                price: price,
-                                card: card
+                                card: card,
+                                priceStore: priceStore
                             )
                         } label: {
-                            SlotSummaryRowView(slot: slot)
+                            SlotSummaryRowView(slot: slot, viewModel: viewModel, priceStore: priceStore)
                                 .padding(.vertical, 32)
                                 .contentShape(Rectangle())
                         }
@@ -49,33 +50,6 @@ struct SlotsRowListView: View {
             .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
-    }
-}
-
-private struct SlotsCard<Content: View>: View {
-    private let content: Content
-    private let contentPadding: CGFloat
-
-    init(contentPadding: CGFloat = 20, @ViewBuilder content: () -> Content) {
-        self.content = content()
-        self.contentPadding = contentPadding
-    }
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-
-        content
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(contentPadding)
-            .background(
-                shape
-                    .fill(Color(uiColor: .secondarySystemBackground).opacity(0.45))
-            )
-            .overlay(
-                shape
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-            .clipShape(shape)
     }
 }
 
@@ -107,17 +81,9 @@ private struct SlotsCard<Content: View>: View {
         SlotsRowListView(
             totalSlots: 10,
             slots: sampleSlots,
-            price: Price(
-                time: 1_734_000_000,
-                usd: 89_000,
-                eur: 82_000,
-                gbp: 70_000,
-                cad: 120_000,
-                chf: 80_000,
-                aud: 130_000,
-                jpy: 13_700_000
-            ),
-            card: SatsCardInfo(version: "1", pubkey: "1234")
+            card: SatsCardInfo(version: "1", pubkey: "1234"),
+            viewModel: SatsCardDetailViewModel(bdkClient: .mock),
+            priceStore: PriceStore()
         )
     }
 }

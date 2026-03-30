@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct SatsBuddyApp: App {
     private let viewModel: SatsCardViewModel
+    private let priceStore = PriceStore()
 
     init() {
         let bdkClient = BdkClient.live
@@ -22,7 +23,7 @@ struct SatsBuddyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            SatsCardListView(viewModel: viewModel)
+            SatsCardListView(viewModel: viewModel, priceStore: priceStore)
         }
     }
 }

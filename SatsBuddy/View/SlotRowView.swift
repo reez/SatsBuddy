@@ -9,23 +9,25 @@ import SwiftUI
 
 struct SlotSummaryRowView: View {
     let slot: SlotInfo
+    let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
 
     var body: some View {
-        SlotSummaryHeader(slot: slot, showsChevron: true)
+        SlotSummaryHeader(slot: slot, showsChevron: true, viewModel: viewModel, priceStore: priceStore)
     }
 }
 
 struct SlotRowView<Footer: View>: View {
     let slot: SlotInfo
-    //    @State private var addressCopied = false
+    let priceStore: PriceStore
     private let footer: Footer
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var isAddressCopied: Bool = false
-    let price: Price?
+    private var price: Price? { priceStore.price }
 
-    init(slot: SlotInfo, price: Price?, @ViewBuilder footer: () -> Footer) {
+    init(slot: SlotInfo, priceStore: PriceStore, @ViewBuilder footer: () -> Footer) {
         self.slot = slot
-        self.price = price
+        self.priceStore = priceStore
         self.footer = footer()
     }
 
@@ -112,16 +114,6 @@ extension SlotRowView {
 }
 
 #Preview {
-    let price = Price(
-        time: 1_734_000_000,
-        usd: 89_000,
-        eur: 82_000,
-        gbp: 70_000,
-        cad: 120_000,
-        chf: 80_000,
-        aud: 130_000,
-        jpy: 13_700_000
-    )
     SlotRowView(
         slot: .init(
             slotNumber: UInt8(1),
@@ -132,14 +124,14 @@ extension SlotRowView {
             address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
             balance: 21_000
         ),
-        price: price
+        priceStore: PriceStore()
     )
     .padding()
 }
 
 extension SlotRowView where Footer == EmptyView {
-    init(slot: SlotInfo, price: Price?) {
-        self.init(slot: slot, price: price) { EmptyView() }
+    init(slot: SlotInfo, priceStore: PriceStore) {
+        self.init(slot: slot, priceStore: priceStore) { EmptyView() }
     }
 }
 
@@ -161,24 +153,35 @@ private struct SlotSummaryHeader: View {
     let slot: SlotInfo
     let showsChevron: Bool
     let showsSlotTitle: Bool
+    let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
+    @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
-    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true) {
+    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true, viewModel: SatsCardDetailViewModel, priceStore: PriceStore) {
         self.slot = slot
         self.showsChevron = showsChevron
         self.showsSlotTitle = showsSlotTitle
+        self.viewModel = viewModel
+        self.priceStore = priceStore
     }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            if showsSlotTitle {
-                Text("Slot \(slot.displaySlotNumber)")
-                    .font(.body)
-                    .fontWeight(.medium)
+            VStack(alignment: .leading) {
+                if showsSlotTitle {
+                    Text("Slot \(slot.displaySlotNumber)")
+                        .font(.body)
+                        .fontWeight(.medium)
+                }
+                
+                buildBalanceIfNeeded()
+                
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Spacer()
 
             SlotStatusBadges(slot: slot)
-
-            Spacer()
 
             if showsChevron {
                 Image(systemName: "chevron.right")
@@ -186,6 +189,53 @@ private struct SlotSummaryHeader: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.tertiary)
             }
+        }
+        .task {
+            if let address = slot.address {
+                await viewModel.getBalance(for: address, network: .bitcoin)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func buildBalanceIfNeeded() -> some View {
+        HStack {
+            let balance = viewModel.balance(for: slot)
+            if balanceFormat.showsBitcoinSymbol {
+                Image(systemName: "bitcoinsign")
+                    .foregroundStyle(.secondary)
+                    .font(.body)
+                    .fontWeight(.thin)
+            } else if balanceFormat == .fiat {
+                let symbol = balanceFormat.displayPrefix(price: priceStore.price)
+                if !symbol.isEmpty {
+                    Text(symbol)
+                        .foregroundStyle(.secondary)
+                        .font(.body)
+                        .fontWeight(.thin)
+                }
+            }
+            
+            Text(balanceFormat.formatted(balance, price: priceStore.price))
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+            
+            Text(balanceFormat.displayText(price: priceStore.price))
+                .foregroundStyle(.secondary)
+                .font(.body)
+                .fontWeight(.thin)
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    )
+                )
+                .id("format-\(balanceFormat)")
+                .animation(
+                    .spring(response: 0.3, dampingFraction: 0.7),
+                    value: balanceFormat
+                )
         }
     }
 }

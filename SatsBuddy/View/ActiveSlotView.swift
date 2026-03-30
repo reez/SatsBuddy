@@ -13,13 +13,13 @@ struct ActiveSlotView: View {
     let card: SatsCardInfo
     let isLoading: Bool
     let viewModel: SatsCardDetailViewModel
+    let priceStore: PriceStore
     let isScanning: Bool
     let onRefresh: () -> Void
     let onSetupNextSlot: (() -> Void)?
     let onSweepBalance: (() -> Void)?
     let canSweepBalance: Bool
     @Binding var isSweepButtonHidden: Bool
-    let price: Price?
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
@@ -29,10 +29,10 @@ struct ActiveSlotView: View {
 
             BalanceHeaderView(
                 slot: slot,
-                price: price,
                 isLoading: isLoading,
                 balanceFormat: $balanceFormat,
-                errorMessage: viewModel.errorMessage
+                errorMessage: viewModel.errorMessage,
+                priceStore: priceStore
             )
 
             if let onSweepBalance {
@@ -83,7 +83,7 @@ struct ActiveSlotView: View {
                     slotPositionText: slotPositionText,
                     card: card,
                     viewModel: viewModel,
-                    price: price
+                    priceStore: priceStore
                 )
 
                 Divider()
@@ -105,10 +105,11 @@ struct ActiveSlotView: View {
 
 private struct BalanceHeaderView: View {
     let slot: SlotInfo
-    let price: Price?
     let isLoading: Bool
     @Binding var balanceFormat: BalanceDisplayFormat
     let errorMessage: String?
+    let priceStore: PriceStore
+    private var price: Price? { priceStore.price }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -346,15 +347,16 @@ private struct SlotNavigationRow: View {
     let slotPositionText: String
     let card: SatsCardInfo
     let viewModel: SatsCardDetailViewModel
-    let price: Price?
+    let priceStore: PriceStore
 
     var body: some View {
         NavigationLink {
             SlotsRowListView(
                 totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
                 slots: viewModel.slots,
-                price: price,
-                card: card
+                card: card,
+                viewModel: viewModel,
+                priceStore: priceStore
             )
             .navigationTitle("All Slots")
             .navigationBarTitleDisplayMode(.inline)
@@ -480,29 +482,18 @@ extension ActiveSlotView {
             slots: [slot],
             isActive: true
         )
-        let price = Price(
-            time: 1_734_000_000,
-            usd: 89_000,
-            eur: 82_000,
-            gbp: 70_000,
-            cad: 120_000,
-            chf: 80_000,
-            aud: 130_000,
-            jpy: 13_700_000
-        )
-
         ActiveSlotView(
             slot: slot,
             card: card,
             isLoading: false,
             viewModel: SatsCardDetailViewModel(),
+            priceStore: PriceStore(),
             isScanning: false,
             onRefresh: {},
             onSetupNextSlot: nil,
             onSweepBalance: {},
             canSweepBalance: true,
-            isSweepButtonHidden: .constant(false),
-            price: price
+            isSweepButtonHidden: .constant(false)
         )
         .padding()
     }

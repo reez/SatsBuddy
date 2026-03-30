@@ -21,44 +21,6 @@ final class SatsCardViewModelTests: XCTestCase {
         XCTAssertSatsCardArraysEqual(viewModel.scannedCards, storedCards)
     }
 
-    func testRefreshPriceSuccessStoresPriceAndClearsErrorMessage() async {
-        let expectedPrice = Price(
-            time: 1_734_000_001,
-            usd: 95_000,
-            eur: 88_000,
-            gbp: 75_000,
-            cad: 128_000,
-            chf: 84_000,
-            aud: 136_000,
-            jpy: 14_200_000
-        )
-        let viewModel = makeViewModel(
-            priceClient: PriceClient(fetchPrice: { expectedPrice })
-        )
-
-        viewModel.priceErrorMessage = "stale error"
-        viewModel.refreshPrice()
-
-        await waitUntil {
-            viewModel.price == expectedPrice && viewModel.priceErrorMessage == nil
-        }
-    }
-
-    func testRefreshPriceFailureStoresLocalizedErrorMessage() async {
-        let viewModel = makeViewModel(
-            priceClient: PriceClient(fetchPrice: {
-                throw TestError.expected("Price fetch failed")
-            })
-        )
-
-        viewModel.refreshPrice()
-
-        await waitUntil {
-            viewModel.priceErrorMessage == "Price fetch failed"
-        }
-        XCTAssertNil(viewModel.price)
-    }
-
     func testUpdateLabelTrimsWhitespaceAndPersistsCards() {
         let existingCard = makeSatsCard(label: nil)
         let recorder = CardsStoreRecorder(loadedCards: [existingCard])
@@ -224,8 +186,7 @@ final class SatsCardViewModelTests: XCTestCase {
     }
 
     private func makeViewModel(
-        cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder(),
-        priceClient: PriceClient = PriceClient(fetchPrice: { currentPriceMock })
+        cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder()
     ) -> SatsCardViewModel {
         let cardsStore = CardsKeychainClient(
             loadCards: {
@@ -239,8 +200,7 @@ final class SatsCardViewModelTests: XCTestCase {
 
         return SatsCardViewModel(
             ckTapService: .mock,
-            cardsStore: cardsStore,
-            priceClient: priceClient
+            cardsStore: cardsStore
         )
     }
 }

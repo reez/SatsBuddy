@@ -20,11 +20,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     var isScanning: Bool = false
     var scannedCards: [SatsCardInfo] = []
     var detailLoadingCardIdentifier: String?
-    var price: Price?
-    var priceErrorMessage: String?
-
     let ckTapClient: CkTapClient
-    private let priceClient: PriceClient
     private let cardsStore: CardsKeychainClient
     private var currentNFCReadTask: Task<Void, Never>?
     private var currentNFCReadTaskToken: UUID?
@@ -35,38 +31,18 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         let bdkClient = BdkClient.live
         self.ckTapClient = .live(bdk: bdkClient)
         self.cardsStore = .live
-        self.priceClient = .live
         super.init()
         loadPersistedCards()
     }
 
     init(
         ckTapService: CkTapClient,
-        cardsStore: CardsKeychainClient = .live,
-        priceClient: PriceClient = .live
+        cardsStore: CardsKeychainClient = .live
     ) {
         self.ckTapClient = ckTapService
         self.cardsStore = cardsStore
-        self.priceClient = priceClient
         super.init()
         loadPersistedCards()
-    }
-
-    func refreshPrice() {
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let latest = try await priceClient.fetchPrice()
-                await MainActor.run {
-                    self.price = latest
-                    self.priceErrorMessage = nil
-                }
-            } catch {
-                await MainActor.run {
-                    self.priceErrorMessage = error.localizedDescription
-                }
-            }
-        }
     }
 
     enum Operation {
