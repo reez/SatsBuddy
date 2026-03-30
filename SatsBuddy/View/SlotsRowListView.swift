@@ -30,9 +30,13 @@ struct SlotsRowListView: View {
                                 priceStore: priceStore
                             )
                         } label: {
-                            SlotSummaryRowView(slot: slot, viewModel: viewModel, priceStore: priceStore)
-                                .padding(.vertical, 32)
-                                .contentShape(Rectangle())
+                            SlotSummaryRowView(
+                                slot: slot,
+                                viewModel: viewModel,
+                                priceStore: priceStore
+                            )
+                            .padding(.vertical, 32)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -53,37 +57,39 @@ struct SlotsRowListView: View {
     }
 }
 
-#Preview {
-    let sampleSlots: [SlotInfo] = [
-        SlotInfo(
-            slotNumber: 0,
-            isActive: false,
-            isUsed: true,
-            pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f",
-            pubkeyDescriptor:
-                "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f)",
-            address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-            balance: nil
-        ),
-        SlotInfo(
-            slotNumber: 1,
-            isActive: true,
-            isUsed: true,
-            pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
-            pubkeyDescriptor:
-                "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c)",
-            address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
-            balance: 100000
-        ),
-    ]
+#if DEBUG
+    #Preview {
+        let sampleSlots: [SlotInfo] = [
+            SlotInfo(
+                slotNumber: 0,
+                isActive: false,
+                isUsed: true,
+                pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f",
+                pubkeyDescriptor:
+                    "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f)",
+                address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+                balance: nil
+            ),
+            SlotInfo(
+                slotNumber: 1,
+                isActive: true,
+                isUsed: true,
+                pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
+                pubkeyDescriptor:
+                    "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c)",
+                address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
+                balance: 100000
+            ),
+        ]
 
-    NavigationStack {
-        SlotsRowListView(
-            totalSlots: 10,
-            slots: sampleSlots,
-            card: SatsCardInfo(version: "1", pubkey: "1234"),
-            viewModel: SatsCardDetailViewModel(bdkClient: .mock),
-            priceStore: PriceStore()
-        )
+        NavigationStack {
+            SlotsRowListView(
+                totalSlots: 10,
+                slots: sampleSlots,
+                card: SatsCardInfo(version: "1", pubkey: "1234"),
+                viewModel: SatsCardDetailViewModel(bdkClient: .mock),
+                priceStore: PriceStore()
+            )
+        }
     }
-}
+#endif
