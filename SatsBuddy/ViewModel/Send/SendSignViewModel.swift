@@ -425,8 +425,6 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
 
             state = .preparingPsbt
-            setStatusMessage(.verifyingCard)
-            try await SatsCardAuthenticityVerifier.verify(satsCard)
             setStatusMessage(.checkingCard)
 
             var liveStatus = await satsCard.status()
@@ -443,6 +441,16 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                         NSLocalizedDescriptionKey:
                             "Wrong SATSCARD detected. Tap the original card and try again."
                     ]
+                )
+            }
+
+            if Self.shouldVerifyAuthenticityDuringSend(activeSlotAddress: liveStatus.addr) {
+                setStatusMessage(.verifyingCard)
+                try await SatsCardAuthenticityVerifier.verify(satsCard)
+                setStatusMessage(.checkingCard)
+            } else {
+                Log.nfc.info(
+                    "[SendSign] Skipping SATSCARD authenticity verification because the active slot is new/empty."
                 )
             }
 
@@ -1080,6 +1088,10 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         }
 
         return nil
+    }
+
+    nonisolated static func shouldVerifyAuthenticityDuringSend(activeSlotAddress: String?) -> Bool {
+        CkTapCardService.shouldVerifyAuthenticity(activeSlotAddress: activeSlotAddress)
     }
 
     nonisolated private static func securityDelayMessage(seconds: Int) -> String {
