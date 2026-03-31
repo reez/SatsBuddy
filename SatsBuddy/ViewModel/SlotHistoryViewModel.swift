@@ -149,12 +149,12 @@ final class SlotHistoryViewModel {
     }
 
     private func missingAddressMessage(for slot: SlotInfo) -> String {
-        if !slot.isUsed {
-            return "This slot has not been used yet."
+        if slot.needsSetupToReceive {
+            return "This slot isn't ready yet. Go back and activate it before receiving."
         }
 
-        if slot.isActive {
-            return "This slot isn't ready yet. Go back and activate it before receiving."
+        if slot.state == .unused {
+            return "This slot has not been used yet."
         }
 
         return "No address available for this slot."

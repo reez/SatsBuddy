@@ -37,6 +37,95 @@ final class ModelValueTests: XCTestCase {
         XCTAssertEqual(slot.displaySlotNumber, 5)
     }
 
+    func testSlotStateDefaultsToActiveReadyWhenActiveSlotHasAddress() {
+        let slot = makeSlotInfo(
+            isActive: true,
+            isUsed: true,
+            address: "bc1qready",
+            state: nil
+        )
+
+        XCTAssertEqual(slot.state, .activeReady)
+        XCTAssertEqual(slot.receiveAddress, "bc1qready")
+        XCTAssertTrue(slot.isReadyToReceive)
+        XCTAssertFalse(slot.needsSetupToReceive)
+    }
+
+    func testSlotStateDefaultsToActiveNeedsSetupWhenActiveSlotHasNoAddress() {
+        let slot = makeSlotInfo(
+            isActive: true,
+            isUsed: true,
+            address: nil,
+            state: nil
+        )
+
+        XCTAssertEqual(slot.state, .activeNeedsSetup)
+        XCTAssertNil(slot.receiveAddress)
+        XCTAssertFalse(slot.isReadyToReceive)
+        XCTAssertTrue(slot.needsSetupToReceive)
+    }
+
+    func testReceiveAddressIsHiddenWhenActiveSlotNeedsSetupEvenIfAddressExists() {
+        let slot = makeSlotInfo(
+            isActive: true,
+            isUsed: true,
+            address: "bc1qoldslot",
+            state: .activeNeedsSetup
+        )
+
+        XCTAssertNil(slot.receiveAddress)
+        XCTAssertFalse(slot.isReadyToReceive)
+        XCTAssertTrue(slot.needsSetupToReceive)
+    }
+
+    func testSlotStateDefaultsToHistoricalForUsedNonActiveSlot() {
+        let slot = makeSlotInfo(
+            isActive: false,
+            isUsed: true,
+            address: "bc1qhistory",
+            state: nil
+        )
+
+        XCTAssertEqual(slot.state, .historical)
+        XCTAssertNil(slot.receiveAddress)
+        XCTAssertFalse(slot.isReadyToReceive)
+        XCTAssertFalse(slot.needsSetupToReceive)
+    }
+
+    func testSlotStateDefaultsToUnusedWhenSlotHasNotBeenUsed() {
+        let slot = makeSlotInfo(
+            isActive: false,
+            isUsed: false,
+            address: nil,
+            state: nil
+        )
+
+        XCTAssertEqual(slot.state, .unused)
+        XCTAssertNil(slot.receiveAddress)
+        XCTAssertFalse(slot.isReadyToReceive)
+        XCTAssertFalse(slot.needsSetupToReceive)
+    }
+
+    func testSlotDecodingBackfillsMissingStateForPersistedCards() throws {
+        let payload = """
+            {
+              "id": "00000000-0000-0000-0000-000000000001",
+              "slotNumber": 0,
+              "isActive": true,
+              "isUsed": true,
+              "pubkey": "slot-pubkey",
+              "pubkeyDescriptor": "wpkh(slot-pubkey)",
+              "address": null,
+              "balance": 21000
+            }
+            """.data(using: .utf8)!
+
+        let slot = try JSONDecoder().decode(SlotInfo.self, from: payload)
+
+        XCTAssertEqual(slot.state, .activeNeedsSetup)
+        XCTAssertTrue(slot.needsSetupToReceive)
+    }
+
     func testDisplayActiveSlotNumberIsNilWhenCardIsExhausted() {
         let exhaustedCard = makeSatsCard(activeSlot: 10, totalSlots: 10)
 

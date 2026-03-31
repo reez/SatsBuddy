@@ -21,6 +21,26 @@ final class SlotHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
     }
 
+    func testLoadHistoryForUnusedSlotShowsUnusedMessage() async {
+        let slot = makeSlotInfo(
+            isActive: false,
+            isUsed: false,
+            address: nil,
+            balance: nil,
+            state: .unused
+        )
+        let viewModel = SlotHistoryViewModel(bdkClient: .mock)
+
+        await viewModel.loadHistory(for: slot)
+
+        XCTAssertEqual(viewModel.errorMessage, "This slot has not been used yet.")
+        XCTAssertEqual(viewModel.transactions, [])
+        XCTAssertNil(viewModel.slotBalance)
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertFalse(viewModel.canRetryCurrentError)
+        XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
+    }
+
     func testLoadHistorySuccessStoresTransactionsAndBalance() async {
         let expectedTransactions = [
             SlotTransaction(
