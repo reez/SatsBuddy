@@ -35,6 +35,14 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return detail
             }
         }
+
+        var requiresNextSlotActivation: Bool {
+            if case .unsealed = self {
+                return true
+            }
+
+            return false
+        }
     }
 
     private struct PendingInvalidationOutcome {
@@ -56,6 +64,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         case unsealingActiveSlot
         case signingTransaction
         case broadcastingTransaction
+        case activatingNextSlot
         case syncingCardState
         case broadcasted(txid: String?)
         case nfcCancelled
@@ -94,6 +103,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return "Finalizing signed transaction…"
             case .broadcastingTransaction:
                 return "Broadcasting transaction…"
+            case .activatingNextSlot:
+                return "Activating next slot…"
             case .syncingCardState:
                 return "Syncing SATSCARD state…"
             case .broadcasted:
@@ -132,6 +143,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return "Signing transaction…"
             case .broadcastingTransaction:
                 return "Broadcasting…"
+            case .activatingNextSlot:
+                return "Activating next slot…"
             case .syncingCardState:
                 return "Syncing SATSCARD…"
             case .broadcasted:
@@ -484,8 +497,15 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return
             }
 
-            setStatusMessage(.syncingCardState)
-            refreshedCardInfo = await refreshCardInfo(transport: transport)
+            refreshedCardInfo = await refreshCardStateAfterBroadcast(
+                autoActivateNextSlot: slotAccess.requiresNextSlotActivation,
+                activateNextSlot: {
+                    try await self.activateNextSlotAfterSweep(satsCard: satsCard)
+                },
+                refreshCardSnapshot: {
+                    await self.refreshCardInfo(transport: transport)
+                }
+            )
             cvc = ""
             state = .done
             setStatusMessage(.broadcasted(txid: signedTxid))
@@ -514,6 +534,42 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             )
             return nil
         }
+    }
+
+    func refreshCardStateAfterBroadcast(
+        autoActivateNextSlot: Bool,
+        activateNextSlot: () async throws -> Void,
+        refreshCardSnapshot: () async -> SatsCardInfo?
+    ) async -> SatsCardInfo? {
+        if autoActivateNextSlot {
+            do {
+                setStatusMessage(.activatingNextSlot)
+                try await activateNextSlot()
+            } catch {
+                Log.cktap.error(
+                    "[SendSign] Auto-activating next slot after broadcast failed: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+
+        setStatusMessage(.syncingCardState)
+        return await refreshCardSnapshot()
+    }
+
+    private func activateNextSlotAfterSweep(satsCard: SatsCard) async throws {
+        var liveStatus = await satsCard.status()
+        latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
+        if let authDelay = latestAuthDelaySeconds, authDelay > 0 {
+            Log.nfc.info(
+                "[SendSign] Post-broadcast auth delay active for \(authDelay) seconds before activating next slot."
+            )
+            try await waitForSecurityDelay(satsCard: satsCard, seconds: authDelay)
+            liveStatus = await satsCard.status()
+            latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
+        }
+
+        let nextSlot = try await satsCard.newSlot(cvc: cvc)
+        Log.nfc.info("[SendSign] Activated next slot \(nextSlot) after broadcast")
     }
 
     private func buildPsbtAndSign(

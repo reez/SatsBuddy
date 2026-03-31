@@ -88,7 +88,7 @@ final class ModelValueTests: XCTestCase {
         )
         XCTAssertEqual(
             SendReviewView.nextSlotSetupDisclosure,
-            "After the sweep, the next slot won't be ready to receive until you activate it."
+            "If another slot is available, SatsBuddy will activate it automatically so the card is ready to receive again."
         )
     }
 

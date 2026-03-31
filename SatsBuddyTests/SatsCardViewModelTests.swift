@@ -185,6 +185,65 @@ final class SatsCardViewModelTests: XCTestCase {
         )
     }
 
+    func testRefreshCardStateAfterBroadcastAutoActivatesThenRefreshes() async {
+        let viewModel = makeSendSignViewModel()
+        var events: [String] = []
+        let refreshedCard = makeSatsCard(activeSlot: 1)
+
+        let result = await viewModel.refreshCardStateAfterBroadcast(
+            autoActivateNextSlot: true,
+            activateNextSlot: {
+                events.append("activate")
+            },
+            refreshCardSnapshot: {
+                events.append("refresh")
+                return refreshedCard
+            }
+        )
+
+        XCTAssertEqual(events, ["activate", "refresh"])
+        XCTAssertEqual(result?.activeSlot, refreshedCard.activeSlot)
+    }
+
+    func testRefreshCardStateAfterBroadcastSkipsActivationForHistoricalSweeps() async {
+        let viewModel = makeSendSignViewModel()
+        var events: [String] = []
+
+        _ = await viewModel.refreshCardStateAfterBroadcast(
+            autoActivateNextSlot: false,
+            activateNextSlot: {
+                events.append("activate")
+            },
+            refreshCardSnapshot: {
+                events.append("refresh")
+                return nil
+            }
+        )
+
+        XCTAssertEqual(events, ["refresh"])
+    }
+
+    func testRefreshCardStateAfterBroadcastStillRefreshesWhenActivationFails() async {
+        let viewModel = makeSendSignViewModel()
+        var events: [String] = []
+        let refreshedCard = makeSatsCard(activeSlot: 0)
+
+        let result = await viewModel.refreshCardStateAfterBroadcast(
+            autoActivateNextSlot: true,
+            activateNextSlot: {
+                events.append("activate")
+                throw TestError.expected("activation failed")
+            },
+            refreshCardSnapshot: {
+                events.append("refresh")
+                return refreshedCard
+            }
+        )
+
+        XCTAssertEqual(events, ["activate", "refresh"])
+        XCTAssertEqual(result?.cardIdentifier, refreshedCard.cardIdentifier)
+    }
+
     private func makeViewModel(
         cardsStoreRecorder: CardsStoreRecorder = CardsStoreRecorder()
     ) -> SatsCardViewModel {
@@ -201,6 +260,30 @@ final class SatsCardViewModelTests: XCTestCase {
         return SatsCardViewModel(
             ckTapService: .mock,
             cardsStore: cardsStore
+        )
+    }
+
+    private func makeSendSignViewModel() -> SendSignViewModel {
+        SendSignViewModel(
+            address: "bc1qdestination",
+            feeRate: 5,
+            slot: makeSlotInfo(),
+            expectedCardIdentifier: "CARD-IDENTIFIER",
+            network: .bitcoin,
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    throw TestError.expected("getBalanceFromAddress not used in this test")
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
         )
     }
 }
