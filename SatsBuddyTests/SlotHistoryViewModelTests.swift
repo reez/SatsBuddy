@@ -12,7 +12,7 @@ final class SlotHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.errorMessage,
-            "This slot isn't ready yet. Go back and activate it before receiving."
+            "This slot is unused. Go back and activate it before receiving."
         )
         XCTAssertEqual(viewModel.transactions, [])
         XCTAssertEqual(viewModel.slotBalance, 1_234)
@@ -33,7 +33,7 @@ final class SlotHistoryViewModelTests: XCTestCase {
 
         await viewModel.loadHistory(for: slot)
 
-        XCTAssertEqual(viewModel.errorMessage, "This slot has not been used yet.")
+        XCTAssertEqual(viewModel.errorMessage, "This slot is unused.")
         XCTAssertEqual(viewModel.transactions, [])
         XCTAssertNil(viewModel.slotBalance)
         XCTAssertFalse(viewModel.isLoading)
