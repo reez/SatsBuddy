@@ -49,6 +49,8 @@ final class ModelValueTests: XCTestCase {
         XCTAssertEqual(slot.receiveAddress, "bc1qready")
         XCTAssertTrue(slot.isReadyToReceive)
         XCTAssertFalse(slot.needsSetupToReceive)
+        XCTAssertTrue(slot.requiresUnsealBeforeSweep)
+        XCTAssertTrue(slot.shouldActivateNextSlotAfterSweep)
     }
 
     func testSlotStateDefaultsToActiveNeedsSetupWhenActiveSlotHasNoAddress() {
@@ -63,6 +65,8 @@ final class ModelValueTests: XCTestCase {
         XCTAssertNil(slot.receiveAddress)
         XCTAssertFalse(slot.isReadyToReceive)
         XCTAssertTrue(slot.needsSetupToReceive)
+        XCTAssertFalse(slot.requiresUnsealBeforeSweep)
+        XCTAssertTrue(slot.shouldActivateNextSlotAfterSweep)
     }
 
     func testReceiveAddressIsHiddenWhenActiveSlotNeedsSetupEvenIfAddressExists() {
@@ -90,6 +94,8 @@ final class ModelValueTests: XCTestCase {
         XCTAssertNil(slot.receiveAddress)
         XCTAssertFalse(slot.isReadyToReceive)
         XCTAssertFalse(slot.needsSetupToReceive)
+        XCTAssertFalse(slot.requiresUnsealBeforeSweep)
+        XCTAssertFalse(slot.shouldActivateNextSlotAfterSweep)
     }
 
     func testSlotStateDefaultsToUnusedWhenSlotHasNotBeenUsed() {
@@ -104,6 +110,8 @@ final class ModelValueTests: XCTestCase {
         XCTAssertNil(slot.receiveAddress)
         XCTAssertFalse(slot.isReadyToReceive)
         XCTAssertFalse(slot.needsSetupToReceive)
+        XCTAssertFalse(slot.requiresUnsealBeforeSweep)
+        XCTAssertFalse(slot.shouldActivateNextSlotAfterSweep)
     }
 
     func testSlotDecodingBackfillsMissingStateForPersistedCards() throws {
@@ -169,7 +177,11 @@ final class ModelValueTests: XCTestCase {
     }
 
     func testSendReviewSweepDisclosureMentionsUnsealAndNextSlotForCurrentSlot() {
-        let disclosure = SendReviewView.sweepDisclosure(for: 3, advancesToNextSlot: true)
+        let disclosure = SendReviewView.sweepDisclosure(
+            for: 3,
+            requiresUnsealBeforeSweep: true,
+            activatesNextSlotAfterSweep: true
+        )
 
         XCTAssertEqual(
             disclosure,
@@ -181,8 +193,25 @@ final class ModelValueTests: XCTestCase {
         )
     }
 
+    func testSendReviewSweepDisclosureForActiveSlotThatAlreadyNeedsSetupStillAdvances() {
+        let disclosure = SendReviewView.sweepDisclosure(
+            for: 3,
+            requiresUnsealBeforeSweep: false,
+            activatesNextSlotAfterSweep: true
+        )
+
+        XCTAssertEqual(
+            disclosure,
+            "Slot 3 is already unsealed. Continuing will sweep funds from that slot and move this SATSCARD to the next slot."
+        )
+    }
+
     func testSendReviewSweepDisclosureForHistoricalSlotDoesNotMentionAdvancingCard() {
-        let disclosure = SendReviewView.sweepDisclosure(for: 3, advancesToNextSlot: false)
+        let disclosure = SendReviewView.sweepDisclosure(
+            for: 3,
+            requiresUnsealBeforeSweep: false,
+            activatesNextSlotAfterSweep: false
+        )
 
         XCTAssertEqual(
             disclosure,

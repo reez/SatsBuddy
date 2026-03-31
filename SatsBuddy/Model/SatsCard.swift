@@ -148,6 +148,14 @@ struct SlotInfo: Identifiable, Codable {
         guard isReadyToReceive else { return nil }
         return normalizedAddress
     }
+
+    var requiresUnsealBeforeSweep: Bool {
+        isActive && state == .activeReady
+    }
+
+    var shouldActivateNextSlotAfterSweep: Bool {
+        isActive && state != .unused
+    }
 }
 
 struct SatsCardInfo: Identifiable, Codable {
