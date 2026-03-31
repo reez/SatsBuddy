@@ -589,8 +589,6 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             throw CkTapCardError.unsupportedCard("Only SATSCARD is supported for this flow.")
         }
 
-        try await SatsCardAuthenticityVerifier.verify(satsCard)
-
         await updateStatus(
             "Checking SATSCARD status…",
             alertMessage: "Checking SATSCARD…"
@@ -604,6 +602,14 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 "Wrong SATSCARD for setupNextSlot: expected=\(target.cardIdentifier, privacy: .private(mask: .hash)) actual=\(liveCardIdentifier, privacy: .private(mask: .hash))"
             )
             throw SetupNextSlotError.wrongCard
+        }
+
+        if Self.shouldVerifyAuthenticityDuringSetup(activeSlotAddress: liveStatus.addr) {
+            try await SatsCardAuthenticityVerifier.verify(satsCard)
+        } else {
+            Log.cktap.info(
+                "Skipping SATSCARD authenticity verification during setupNextSlot because the active slot is new/empty for card \(target.cardIdentifier, privacy: .private(mask: .hash))"
+            )
         }
 
         if let cooldownSeconds = Self.cooldownSeconds(from: liveStatus.authDelay) {
@@ -835,6 +841,11 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     private static func cooldownSeconds(from authDelay: UInt8?) -> Int? {
         guard let authDelay, authDelay > 0 else { return nil }
         return Int(authDelay)
+    }
+
+    static func shouldVerifyAuthenticityDuringSetup(activeSlotAddress: String?) -> Bool {
+        guard let activeSlotAddress else { return false }
+        return !activeSlotAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     static func hasUnusedSlots(activeSlot: UInt8?, totalSlots: UInt8?) -> Bool {

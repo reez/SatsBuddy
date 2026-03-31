@@ -185,6 +185,20 @@ final class SatsCardViewModelTests: XCTestCase {
         )
     }
 
+    func testSetupNextSlotSkipsAuthenticityVerificationWhenActiveSlotHasNoAddress() {
+        XCTAssertFalse(
+            SatsCardViewModel.shouldVerifyAuthenticityDuringSetup(activeSlotAddress: nil)
+        )
+        XCTAssertFalse(
+            SatsCardViewModel.shouldVerifyAuthenticityDuringSetup(activeSlotAddress: "")
+        )
+        XCTAssertTrue(
+            SatsCardViewModel.shouldVerifyAuthenticityDuringSetup(
+                activeSlotAddress: "bc1qexampleaddress"
+            )
+        )
+    }
+
     func testRefreshCardStateAfterBroadcastAutoActivatesThenRefreshes() async {
         let viewModel = makeSendSignViewModel()
         var events: [String] = []
