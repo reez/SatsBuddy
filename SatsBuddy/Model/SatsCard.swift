@@ -13,6 +13,17 @@ enum SlotState: String, Codable, Equatable {
     case activeNeedsSetup
     case historical
 
+    var lifecycleLabel: String {
+        switch self {
+        case .activeReady:
+            return "Sealed"
+        case .activeNeedsSetup, .unused:
+            return "Unused"
+        case .historical:
+            return "Unsealed"
+        }
+    }
+
     static func inferred(
         isActive: Bool,
         isUsed: Bool,
@@ -155,6 +166,14 @@ struct SlotInfo: Identifiable, Codable {
 
     var shouldActivateNextSlotAfterSweep: Bool {
         isActive && state != .unused
+    }
+
+    var showsCurrentBadge: Bool {
+        isActive
+    }
+
+    var lifecycleBadgeText: String {
+        state.lifecycleLabel
     }
 }
 

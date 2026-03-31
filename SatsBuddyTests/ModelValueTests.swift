@@ -114,6 +114,42 @@ final class ModelValueTests: XCTestCase {
         XCTAssertFalse(slot.shouldActivateNextSlotAfterSweep)
     }
 
+    func testSlotBadgeCopyUsesCurrentAndCoinkiteLifecycleTerms() {
+        let currentSealed = makeSlotInfo(
+            isActive: true,
+            isUsed: true,
+            address: "bc1qready",
+            state: nil
+        )
+        let currentUnused = makeSlotInfo(
+            isActive: true,
+            isUsed: true,
+            address: nil,
+            state: nil
+        )
+        let historical = makeSlotInfo(
+            isActive: false,
+            isUsed: true,
+            address: "bc1qhistory",
+            state: nil
+        )
+        let unused = makeSlotInfo(
+            isActive: false,
+            isUsed: false,
+            address: nil,
+            state: nil
+        )
+
+        XCTAssertTrue(currentSealed.showsCurrentBadge)
+        XCTAssertEqual(currentSealed.lifecycleBadgeText, "Sealed")
+        XCTAssertTrue(currentUnused.showsCurrentBadge)
+        XCTAssertEqual(currentUnused.lifecycleBadgeText, "Unused")
+        XCTAssertFalse(historical.showsCurrentBadge)
+        XCTAssertEqual(historical.lifecycleBadgeText, "Unsealed")
+        XCTAssertFalse(unused.showsCurrentBadge)
+        XCTAssertEqual(unused.lifecycleBadgeText, "Unused")
+    }
+
     func testSlotDecodingBackfillsMissingStateForPersistedCards() throws {
         let payload = """
             {

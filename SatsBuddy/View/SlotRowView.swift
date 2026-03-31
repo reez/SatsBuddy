@@ -13,7 +13,12 @@ struct SlotSummaryRowView: View {
     let priceStore: PriceStore
 
     var body: some View {
-        SlotSummaryHeader(slot: slot, showsChevron: true, viewModel: viewModel, priceStore: priceStore)
+        SlotSummaryHeader(
+            slot: slot,
+            showsChevron: true,
+            viewModel: viewModel,
+            priceStore: priceStore
+        )
     }
 }
 
@@ -75,10 +80,8 @@ struct SlotRowView<Footer: View>: View {
                 }
             }
 
-            if slot.isActive {
-                SlotBadge(text: "Active", tint: .green)
-                    .padding(.top, 10)
-            }
+            SlotStatusBadges(slot: slot)
+                .padding(.top, 10)
 
             footer
         }
@@ -157,7 +160,13 @@ private struct SlotSummaryHeader: View {
     let priceStore: PriceStore
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
 
-    init(slot: SlotInfo, showsChevron: Bool, showsSlotTitle: Bool = true, viewModel: SatsCardDetailViewModel, priceStore: PriceStore) {
+    init(
+        slot: SlotInfo,
+        showsChevron: Bool,
+        showsSlotTitle: Bool = true,
+        viewModel: SatsCardDetailViewModel,
+        priceStore: PriceStore
+    ) {
         self.slot = slot
         self.showsChevron = showsChevron
         self.showsSlotTitle = showsSlotTitle
@@ -173,12 +182,12 @@ private struct SlotSummaryHeader: View {
                         .font(.body)
                         .fontWeight(.medium)
                 }
-                
+
                 buildBalanceIfNeeded()
-                
+
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             Spacer()
 
             SlotStatusBadges(slot: slot)
@@ -196,7 +205,7 @@ private struct SlotSummaryHeader: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func buildBalanceIfNeeded() -> some View {
         HStack {
@@ -215,12 +224,12 @@ private struct SlotSummaryHeader: View {
                         .fontWeight(.thin)
                 }
             }
-            
+
             Text(balanceFormat.formatted(balance, price: priceStore.price))
                 .font(.body)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
-            
+
             Text(balanceFormat.displayText(price: priceStore.price))
                 .foregroundStyle(.secondary)
                 .font(.body)
@@ -245,13 +254,22 @@ private struct SlotStatusBadges: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            if slot.isActive {
-                SlotBadge(text: "Active", tint: .green)
-            } else if !slot.isUsed {
-                SlotBadge(text: "Unused", tint: .secondary)
-            } else {
-                SlotBadge(text: "Inactive", tint: .secondary)
+            if slot.showsCurrentBadge {
+                SlotBadge(text: "Current", tint: .green)
             }
+
+            SlotBadge(text: slot.lifecycleBadgeText, tint: lifecycleTint)
+        }
+    }
+
+    private var lifecycleTint: Color {
+        switch slot.state {
+        case .activeReady:
+            return .blue
+        case .historical:
+            return .orange
+        case .activeNeedsSetup, .unused:
+            return .secondary
         }
     }
 }

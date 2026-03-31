@@ -968,7 +968,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     "This slot is still sealed. Enter your SATSCARD CVC to unseal it before signing."
             case .SlotUnused:
                 return
-                    "This slot has not been used yet. Refresh the card details and choose a funded slot."
+                    "This slot is unused. Refresh the card details and choose a funded slot."
             case .SlotTampered:
                 return
                     "This slot was already unsealed. Refresh the card details and confirm you are sending from the right slot."
