@@ -66,7 +66,7 @@ struct ActiveSlotView: View {
             }
 
             VStack(spacing: 0) {
-                ReceiveRow(displayAddress: displayAddress, onSetupNextSlot: onSetupNextSlot)
+                ReceiveRow(displayAddress: receiveAddress, onSetupNextSlot: onSetupNextSlot)
 
                 Divider()
 
@@ -74,7 +74,7 @@ struct ActiveSlotView: View {
 
                 Divider()
 
-                ExplorerRow(displayAddress: displayAddress)
+                ExplorerRow(displayAddress: explorerAddress)
 
                 Divider()
                     .padding(.vertical, 8)
@@ -430,8 +430,13 @@ private struct ReceiveSheetState: Identifiable {
 }
 
 extension ActiveSlotView {
-    fileprivate var displayAddress: String? {
-        slot.address ?? card.address
+    fileprivate var receiveAddress: String? {
+        guard slot.isReadyToReceive else { return nil }
+        return slot.receiveAddress ?? normalizedAddress(card.address)
+    }
+
+    fileprivate var explorerAddress: String? {
+        slot.normalizedAddress ?? normalizedAddress(card.address)
     }
 
     fileprivate var displayPubkey: String {
@@ -454,6 +459,16 @@ extension ActiveSlotView {
 
     fileprivate var refreshTimestampText: String {
         card.dateScanned.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private func normalizedAddress(_ address: String?) -> String? {
+        guard let address = address?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !address.isEmpty
+        else {
+            return nil
+        }
+
+        return address
     }
 }
 

@@ -22,6 +22,14 @@ enum CkTapCardError: LocalizedError {
 }
 
 final class CkTapCardService {
+    private struct ActiveSlotSnapshot {
+        let state: SlotState
+        let isUsed: Bool
+        let pubkey: String?
+        let descriptor: String?
+        let address: String?
+    }
+
     let addressDeriver: BdkClient
     let network: Network
 
@@ -112,19 +120,21 @@ final class CkTapCardService {
         var slots: [SlotInfo] = []
         for slotNumber in 0..<status.numSlots {
             let isActive = status.activeSlot == slotNumber
-            let isUsed = slotNumber <= status.activeSlot
+            let isHistorical = slotNumber < status.activeSlot
 
             var slotPubkey: String?
             var slotAddress: String?
             var slotDescriptor: String?
+            let slotState: SlotState
+            let isUsed: Bool
 
-            if !isActive, isUsed {
+            if !isActive, isHistorical {
+                isUsed = true
+                slotState = .historical
                 // `dump(slot:)`
                 //  - For used, unsealed slots (historical slots), this returns `pubkey` and
                 //    `pubkeyDescriptor` which we can use to derive the exact on-chain address
                 //    the slot generated.
-                //  - For the currently active slot (sealed), this usually fails without a CVC.
-                //    In that case, we fall back to the address obtained via `card.address()` above.
                 do {
                     let details = try await card.dump(slot: slotNumber, cvc: nil)
                     slotPubkey = details.pubkey
@@ -132,19 +142,7 @@ final class CkTapCardService {
 
                     // Derive the address we show the user from the descriptor of unsealed slots.
                     if let descriptor = slotDescriptor, !descriptor.isEmpty {
-                        do {
-                            slotAddress = try addressDeriver.deriveAddress(
-                                descriptor,
-                                network
-                            )
-                            Log.cktap.debug(
-                                "Derived address for slot \(slotNumber): \(slotAddress ?? "nil", privacy: .private(mask: .hash))"
-                            )
-                        } catch {
-                            Log.cktap.error(
-                                "Derive address failed for slot \(slotNumber): \(error.localizedDescription, privacy: .public)"
-                            )
-                        }
+                        slotAddress = deriveAddress(for: descriptor, slotNumber: slotNumber)
                     }
                 } catch {
                     Log.cktap.error(
@@ -152,44 +150,19 @@ final class CkTapCardService {
                     )
                 }
             } else if isActive {
-                slotAddress = currentAddress
-                // Try to read the active slot descriptor (no CVC) so we can build watch-only wallets.
-                if let descriptor = try? await card.read(), !descriptor.isEmpty {
-                    slotDescriptor = descriptor
-                    let derived = try? addressDeriver.deriveAddress(descriptor, network)
-                    if slotAddress == nil {
-                        slotAddress = derived
-                    }
-                    Log.cktap.debug(
-                        "Active slot read descriptor=\(descriptor, privacy: .private(mask: .hash)) derivedAddr=\(derived ?? "nil", privacy: .private(mask: .hash))"
-                    )
-                } else {
-                    // For unsealed/used slots, dump without CVC should include pubkeyDescriptor.
-                    if let dump = try? await card.dump(slot: slotNumber, cvc: nil) {
-                        slotPubkey = dump.pubkey
-                        slotDescriptor = dump.pubkeyDescriptor
-                        if let descriptor = slotDescriptor,
-                            let derived = try? addressDeriver.deriveAddress(descriptor, network)
-                        {
-                            slotAddress = slotAddress ?? derived
-                            Log.cktap.debug(
-                                "Active slot dump descriptor=\(descriptor, privacy: .private(mask: .hash)) derivedAddr=\(derived, privacy: .private(mask: .hash))"
-                            )
-                        }
-                    }
-                }
-
-                if slotPubkey == nil,
-                    slotDescriptor == nil || slotDescriptor?.isEmpty == true
-                {
-                    Log.cktap.error(
-                        "Unable to determine descriptor or pubkey for active slot \(slotNumber) from read/dump data"
-                    )
-                }
-
-                Log.cktap.debug(
-                    "Active slot \(slotNumber) summary -> addr=\(slotAddress ?? "nil", privacy: .private(mask: .hash)) desc=\(slotDescriptor ?? "nil", privacy: .private(mask: .hash)) pubkey=\(slotPubkey ?? "nil", privacy: .private(mask: .hash))"
+                let activeSlot = await readActiveSlot(
+                    card,
+                    slotNumber: slotNumber,
+                    currentAddress: currentAddress
                 )
+                isUsed = activeSlot.isUsed
+                slotState = activeSlot.state
+                slotPubkey = activeSlot.pubkey
+                slotDescriptor = activeSlot.descriptor
+                slotAddress = activeSlot.address
+            } else {
+                isUsed = false
+                slotState = .unused
             }
 
             let slotInfo = SlotInfo(
@@ -199,7 +172,8 @@ final class CkTapCardService {
                 pubkey: slotPubkey,
                 pubkeyDescriptor: slotDescriptor,
                 address: slotAddress,
-                balance: nil
+                balance: nil,
+                state: slotState
             )
             slots.append(slotInfo)
         }
@@ -214,6 +188,117 @@ final class CkTapCardService {
             totalSlots: status.numSlots,
             slots: slots,
             isActive: true
+        )
+    }
+
+    private func deriveAddress(for descriptor: String, slotNumber: UInt8) -> String? {
+        do {
+            let address = try addressDeriver.deriveAddress(descriptor, network)
+            Log.cktap.debug(
+                "Derived address for slot \(slotNumber): \(address, privacy: .private(mask: .hash))"
+            )
+            return address
+        } catch {
+            Log.cktap.error(
+                "Derive address failed for slot \(slotNumber): \(error.localizedDescription, privacy: .public)"
+            )
+            return nil
+        }
+    }
+
+    private func readActiveSlot(
+        _ card: CKTap.SatsCard,
+        slotNumber: UInt8,
+        currentAddress: String?
+    ) async -> ActiveSlotSnapshot {
+        var slotAddress = currentAddress
+        var slotPubkey: String?
+        var slotDescriptor: String?
+
+        do {
+            let dump = try await card.dump(slot: slotNumber, cvc: nil)
+            slotPubkey = dump.pubkey
+            slotDescriptor = dump.pubkeyDescriptor
+            if let descriptor = slotDescriptor, !descriptor.isEmpty {
+                slotAddress = slotAddress ?? deriveAddress(for: descriptor, slotNumber: slotNumber)
+            }
+
+            Log.cktap.debug(
+                "Active slot \(slotNumber) is not receive-ready; dump succeeded without CVC."
+            )
+
+            return ActiveSlotSnapshot(
+                state: .activeNeedsSetup,
+                isUsed: true,
+                pubkey: slotPubkey,
+                descriptor: slotDescriptor,
+                address: slotAddress
+            )
+        } catch let dumpError as DumpError {
+            switch dumpError {
+            case .SlotSealed:
+                if let descriptor = try? await card.read(), !descriptor.isEmpty {
+                    slotDescriptor = descriptor
+                    slotAddress =
+                        slotAddress ?? deriveAddress(for: descriptor, slotNumber: slotNumber)
+                    Log.cktap.debug(
+                        "Active slot read descriptor=\(descriptor, privacy: .private(mask: .hash)) addr=\(slotAddress ?? "nil", privacy: .private(mask: .hash))"
+                    )
+                }
+
+                return ActiveSlotSnapshot(
+                    state: .activeReady,
+                    isUsed: true,
+                    pubkey: slotPubkey,
+                    descriptor: slotDescriptor,
+                    address: slotAddress
+                )
+
+            case .SlotUnused:
+                Log.cktap.debug("Active slot \(slotNumber) is unused and needs setup.")
+                return ActiveSlotSnapshot(
+                    state: .unused,
+                    isUsed: false,
+                    pubkey: nil,
+                    descriptor: nil,
+                    address: nil
+                )
+
+            case .SlotTampered:
+                Log.cktap.error("Active slot \(slotNumber) was reported as tampered.")
+                return ActiveSlotSnapshot(
+                    state: .activeNeedsSetup,
+                    isUsed: true,
+                    pubkey: nil,
+                    descriptor: nil,
+                    address: nil
+                )
+
+            case .Key, .CkTap:
+                break
+            }
+        } catch {
+            Log.cktap.error(
+                "Unable to inspect active slot \(slotNumber): \(error.localizedDescription, privacy: .public)"
+            )
+        }
+
+        let fallbackState: SlotState = SlotInfo(
+            slotNumber: slotNumber,
+            isActive: true,
+            isUsed: true,
+            pubkey: nil,
+            pubkeyDescriptor: nil,
+            address: currentAddress,
+            balance: nil
+        ).state
+
+        return ActiveSlotSnapshot(
+            state: fallbackState,
+            isUsed: fallbackState != .unused,
+            pubkey: slotPubkey,
+            descriptor: slotDescriptor,
+            address: slotAddress
         )
     }
 }

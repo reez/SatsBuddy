@@ -248,17 +248,11 @@ extension SatsCardDetailView {
     }
 
     private var needsNextSlotSetup: Bool {
-        !updatedCard.isExhausted && slotForDisplay.isActive && slotForDisplay.isUsed
-            && slotForDisplay.address == nil
+        !updatedCard.isExhausted && slotForDisplay.needsSetupToReceive
     }
 
     private var canSendFromDisplayedSlot: Bool {
-        guard let address = slotForDisplay.address?.trimmingCharacters(in: .whitespacesAndNewlines)
-        else {
-            return false
-        }
-
-        return !address.isEmpty
+        slotForDisplay.normalizedAddress != nil
     }
 
     private var canSweepBalance: Bool {

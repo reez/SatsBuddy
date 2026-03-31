@@ -82,6 +82,7 @@ extension XCTestCase {
                 )
                 XCTAssertEqual(leftSlot.address, rightSlot.address, file: file, line: line)
                 XCTAssertEqual(leftSlot.balance, rightSlot.balance, file: file, line: line)
+                XCTAssertEqual(leftSlot.state, rightSlot.state, file: file, line: line)
             }
         }
     }
@@ -95,7 +96,8 @@ func makeSlotInfo(
     pubkey: String? = "slot-pubkey",
     pubkeyDescriptor: String? = "wpkh(slot-pubkey)",
     address: String? = "bc1qslot",
-    balance: UInt64? = 21_000
+    balance: UInt64? = 21_000,
+    state: SlotState? = nil
 ) -> SlotInfo {
     SlotInfo(
         id: id,
@@ -105,7 +107,8 @@ func makeSlotInfo(
         pubkey: pubkey,
         pubkeyDescriptor: pubkeyDescriptor,
         address: address,
-        balance: balance
+        balance: balance,
+        state: state
     )
 }
 
