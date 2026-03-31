@@ -35,14 +35,6 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return detail
             }
         }
-
-        var requiresNextSlotActivation: Bool {
-            if case .unsealed = self {
-                return true
-            }
-
-            return false
-        }
     }
 
     private struct PendingInvalidationOutcome {
@@ -498,7 +490,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             }
 
             refreshedCardInfo = await refreshCardStateAfterBroadcast(
-                autoActivateNextSlot: slotAccess.requiresNextSlotActivation,
+                autoActivateNextSlot: slot.shouldActivateNextSlotAfterSweep,
                 activateNextSlot: {
                     try await self.activateNextSlotAfterSweep(satsCard: satsCard)
                 },

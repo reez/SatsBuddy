@@ -14,7 +14,8 @@ struct SendReviewView: View {
     let amount: String
     let sweptBalance: UInt64?
     let slotDisplayNumber: Int
-    let advancesToNextSlot: Bool
+    let requiresUnsealBeforeSweep: Bool
+    let activatesNextSlotAfterSweep: Bool
     let fee: Int
     let onContinue: () -> Void
 
@@ -82,10 +83,11 @@ struct SendReviewView: View {
                             Text(
                                 Self.sweepDisclosure(
                                     for: slotDisplayNumber,
-                                    advancesToNextSlot: advancesToNextSlot
+                                    requiresUnsealBeforeSweep: requiresUnsealBeforeSweep,
+                                    activatesNextSlotAfterSweep: activatesNextSlotAfterSweep
                                 )
                             )
-                            if advancesToNextSlot {
+                            if activatesNextSlotAfterSweep {
                                 Text(Self.nextSlotSetupDisclosure)
                             }
                         }
@@ -126,10 +128,19 @@ extension SendReviewView {
     static let nextSlotSetupDisclosure =
         "If another slot is available, SatsBuddy will activate it automatically so the card is ready to receive again."
 
-    static func sweepDisclosure(for slotDisplayNumber: Int, advancesToNextSlot: Bool) -> String {
-        guard advancesToNextSlot else {
+    static func sweepDisclosure(
+        for slotDisplayNumber: Int,
+        requiresUnsealBeforeSweep: Bool,
+        activatesNextSlotAfterSweep: Bool
+    ) -> String {
+        guard activatesNextSlotAfterSweep else {
             return
                 "Slot \(slotDisplayNumber) is already unsealed. Continuing will sweep funds from that slot without changing the SATSCARD's current slot."
+        }
+
+        guard requiresUnsealBeforeSweep else {
+            return
+                "Slot \(slotDisplayNumber) is already unsealed. Continuing will sweep funds from that slot and move this SATSCARD to the next slot."
         }
 
         return
@@ -149,7 +160,8 @@ extension SendReviewView {
         amount: "ALL",
         sweptBalance: 100_000,
         slotDisplayNumber: 3,
-        advancesToNextSlot: true,
+        requiresUnsealBeforeSweep: true,
+        activatesNextSlotAfterSweep: true,
         fee: 17,
         onContinue: {}
     )
