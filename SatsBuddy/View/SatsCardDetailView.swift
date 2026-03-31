@@ -71,7 +71,7 @@ struct SatsCardDetailView: View {
                 onBroadcastSuccess: { refreshedCard in
                     let cardForReload =
                         refreshedCard.map { cardViewModel.applyCardSnapshot($0) } ?? updatedCard
-                    viewModel.loadSlotDetails(for: cardForReload, traceID: traceID)
+                    await viewModel.refreshBalance(for: cardForReload, traceID: traceID)
                 }
             )
         }

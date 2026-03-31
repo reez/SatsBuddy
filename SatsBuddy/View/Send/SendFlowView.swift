@@ -10,7 +10,7 @@ import SwiftUI
 struct SendFlowView: View {
     let slot: SlotInfo
     let card: SatsCardInfo
-    let onBroadcastSuccess: ((SatsCardInfo?) -> Void)?
+    let onBroadcastSuccess: (@MainActor (SatsCardInfo?) async -> Void)?
 
     private enum Step {
         case destination
@@ -32,7 +32,7 @@ struct SendFlowView: View {
     init(
         slot: SlotInfo,
         card: SatsCardInfo,
-        onBroadcastSuccess: ((SatsCardInfo?) -> Void)? = nil
+        onBroadcastSuccess: (@MainActor (SatsCardInfo?) async -> Void)? = nil
     ) {
         self.slot = slot
         self.card = card
@@ -75,7 +75,7 @@ struct SendFlowView: View {
                         network: .bitcoin
                     ),
                     onDone: { refreshedCardInfo in
-                        onBroadcastSuccess?(refreshedCardInfo)
+                        await onBroadcastSuccess?(refreshedCardInfo)
                         dismiss()
                     }
                 )
