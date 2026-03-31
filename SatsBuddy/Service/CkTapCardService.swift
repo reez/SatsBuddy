@@ -51,7 +51,14 @@ final class CkTapCardService {
 
         switch cardType {
         case .satsCard(let card):
-            try await SatsCardAuthenticityVerifier.verify(card)
+            let liveStatus = await card.status()
+            if Self.shouldVerifyAuthenticity(activeSlotAddress: liveStatus.addr) {
+                try await SatsCardAuthenticityVerifier.verify(card)
+            } else {
+                Log.cktap.info(
+                    "Skipping SATSCARD authenticity verification during setupNextSlot because the active slot is new/empty."
+                )
+            }
             let next = try await card.newSlot(cvc: cvc)
             Log.cktap.info("newSlot completed -> next active slot \(next)")
             return try await readSatsCard(card)
@@ -79,7 +86,14 @@ final class CkTapCardService {
 
         switch cardType {
         case .satsCard(let card):
-            try await SatsCardAuthenticityVerifier.verify(card)
+            let liveStatus = await card.status()
+            if Self.shouldVerifyAuthenticity(activeSlotAddress: liveStatus.addr) {
+                try await SatsCardAuthenticityVerifier.verify(card)
+            } else {
+                Log.cktap.info(
+                    "Skipping SATSCARD authenticity verification during scan because the active slot is new/empty."
+                )
+            }
             return try await readSatsCard(card)
 
         case .tapSigner(_):
@@ -90,6 +104,11 @@ final class CkTapCardService {
             Log.cktap.info("SatsChip detected")
             throw CkTapCardError.unsupportedCard("SATSCHIP not supported")
         }
+    }
+
+    static func shouldVerifyAuthenticity(activeSlotAddress: String?) -> Bool {
+        guard let activeSlotAddress else { return false }
+        return !activeSlotAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func readSatsCard(_ card: CKTap.SatsCard) async throws -> SatsCardInfo {
