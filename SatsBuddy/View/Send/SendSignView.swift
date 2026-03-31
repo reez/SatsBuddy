@@ -10,7 +10,7 @@ import SwiftUI
 
 struct SendSignView: View {
     @State var viewModel: SendSignViewModel
-    let onDone: @MainActor (SatsCardInfo?) async -> Void
+    let onDone: @MainActor (SendCompletionResult) async -> Void
     @FocusState private var cvcFocused: Bool
     @State private var didFinishFlow = false
 
@@ -87,7 +87,7 @@ struct SendSignView: View {
             if viewModel.isBroadCasted {
                 Button {
                     Task { @MainActor in
-                        await onDone(viewModel.refreshedCardInfo)
+                        await onDone(viewModel.completionResult)
                     }
                 } label: {
                     Text("Done")
@@ -139,7 +139,7 @@ struct SendSignView: View {
 
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(600))
-                await onDone(viewModel.refreshedCardInfo)
+                await onDone(viewModel.completionResult)
             }
         }
     }

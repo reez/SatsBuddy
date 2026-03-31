@@ -68,10 +68,13 @@ struct SatsCardDetailView: View {
             SendFlowView(
                 slot: slotForDisplay,
                 card: updatedCard,
-                onBroadcastSuccess: { refreshedCard in
+                onBroadcastSuccess: { completionResult in
                     let cardForReload =
-                        refreshedCard.map { cardViewModel.applyCardSnapshot($0) } ?? updatedCard
+                        completionResult.refreshedCardInfo.map {
+                            cardViewModel.applyCardSnapshot($0)
+                        } ?? updatedCard
                     await viewModel.refreshBalance(for: cardForReload, traceID: traceID)
+                    viewModel.applyPostBroadcastWarning(completionResult.warningMessage)
                 }
             )
         }

@@ -202,14 +202,15 @@ final class SatsCardViewModelTests: XCTestCase {
         )
 
         XCTAssertEqual(events, ["activate", "refresh"])
-        XCTAssertEqual(result?.activeSlot, refreshedCard.activeSlot)
+        XCTAssertEqual(result.refreshedCardInfo?.activeSlot, refreshedCard.activeSlot)
+        XCTAssertNil(result.warningMessage)
     }
 
     func testRefreshCardStateAfterBroadcastSkipsActivationForHistoricalSweeps() async {
         let viewModel = makeSendSignViewModel()
         var events: [String] = []
 
-        _ = await viewModel.refreshCardStateAfterBroadcast(
+        let result = await viewModel.refreshCardStateAfterBroadcast(
             autoActivateNextSlot: false,
             activateNextSlot: {
                 events.append("activate")
@@ -221,6 +222,7 @@ final class SatsCardViewModelTests: XCTestCase {
         )
 
         XCTAssertEqual(events, ["refresh"])
+        XCTAssertNil(result.warningMessage)
     }
 
     func testRefreshCardStateAfterBroadcastStillRefreshesWhenActivationFails() async {
@@ -232,7 +234,7 @@ final class SatsCardViewModelTests: XCTestCase {
             autoActivateNextSlot: true,
             activateNextSlot: {
                 events.append("activate")
-                throw TestError.expected("activation failed")
+                throw CkTapError.Transport(msg: "connection lost")
             },
             refreshCardSnapshot: {
                 events.append("refresh")
@@ -241,7 +243,34 @@ final class SatsCardViewModelTests: XCTestCase {
         )
 
         XCTAssertEqual(events, ["activate", "refresh"])
-        XCTAssertEqual(result?.cardIdentifier, refreshedCard.cardIdentifier)
+        XCTAssertEqual(result.refreshedCardInfo?.cardIdentifier, refreshedCard.cardIdentifier)
+        XCTAssertEqual(
+            result.warningMessage,
+            SatsCardViewModel.SetupNextSlotError.transportInterrupted.errorDescription
+        )
+    }
+
+    func testRefreshCardStateAfterBroadcastWarnsWhenRefreshFailsAfterAdvancingSlot() async {
+        let viewModel = makeSendSignViewModel()
+        var events: [String] = []
+
+        let result = await viewModel.refreshCardStateAfterBroadcast(
+            autoActivateNextSlot: true,
+            activateNextSlot: {
+                events.append("activate")
+            },
+            refreshCardSnapshot: {
+                events.append("refresh")
+                return nil
+            }
+        )
+
+        XCTAssertEqual(events, ["activate", "refresh"])
+        XCTAssertNil(result.refreshedCardInfo)
+        XCTAssertEqual(
+            result.warningMessage,
+            SatsCardViewModel.SetupNextSlotError.slotAdvancedRefreshRequired.errorDescription
+        )
     }
 
     private func makeViewModel(

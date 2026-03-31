@@ -36,6 +36,33 @@ class SatsCardDetailViewModel {
     }
 
     @MainActor
+    func applyPostBroadcastWarning(_ warningMessage: String?) {
+        guard
+            let warningMessage = warningMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !warningMessage.isEmpty
+        else {
+            return
+        }
+
+        guard
+            let existingErrorMessage = errorMessage?.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ),
+            !existingErrorMessage.isEmpty
+        else {
+            errorMessage = warningMessage
+            return
+        }
+
+        if existingErrorMessage.contains(warningMessage) {
+            errorMessage = existingErrorMessage
+            return
+        }
+
+        errorMessage = "\(warningMessage)\n\(existingErrorMessage)"
+    }
+
+    @MainActor
     @discardableResult
     private func startBalanceFetch(for card: SatsCardInfo, traceID: String? = nil)
         -> Task<Void, Never>?

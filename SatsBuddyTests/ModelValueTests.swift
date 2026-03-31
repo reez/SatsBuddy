@@ -279,6 +279,33 @@ final class ModelValueTests: XCTestCase {
         XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
     }
 
+    @MainActor
+    func testDetailViewModelApplyPostBroadcastWarningShowsWarningWhenNoOtherErrorExists() {
+        let viewModel = SatsCardDetailViewModel()
+
+        viewModel.applyPostBroadcastWarning("Next slot activation failed.")
+
+        XCTAssertEqual(viewModel.errorMessage, "Next slot activation failed.")
+    }
+
+    @MainActor
+    func testDetailViewModelApplyPostBroadcastWarningPreservesBalanceError() {
+        let viewModel = SatsCardDetailViewModel()
+        viewModel.errorMessage = "Failed to fetch balance: timeout"
+
+        viewModel.applyPostBroadcastWarning(
+            "Next slot was activated, but SatsBuddy could not refresh the card details. Refresh the card before trying again."
+        )
+
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            """
+            Next slot was activated, but SatsBuddy could not refresh the card details. Refresh the card before trying again.
+            Failed to fetch balance: timeout
+            """
+        )
+    }
+
     private static func makeBalance(totalSats: UInt64, confirmedSats: UInt64) -> Balance {
         let total = Amount.fromSat(satoshi: totalSats)
         let confirmed = Amount.fromSat(satoshi: confirmedSats)

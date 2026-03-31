@@ -12,6 +12,11 @@ import Foundation
 import Observation
 import os
 
+struct SendCompletionResult {
+    let refreshedCardInfo: SatsCardInfo?
+    let warningMessage: String?
+}
+
 @MainActor
 @Observable
 final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate {
@@ -162,6 +167,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     var psbtError: String?
     var txHex: String?
     var refreshedCardInfo: SatsCardInfo?
+    var postBroadcastWarningMessage: String?
     var state: State = .idle
     var isBusy: Bool {
         switch state {
@@ -186,6 +192,12 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     private var latestAuthDelaySeconds: Int?
     private var hasPreparedPsbt: Bool {
         psbt != nil && psbtError == nil
+    }
+    var completionResult: SendCompletionResult {
+        SendCompletionResult(
+            refreshedCardInfo: refreshedCardInfo,
+            warningMessage: postBroadcastWarningMessage
+        )
     }
 
     init(
@@ -217,6 +229,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         psbtBase64 = nil
         psbtError = nil
         refreshedCardInfo = nil
+        postBroadcastWarningMessage = nil
         setStatusMessage(.preparingSweep)
 
         do {
@@ -287,6 +300,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         pendingInvalidationOutcome = nil
         latestAuthDelaySeconds = nil
         refreshedCardInfo = nil
+        postBroadcastWarningMessage = nil
         let previousSession = session
         session = nil
         previousSession?.invalidate()
@@ -489,7 +503,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return
             }
 
-            refreshedCardInfo = await refreshCardStateAfterBroadcast(
+            let postBroadcastResult = await refreshCardStateAfterBroadcast(
                 autoActivateNextSlot: slot.shouldActivateNextSlotAfterSweep,
                 activateNextSlot: {
                     try await self.activateNextSlotAfterSweep(satsCard: satsCard)
@@ -498,6 +512,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                     await self.refreshCardInfo(transport: transport)
                 }
             )
+            refreshedCardInfo = postBroadcastResult.refreshedCardInfo
+            postBroadcastWarningMessage = postBroadcastResult.warningMessage
             cvc = ""
             state = .done
             setStatusMessage(.broadcasted(txid: signedTxid))
@@ -532,20 +548,33 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         autoActivateNextSlot: Bool,
         activateNextSlot: () async throws -> Void,
         refreshCardSnapshot: () async -> SatsCardInfo?
-    ) async -> SatsCardInfo? {
+    ) async -> SendCompletionResult {
+        var warningMessage: String?
+
         if autoActivateNextSlot {
             do {
                 setStatusMessage(.activatingNextSlot)
                 try await activateNextSlot()
             } catch {
+                warningMessage = postBroadcastWarningMessage(for: error)
                 Log.cktap.error(
-                    "[SendSign] Auto-activating next slot after broadcast failed: \(error.localizedDescription, privacy: .public)"
+                    "[SendSign] Auto-activating next slot after broadcast failed: \(warningMessage ?? error.localizedDescription, privacy: .public)"
                 )
             }
         }
 
         setStatusMessage(.syncingCardState)
-        return await refreshCardSnapshot()
+        let refreshedCardInfo = await refreshCardSnapshot()
+
+        if autoActivateNextSlot, refreshedCardInfo == nil, warningMessage == nil {
+            warningMessage =
+                SatsCardViewModel.SetupNextSlotError.slotAdvancedRefreshRequired.errorDescription
+        }
+
+        return SendCompletionResult(
+            refreshedCardInfo: refreshedCardInfo,
+            warningMessage: warningMessage
+        )
     }
 
     private func activateNextSlotAfterSweep(satsCard: SatsCard) async throws {
@@ -555,13 +584,45 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             Log.nfc.info(
                 "[SendSign] Post-broadcast auth delay active for \(authDelay) seconds before activating next slot."
             )
-            try await waitForSecurityDelay(satsCard: satsCard, seconds: authDelay)
+            do {
+                try await waitForSecurityDelay(satsCard: satsCard, seconds: authDelay)
+            } catch {
+                throw SatsCardViewModel.setupNextSlotError(
+                    from: error,
+                    authDelay: UInt8(exactly: authDelay)
+                )
+            }
             liveStatus = await satsCard.status()
             latestAuthDelaySeconds = liveStatus.authDelay.map(Int.init)
         }
 
-        let nextSlot = try await satsCard.newSlot(cvc: cvc)
+        let nextSlot: UInt8
+        do {
+            nextSlot = try await satsCard.newSlot(cvc: cvc)
+        } catch {
+            let postAttemptStatus = await satsCard.status()
+            throw SatsCardViewModel.setupNextSlotError(
+                from: error,
+                authDelay: postAttemptStatus.authDelay,
+                activeSlot: postAttemptStatus.activeSlot,
+                totalSlots: postAttemptStatus.numSlots
+            )
+        }
+
         Log.nfc.info("[SendSign] Activated next slot \(nextSlot) after broadcast")
+    }
+
+    private func postBroadcastWarningMessage(for error: Error) -> String {
+        if let setupError = error as? SatsCardViewModel.SetupNextSlotError,
+            let description = setupError.errorDescription
+        {
+            return description
+        }
+
+        return SatsCardViewModel.setupNextSlotError(
+            from: error,
+            authDelay: latestAuthDelaySeconds.flatMap(UInt8.init(exactly:))
+        ).errorDescription ?? "Next slot activation failed."
     }
 
     private func buildPsbtAndSign(

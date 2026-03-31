@@ -318,14 +318,14 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     let alertMessage: String
                     switch operation {
                     case .scan:
-                        if let authenticityAlertMessage = self.authenticityAlertMessage(from: error)
+                        if let authenticityAlertMessage = Self.authenticityAlertMessage(from: error)
                         {
                             alertMessage = authenticityAlertMessage
                         } else if error is CkTapCardError {
                             alertMessage = "Unsupported tag."
-                        } else if self.extractTransportMessage(from: error) != nil {
+                        } else if Self.extractTransportMessage(from: error) != nil {
                             alertMessage = "Connection lost."
-                        } else if let ckTapError = self.extractCkTapError(from: error) {
+                        } else if let ckTapError = Self.extractCkTapError(from: error) {
                             switch ckTapError {
                             case .UnknownCardType:
                                 alertMessage = "Unsupported tag."
@@ -343,15 +343,15 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                             case .wrongCard:
                                 alertMessage = "Wrong SATSCARD."
                             }
-                        } else if let authenticityAlertMessage = self.authenticityAlertMessage(
+                        } else if let authenticityAlertMessage = Self.authenticityAlertMessage(
                             from: error
                         ) {
                             alertMessage = authenticityAlertMessage
                         } else if error is CkTapCardError {
                             alertMessage = "Unsupported tag."
-                        } else if self.extractTransportMessage(from: error) != nil {
+                        } else if Self.extractTransportMessage(from: error) != nil {
                             alertMessage = "Connection lost."
-                        } else if let ckTapError = self.extractCkTapError(from: error) {
+                        } else if let ckTapError = Self.extractCkTapError(from: error) {
                             switch ckTapError {
                             case .UnknownCardType:
                                 alertMessage = "Unsupported tag."
@@ -364,12 +364,12 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                             alertMessage = "Refresh failed."
                         }
                     case .setupNextSlot:
-                        if let authenticityAlertMessage = self.authenticityAlertMessage(
+                        if let authenticityAlertMessage = Self.authenticityAlertMessage(
                             from: error
                         ) {
                             alertMessage = authenticityAlertMessage
                         } else {
-                            switch self.setupNextSlotError(from: error, authDelay: nil) {
+                            switch Self.setupNextSlotError(from: error, authDelay: nil) {
                             case .wrongCard:
                                 alertMessage = "Wrong SATSCARD."
                             case .incorrectCvc:
@@ -709,7 +709,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 return description
             }
 
-            return setupNextSlotError(from: error, authDelay: nil).errorDescription
+            return Self.setupNextSlotError(from: error, authDelay: nil).errorDescription
                 ?? "Error: \(error.localizedDescription)"
         }
     }
@@ -729,6 +729,20 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
     }
 
     func setupNextSlotError(
+        from error: Error,
+        authDelay: UInt8?,
+        activeSlot: UInt8? = nil,
+        totalSlots: UInt8? = nil
+    ) -> SetupNextSlotError {
+        Self.setupNextSlotError(
+            from: error,
+            authDelay: authDelay,
+            activeSlot: activeSlot,
+            totalSlots: totalSlots
+        )
+    }
+
+    static func setupNextSlotError(
         from error: Error,
         authDelay: UInt8?,
         activeSlot: UInt8? = nil,
@@ -779,7 +793,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         return .raw("Error: \(error.localizedDescription)")
     }
 
-    private func extractCardError(from error: Error) -> CardError? {
+    private static func extractCardError(from error: Error) -> CardError? {
         guard let ckTapError = extractCkTapError(from: error) else { return nil }
         if case .Card(let cardError) = ckTapError {
             return cardError
@@ -787,11 +801,11 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         return nil
     }
 
-    private func authenticityAlertMessage(from error: Error) -> String? {
+    private static func authenticityAlertMessage(from error: Error) -> String? {
         (error as? SatsCardAuthenticityError)?.alertMessage
     }
 
-    private func extractTransportMessage(from error: Error) -> String? {
+    private static func extractTransportMessage(from error: Error) -> String? {
         guard let ckTapError = extractCkTapError(from: error) else { return nil }
         if case .Transport(let message) = ckTapError {
             return message
@@ -799,7 +813,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
         return nil
     }
 
-    private func extractCkTapError(from error: Error) -> CkTapError? {
+    private static func extractCkTapError(from error: Error) -> CkTapError? {
         switch error {
         case let ckTapError as CkTapError:
             return ckTapError
