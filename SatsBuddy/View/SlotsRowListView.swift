@@ -80,6 +80,15 @@ struct SlotsRowListView: View {
                 address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
                 balance: 100000
             ),
+            SlotInfo(
+                slotNumber: 2,
+                isActive: false,
+                isUsed: false,
+                pubkey: nil,
+                pubkeyDescriptor: nil,
+                address: nil,
+                balance: nil
+            ),
         ]
 
         NavigationStack {

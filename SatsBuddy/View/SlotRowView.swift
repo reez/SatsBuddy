@@ -178,13 +178,22 @@ private struct SlotSummaryHeader: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 if showsSlotTitle {
-                    Text("Slot \(slot.displaySlotNumber)")
-                        .font(.body)
-                        .fontWeight(.medium)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("Slot \(slot.displaySlotNumber)")
+                            .font(.body)
+                            .fontWeight(.medium)
+
+                        if slot.showsCurrentBadge {
+                            SlotPlainLabel(
+                                text: "Current",
+                                textColor: .blue
+                            )
+                        }
+                    }
                 }
 
                 buildBalanceIfNeeded()
-                SlotStatusBadges(slot: slot)
+                SlotStatusBadges(slot: slot, showsCurrentBadge: false)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -247,32 +256,69 @@ private struct SlotSummaryHeader: View {
 
 private struct SlotStatusBadges: View {
     let slot: SlotInfo
+    var showsCurrentBadge: Bool = true
 
     var body: some View {
         HStack(spacing: 8) {
-            SlotBadge(text: slot.lifecycleBadgeText, tint: lifecycleTint)
+            SlotBadge(
+                text: slot.lifecycleBadgeText,
+                borderColor: lifecycleBorderColor,
+                textColor: lifecycleTextColor,
+                fillColor: lifecycleFillColor
+            )
 
-            if slot.showsCurrentBadge {
-                SlotBadge(text: "Current", tint: .green)
+            if showsCurrentBadge && slot.showsCurrentBadge {
+                SlotPlainLabel(
+                    text: "Current",
+                    textColor: .blue
+                )
             }
         }
     }
 
-    private var lifecycleTint: Color {
+    private var lifecycleBorderColor: Color {
         switch slot.state {
         case .activeReady:
-            return .blue
+            return .primary
         case .historical:
-            return .orange
-        case .activeNeedsSetup, .unused:
             return .secondary
+        case .activeNeedsSetup:
+            return .primary
+        case .unused:
+            return .secondary
+        }
+    }
+
+    private var lifecycleTextColor: Color {
+        switch slot.state {
+        case .activeReady:
+            return Color(uiColor: .systemBackground)
+        case .historical:
+            return .secondary
+        case .activeNeedsSetup:
+            return .primary
+        case .unused:
+            return Color(uiColor: .systemBackground)
+        }
+    }
+
+    private var lifecycleFillColor: Color {
+        switch slot.state {
+        case .activeReady:
+            return .primary
+        case .unused:
+            return .secondary
+        case .historical, .activeNeedsSetup:
+            return .clear
         }
     }
 }
 
 private struct SlotBadge: View {
     let text: String
-    let tint: Color
+    let borderColor: Color
+    let textColor: Color
+    var fillColor: Color = .clear
 
     var body: some View {
         Text(text.uppercased())
@@ -280,8 +326,27 @@ private struct SlotBadge: View {
             .fontWeight(.semibold)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(tint.opacity(0.15))
-            .foregroundStyle(tint)
-            .clipShape(Capsule())
+            .foregroundStyle(textColor)
+            .background {
+                Capsule()
+                    .fill(fillColor)
+            }
+            .overlay {
+                Capsule()
+                    .strokeBorder(borderColor, lineWidth: 1)
+            }
+    }
+}
+
+private struct SlotPlainLabel: View {
+    let text: String
+    let textColor: Color
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 2)
     }
 }
