@@ -175,8 +175,8 @@ private struct SlotSummaryHeader: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            VStack(alignment: .leading) {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
                 if showsSlotTitle {
                     Text("Slot \(slot.displaySlotNumber)")
                         .font(.body)
@@ -184,13 +184,9 @@ private struct SlotSummaryHeader: View {
                 }
 
                 buildBalanceIfNeeded()
-
+                SlotStatusBadges(slot: slot)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer()
-
-            SlotStatusBadges(slot: slot)
 
             if showsChevron {
                 Image(systemName: "chevron.right")
@@ -254,11 +250,11 @@ private struct SlotStatusBadges: View {
 
     var body: some View {
         HStack(spacing: 8) {
+            SlotBadge(text: slot.lifecycleBadgeText, tint: lifecycleTint)
+
             if slot.showsCurrentBadge {
                 SlotBadge(text: "Current", tint: .green)
             }
-
-            SlotBadge(text: slot.lifecycleBadgeText, tint: lifecycleTint)
         }
     }
 
