@@ -165,6 +165,14 @@ extension Balance {
     var sweepBalanceDisabled: Bool {
         confirmed.toSat() == .zero || total.toSat() == .zero
     }
+
+    var sweepBalanceDisabledMessage: String? {
+        guard total.toSat() > .zero, confirmed.toSat() == .zero else {
+            return nil
+        }
+
+        return "Pending confirmation"
+    }
 }
 
 #if DEBUG
