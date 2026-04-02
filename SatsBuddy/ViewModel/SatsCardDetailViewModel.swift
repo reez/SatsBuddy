@@ -16,6 +16,8 @@ class SatsCardDetailViewModel {
     var isLoading = false
     var errorMessage: String?
     var isSweepBalanceButtonDisabled = true
+    var sweepBalanceDisabledMessage: String?
+    var sweepBalanceDisabledLinkURL: URL?
     private let bdkClient: BdkClient
     private var currentFetchToken: UUID?
     private var balanceFetchTask: Task<Void, Never>?
@@ -70,6 +72,8 @@ class SatsCardDetailViewModel {
         errorMessage = nil
         isLoading = true
         isSweepBalanceButtonDisabled = true
+        sweepBalanceDisabledMessage = nil
+        sweepBalanceDisabledLinkURL = nil
 
         slots = card.slots
 
@@ -128,6 +132,8 @@ class SatsCardDetailViewModel {
                 if self.currentFetchToken == fetchToken {
                     self.isLoading = false
                     self.isSweepBalanceButtonDisabled = true
+                    self.sweepBalanceDisabledMessage = nil
+                    self.sweepBalanceDisabledLinkURL = nil
                 }
             }
             return
@@ -140,6 +146,12 @@ class SatsCardDetailViewModel {
         do {
             let networkStart = Date()
             let balance = try await bdkClient.getBalanceFromAddress(activeSlotAddress, .bitcoin)
+            let pendingConfirmationLinkURL =
+                await pendingConfirmationLinkURL(
+                    for: activeSlotAddress,
+                    balance: balance,
+                    traceID: traceID
+                )
             let networkDuration = Date().timeIntervalSince(networkStart)
             let totalDuration = Date().timeIntervalSince(loadStartedAt)
             let networkDurationString = String(format: "%.3f", networkDuration)
@@ -159,6 +171,8 @@ class SatsCardDetailViewModel {
                 self.slots[activeSlotIndex].balance = balance.total.toSat()
                 self.isLoading = false
                 self.isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
+                self.sweepBalanceDisabledMessage = balance.sweepBalanceDisabledMessage
+                self.sweepBalanceDisabledLinkURL = pendingConfirmationLinkURL
                 return true
             }
 
@@ -183,6 +197,8 @@ class SatsCardDetailViewModel {
                 self.errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
                 self.isLoading = false
                 self.isSweepBalanceButtonDisabled = true
+                self.sweepBalanceDisabledMessage = nil
+                self.sweepBalanceDisabledLinkURL = nil
             }
             Log.cktap.error(
                 "[\(traceID)] Total time before failure: \(totalDurationString)s"
@@ -224,5 +240,29 @@ class SatsCardDetailViewModel {
         }
 
         return nil
+    }
+
+    private func pendingConfirmationLinkURL(
+        for address: String,
+        balance: Balance,
+        traceID: String
+    ) async -> URL? {
+        guard balance.sweepBalanceDisabledMessage != nil else { return nil }
+
+        do {
+            let transactions = try await bdkClient.getTransactionsForAddress(address, .bitcoin, 25)
+            let pendingTransaction =
+                transactions.first(where: {
+                    !$0.confirmed && $0.direction == .incoming
+                }) ?? transactions.first(where: { !$0.confirmed })
+
+            guard let txid = pendingTransaction?.txid else { return nil }
+            return URL(string: "https://mempool.space/tx/\(txid)")
+        } catch {
+            Log.cktap.error(
+                "[\(traceID)] Failed to fetch pending transaction link: \(error.localizedDescription, privacy: .public)"
+            )
+            return nil
+        }
     }
 }

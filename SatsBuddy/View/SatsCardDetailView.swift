@@ -229,6 +229,147 @@ struct SatsCardDetailView: View {
             priceStore: PriceStore()
         )
     }
+
+    #Preview("Pending Confirmation") {
+        CardDetailStatePreview(
+            card: CardDetailStatePreview.makeCard(balance: 15_000),
+            viewModel: CardDetailStatePreview.makeViewModel(
+                balance: 15_000,
+                isSweepBalanceButtonDisabled: true,
+                sweepBalanceDisabledMessage: "Pending confirmation",
+                sweepBalanceDisabledLinkURL: previewMempoolURL
+            ),
+            canSweepBalance: false
+        )
+    }
+
+    #Preview("Confirmed + Pending") {
+        CardDetailStatePreview(
+            card: CardDetailStatePreview.makeCard(balance: 30_000),
+            viewModel: CardDetailStatePreview.makeViewModel(
+                balance: 30_000,
+                isSweepBalanceButtonDisabled: false
+            ),
+            canSweepBalance: true
+        )
+    }
+
+    private let previewMempoolURL = URL(
+        string:
+            "https://mempool.space/tx/7d913f387d17f1ec7e2f0f4f6d7e04d89f2c3b6f1c6d5e4a3b2c1d0e9f8a7b6c"
+    )
+
+    private struct CardDetailStatePreview: View {
+        private let card: SatsCardInfo
+        private let canSweepBalance: Bool
+        @State private var viewModel: SatsCardDetailViewModel
+        @State private var showToolbarSweep = false
+        private let priceStore = PriceStore()
+
+        init(
+            card: SatsCardInfo,
+            viewModel: SatsCardDetailViewModel,
+            canSweepBalance: Bool
+        ) {
+            self.card = card
+            self.canSweepBalance = canSweepBalance
+            _viewModel = State(initialValue: viewModel)
+        }
+
+        var body: some View {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: .zero) {
+                        ActiveSlotView(
+                            slot: activeSlot,
+                            card: card,
+                            isLoading: false,
+                            viewModel: viewModel,
+                            priceStore: priceStore,
+                            isScanning: false,
+                            onRefresh: {},
+                            onSetupNextSlot: nil,
+                            onSweepBalance: {},
+                            canSweepBalance: canSweepBalance,
+                            isSweepButtonHidden: $showToolbarSweep
+                        )
+                        .padding(.horizontal)
+
+                        FooterView(updatedCard: card)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                    }
+                    .padding()
+                }
+                .coordinateSpace(name: "detailScroll")
+                .navigationTitle(card.displayName)
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+
+        private var activeSlot: SlotInfo {
+            card.slots.first(where: { $0.isActive }) ?? card.slots[0]
+        }
+
+        fileprivate static func makeCard(balance: UInt64) -> SatsCardInfo {
+            let slots = [
+                SlotInfo(
+                    slotNumber: 0,
+                    isActive: false,
+                    isUsed: true,
+                    pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388",
+                    pubkeyDescriptor:
+                        "wpkh(02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388)",
+                    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+                    balance: nil
+                ),
+                SlotInfo(
+                    slotNumber: 1,
+                    isActive: false,
+                    isUsed: true,
+                    pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c3b4",
+                    pubkeyDescriptor:
+                        "wpkh(03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c3b4)",
+                    address: "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4",
+                    balance: nil
+                ),
+                SlotInfo(
+                    slotNumber: 2,
+                    isActive: true,
+                    isUsed: true,
+                    pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351",
+                    pubkeyDescriptor:
+                        "wpkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351)",
+                    address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+                    balance: balance
+                ),
+            ]
+
+            return SatsCardInfo(
+                version: "1.0.3",
+                address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+                pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351",
+                activeSlot: 2,
+                totalSlots: 10,
+                slots: slots,
+                isActive: true
+            )
+        }
+
+        fileprivate static func makeViewModel(
+            balance: UInt64,
+            isSweepBalanceButtonDisabled: Bool,
+            sweepBalanceDisabledMessage: String? = nil,
+            sweepBalanceDisabledLinkURL: URL? = nil
+        ) -> SatsCardDetailViewModel {
+            let viewModel = SatsCardDetailViewModel()
+            viewModel.slots = makeCard(balance: balance).slots
+            viewModel.isSweepBalanceButtonDisabled = isSweepBalanceButtonDisabled
+            viewModel.sweepBalanceDisabledMessage = sweepBalanceDisabledMessage
+            viewModel.sweepBalanceDisabledLinkURL = sweepBalanceDisabledLinkURL
+            return viewModel
+        }
+    }
 #endif
 
 extension SatsCardDetailView {

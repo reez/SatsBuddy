@@ -212,6 +212,26 @@ final class ModelValueTests: XCTestCase {
         )
     }
 
+    func testSweepBalanceEnabledWhenConfirmedAndPendingFundsBothExist() {
+        XCTAssertFalse(
+            Self.makeBalance(totalSats: 30_000, confirmedSats: 15_000).sweepBalanceDisabled
+        )
+    }
+
+    func testSweepBalanceDisabledMessageExplainsPendingConfirmationState() {
+        XCTAssertEqual(
+            Self.makeBalance(totalSats: 15_000, confirmedSats: 0).sweepBalanceDisabledMessage,
+            "Pending confirmation"
+        )
+    }
+
+    func testSweepBalanceDisabledMessageIsNilWhenFundsAreSweepable() {
+        XCTAssertNil(
+            Self.makeBalance(totalSats: 15_000, confirmedSats: 15_000)
+                .sweepBalanceDisabledMessage
+        )
+    }
+
     func testSendReviewSweepDisclosureMentionsUnsealAndNextSlotForCurrentSlot() {
         let disclosure = SendReviewView.sweepDisclosure(
             for: 3,
@@ -267,7 +287,16 @@ final class ModelValueTests: XCTestCase {
                 },
                 warmUp: {},
                 getTransactionsForAddress: { _, _, _ in
-                    []
+                    [
+                        SlotTransaction(
+                            txid: "pending-txid",
+                            amount: 15_000,
+                            fee: 120,
+                            timestamp: Date(),
+                            confirmed: false,
+                            direction: .incoming
+                        )
+                    ]
                 },
                 buildPsbt: { _, _, _, _ in
                     throw TestError.expected("buildPsbt not used in this test")
@@ -284,6 +313,14 @@ final class ModelValueTests: XCTestCase {
 
         XCTAssertEqual(viewModel.slots.first?.balance, 15_000)
         XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
+        XCTAssertEqual(
+            viewModel.sweepBalanceDisabledMessage,
+            "Pending confirmation"
+        )
+        XCTAssertEqual(
+            viewModel.sweepBalanceDisabledLinkURL,
+            URL(string: "https://mempool.space/tx/pending-txid")
+        )
     }
 
     @MainActor
@@ -313,6 +350,50 @@ final class ModelValueTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertEqual(viewModel.slots.first?.balance, 21_000)
         XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
+        XCTAssertNil(viewModel.sweepBalanceDisabledMessage)
+        XCTAssertNil(viewModel.sweepBalanceDisabledLinkURL)
+    }
+
+    @MainActor
+    func testDetailViewModelKeepsSweepEnabledWhenConfirmedFundsRemainAlongsidePending() async {
+        let slot = makeSlotInfo(balance: nil)
+        let card = makeSatsCard(slots: [slot])
+        let viewModel = SatsCardDetailViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    Self.makeBalance(totalSats: 30_000, confirmedSats: 15_000)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    [
+                        SlotTransaction(
+                            txid: "pending-txid",
+                            amount: 15_000,
+                            fee: 120,
+                            timestamp: Date(),
+                            confirmed: false,
+                            direction: .incoming
+                        )
+                    ]
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        viewModel.loadSlotDetails(for: card, traceID: "TEST")
+
+        await waitUntil {
+            !viewModel.isLoading
+        }
+
+        XCTAssertEqual(viewModel.slots.first?.balance, 30_000)
+        XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
+        XCTAssertNil(viewModel.sweepBalanceDisabledMessage)
+        XCTAssertNil(viewModel.sweepBalanceDisabledLinkURL)
     }
 
     @MainActor

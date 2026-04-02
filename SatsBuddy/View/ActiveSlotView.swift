@@ -63,6 +63,25 @@ struct ActiveSlotView: View {
                 } action: { hidden in
                     isSweepButtonHidden = hidden
                 }
+
+                if let sweepBalanceDisabledMessage = viewModel.sweepBalanceDisabledMessage {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(sweepBalanceDisabledMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if let sweepBalanceDisabledLinkURL = viewModel.sweepBalanceDisabledLinkURL {
+                            Text(
+                                .init(
+                                    "[mempool.space](\(sweepBalanceDisabledLinkURL.absoluteString))"
+                                )
+                            )
+                            .font(.footnote)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             VStack(spacing: 0) {
