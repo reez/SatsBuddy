@@ -28,7 +28,7 @@ jobs:
             -project SatsBuddy.xcodeproj \
             -scheme SatsBuddy \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
+            -destination 'platform=iOS Simulator,name=iPhone 17'
 
       - name: Run Tests
         run: |
@@ -36,4 +36,4 @@ jobs:
             -project SatsBuddy.xcodeproj \
             -scheme SatsBuddy \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1'
+            -destination 'platform=iOS Simulator,name=iPhone 17'
