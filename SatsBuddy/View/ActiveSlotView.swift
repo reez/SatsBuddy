@@ -230,22 +230,13 @@ private struct ReceiveRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Receive")
                     .foregroundStyle(.secondary)
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("All slots used")
                             .foregroundStyle(.primary)
-                        Text(exhaustedMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer(minLength: 80)
-
-                    Image(systemName: "exclamationmark.circle")
-                        .foregroundStyle(.secondary)
-                        .font(.footnote)
-                        .fontWeight(.bold)
                 }
             }
             .padding(.vertical, 8)
@@ -484,7 +475,7 @@ extension ActiveSlotView {
 
     fileprivate var exhaustedReceiveMessage: String? {
         guard card.isExhausted else { return nil }
-        return "This card can no longer receive funds."
+        return ""
     }
 
     fileprivate var explorerAddress: String? {
