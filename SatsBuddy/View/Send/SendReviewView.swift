@@ -59,6 +59,7 @@ struct SendReviewView: View {
                                 Text("Amount")
                                 Spacer()
                                 Text(displayAmount)
+                                    .minimumScaleFactor(0.25)
                             }
                             .padding(.top, 8)
                             .fontWeight(.semibold)
@@ -92,6 +93,7 @@ struct SendReviewView: View {
                             }
                         }
                         .font(.footnote)
+                        .minimumScaleFactor(0.25)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
