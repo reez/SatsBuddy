@@ -60,8 +60,8 @@ struct ReceiveView: View {
                         .padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Address")
-                            .foregroundStyle(.secondary)
+                        //                        Text("Address")
+                        //                            .foregroundStyle(.secondary)
 
                         Button {
                             copyAddress()
