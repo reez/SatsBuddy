@@ -76,8 +76,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             case .preparingSweep:
                 return "Preparing sweep transaction…"
             case .readyToSignAndBroadcast:
-                return
-                    "Transaction ready. Enter your SATSCARD CVC, then tap your card to sign and broadcast."
+                return "Enter CVC, tap card to send transaction."
             case .stillPreparing:
                 return "Still preparing transaction…"
             case .enterCvc:
