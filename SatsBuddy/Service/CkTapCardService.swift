@@ -54,13 +54,8 @@ final class CkTapCardService {
             let liveStatus = await card.status()
             if Self.shouldVerifyAuthenticity(activeSlotAddress: liveStatus.addr) {
                 try await SatsCardAuthenticityVerifier.verify(card)
-            } else {
-                Log.cktap.info(
-                    "Skipping SATSCARD authenticity verification during setupNextSlot because the active slot is new/empty."
-                )
             }
-            let next = try await card.newSlot(cvc: cvc)
-            Log.cktap.info("newSlot completed -> next active slot \(next)")
+            try await card.newSlot(cvc: cvc)
             return try await readSatsCard(card)
 
         case .tapSigner(_):
@@ -81,7 +76,6 @@ final class CkTapCardService {
     ///   - For each used slot: call `dump(slot:)` to get pubkey + descriptor
     ///   - For unsealed historical slots: derive real addresses via BDK (BdkClient)
     func readCardInfo(transport: CkTransport) async throws -> SatsCardInfo {
-        Log.cktap.info("Reading card info via CKTap…")
         let cardType = try await CKTap.toCktap(transport: transport)
 
         switch cardType {
@@ -89,19 +83,13 @@ final class CkTapCardService {
             let liveStatus = await card.status()
             if Self.shouldVerifyAuthenticity(activeSlotAddress: liveStatus.addr) {
                 try await SatsCardAuthenticityVerifier.verify(card)
-            } else {
-                Log.cktap.info(
-                    "Skipping SATSCARD authenticity verification during scan because the active slot is new/empty."
-                )
             }
             return try await readSatsCard(card)
 
         case .tapSigner(_):
-            Log.cktap.info("TapSigner detected")
             throw CkTapCardError.unsupportedCard("TAPSIGNER not supported")
 
         case .satsChip(_):
-            Log.cktap.info("SatsChip detected")
             throw CkTapCardError.unsupportedCard("SATSCHIP not supported")
         }
     }
@@ -113,13 +101,6 @@ final class CkTapCardService {
 
     private func readSatsCard(_ card: CKTap.SatsCard) async throws -> SatsCardInfo {
         let status = await card.status()
-        Log.cktap.debug("status.ver -> \(status.ver, privacy: .public)")
-        Log.cktap.debug(
-            "status.pubkey -> \(status.pubkey, privacy: .private(mask: .hash))"
-        )
-        Log.cktap.debug(
-            "status slots -> active: \(status.activeSlot), total: \(status.numSlots)"
-        )
 
         // Active slot address:
         // The active slot is sealed and `dump(slot:)` will usually fail without a CVC.
@@ -127,9 +108,6 @@ final class CkTapCardService {
         var currentAddress: String?
         do {
             currentAddress = try await card.address()
-            Log.cktap.debug(
-                "card.address() -> \(currentAddress ?? "nil", privacy: .private(mask: .hash))"
-            )
         } catch {
             Log.cktap.error(
                 "card.address() failed (activeSlot=\(status.activeSlot)): \(error.localizedDescription, privacy: .private(mask: .hash))"
@@ -212,11 +190,7 @@ final class CkTapCardService {
 
     private func deriveAddress(for descriptor: String, slotNumber: UInt8) -> String? {
         do {
-            let address = try addressDeriver.deriveAddress(descriptor, network)
-            Log.cktap.debug(
-                "Derived address for slot \(slotNumber): \(address, privacy: .private(mask: .hash))"
-            )
-            return address
+            return try addressDeriver.deriveAddress(descriptor, network)
         } catch {
             Log.cktap.error(
                 "Derive address failed for slot \(slotNumber): \(error.localizedDescription, privacy: .public)"
@@ -242,10 +216,6 @@ final class CkTapCardService {
                 slotAddress = slotAddress ?? deriveAddress(for: descriptor, slotNumber: slotNumber)
             }
 
-            Log.cktap.debug(
-                "Active slot \(slotNumber) is not receive-ready; dump succeeded without CVC."
-            )
-
             return ActiveSlotSnapshot(
                 state: .activeNeedsSetup,
                 isUsed: true,
@@ -260,9 +230,6 @@ final class CkTapCardService {
                     slotDescriptor = descriptor
                     slotAddress =
                         slotAddress ?? deriveAddress(for: descriptor, slotNumber: slotNumber)
-                    Log.cktap.debug(
-                        "Active slot read descriptor=\(descriptor, privacy: .private(mask: .hash)) addr=\(slotAddress ?? "nil", privacy: .private(mask: .hash))"
-                    )
                 }
 
                 return ActiveSlotSnapshot(
@@ -274,7 +241,6 @@ final class CkTapCardService {
                 )
 
             case .SlotUnused:
-                Log.cktap.debug("Active slot \(slotNumber) is unused and needs setup.")
                 return ActiveSlotSnapshot(
                     state: .unused,
                     isUsed: false,

@@ -242,12 +242,18 @@ struct SatsCardInfo: Identifiable, Codable {
 
     var isExhausted: Bool {
         guard let activeSlot, let totalSlots else { return false }
-        return activeSlot >= totalSlots
+        if activeSlot >= totalSlots {
+            return true
+        }
+
+        // Some cards appear to leave the final consumed slot as "current" instead of
+        // advancing `activeSlot` past `totalSlots`. Treat that terminal state as exhausted.
+        return isTerminalFinalSlot
     }
 
     var displayActiveSlotNumber: Int? {
         guard let activeSlot else { return nil }
-        if let totalSlots, activeSlot >= totalSlots {
+        if isExhausted {
             return nil
         }
         return Int(activeSlot) + 1
@@ -262,5 +268,16 @@ struct SatsCardInfo: Identifiable, Codable {
 
         guard isExhausted else { return nil }
         return "\(totalSlots)/\(totalSlots)"
+    }
+
+    private var isTerminalFinalSlot: Bool {
+        guard let activeSlot, let totalSlots, totalSlots > 0 else { return false }
+        guard activeSlot == totalSlots - 1 else { return false }
+        guard let currentSlot = slots.first(where: { $0.isActive && $0.slotNumber == activeSlot })
+        else {
+            return false
+        }
+
+        return currentSlot.isUsed && currentSlot.state == .activeNeedsSetup
     }
 }
