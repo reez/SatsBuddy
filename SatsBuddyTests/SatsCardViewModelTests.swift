@@ -121,6 +121,24 @@ final class SatsCardViewModelTests: XCTestCase {
         XCTAssertEqual(recorder.savedSnapshots.first?.first?.activeSlot, 1)
     }
 
+    func testApplyCardSnapshotInsertsNewCardAtTopAndPersistsResult() {
+        let existingCard = makeSatsCard(cardIdent: "CARD-1")
+        let newCard = makeSatsCard(
+            id: UUID(uuidString: "20000000-0000-0000-0000-000000000012")!,
+            pubkey: "pubkey-2",
+            cardIdent: "CARD-2"
+        )
+        let recorder = CardsStoreRecorder(loadedCards: [existingCard])
+        let viewModel = makeViewModel(cardsStoreRecorder: recorder)
+
+        let insertedCard = viewModel.applyCardSnapshot(newCard)
+
+        XCTAssertEqual(insertedCard.cardIdentifier, newCard.cardIdentifier)
+        XCTAssertEqual(viewModel.scannedCards.map(\.cardIdentifier), ["CARD-2", "CARD-1"])
+        XCTAssertEqual(recorder.savedSnapshots.count, 1)
+        XCTAssertEqual(recorder.savedSnapshots.first?.map(\.cardIdentifier), ["CARD-2", "CARD-1"])
+    }
+
     func testValidatedRefreshCardInfoRejectsWrongCardIdentifier() {
         let viewModel = makeViewModel()
         let scannedCard = makeSatsCard(cardIdent: "CARD-1")
