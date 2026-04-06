@@ -19,6 +19,9 @@ struct SendSignView: View {
             Text("Sign and broadcast")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .allowsTightening(true)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Expected card ID")
@@ -110,7 +113,7 @@ struct SendSignView: View {
                         if viewModel.isBusy {
                             ProgressView()
                         }
-                        Text("Tap Card to Sign and Broadcast")
+                        Text("Send")
                             .bold()
                             .frame(maxWidth: .infinity)
                     }
