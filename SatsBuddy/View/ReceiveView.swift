@@ -47,7 +47,7 @@ struct ReceiveView: View {
                                     .transition(.opacity)
                             }
                         }
-                        .padding()
+                        //                        .padding()
 
                         Divider()
                             .padding(.horizontal)
@@ -70,11 +70,11 @@ struct ReceiveView: View {
                                 Text(address)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                Spacer(minLength: 80)
-                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                                    .foregroundColor(isCopied ? .green : .blue)
-                                    .font(.caption)
-                                    .symbolEffect(.bounce, value: isCopied)
+                                //                                Spacer(minLength: 80)
+                                //                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                                //                                    .foregroundColor(isCopied ? .green : .blue)
+                                //                                    .font(.caption)
+                                //                                    .symbolEffect(.bounce, value: isCopied)
                             }
                         }
                         .buttonStyle(.plain)
@@ -89,16 +89,18 @@ struct ReceiveView: View {
                         copyAddress()
                     } label: {
                         Label(
-                            isCopied ? "Copied" : "Copy address",
+                            isCopied ? "Copied" : "Copy Address",
                             systemImage: isCopied ? "checkmark" : "doc.on.doc"
                         )
+                        .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                        .padding(.vertical)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color(uiColor: .systemBackground))
                     .background(Color(uiColor: .label), in: .capsule)
                     .padding(.top, 8)
+                    .padding(.horizontal)
 
                 }
                 .padding()
