@@ -85,7 +85,11 @@ struct ActiveSlotView: View {
             }
 
             VStack(spacing: 0) {
-                ReceiveRow(displayAddress: receiveAddress, onSetupNextSlot: onSetupNextSlot)
+                ReceiveRow(
+                    displayAddress: receiveAddress,
+                    onSetupNextSlot: onSetupNextSlot,
+                    exhaustedMessage: exhaustedReceiveMessage
+                )
 
                 Divider()
 
@@ -215,25 +219,49 @@ private struct BalanceHeaderView: View {
 private struct ReceiveRow: View {
     let displayAddress: String?
     let onSetupNextSlot: (() -> Void)?
+    let exhaustedMessage: String?
 
     @State private var isPreparingReceiveSheet = false
     @State private var receiveSheetState: ReceiveSheetState?
     @State private var copied = false
 
     var body: some View {
-        if displayAddress == nil, let onSetupNextSlot {
+        if let exhaustedMessage {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Receive")
+                    .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("All slots used")
+                            .foregroundStyle(.primary)
+                        Text(exhaustedMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 80)
+
+                    Image(systemName: "exclamationmark.circle")
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                }
+            }
+            .padding(.vertical, 8)
+        } else if displayAddress == nil, let onSetupNextSlot {
             Button(action: onSetupNextSlot) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Receive")
                         .foregroundStyle(.secondary)
                     HStack(alignment: .center) {
                         Text("Activate next slot")
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
 
                         Spacer(minLength: 80)
 
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(.blue)
+                            .foregroundStyle(.blue)
                             .font(.footnote)
                             .fontWeight(.bold)
                     }
@@ -252,7 +280,7 @@ private struct ReceiveRow: View {
                         .foregroundStyle(.secondary)
                     HStack(alignment: .center) {
                         Text(displayAddress ?? "No address")
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
                             .truncationMode(.middle)
 
@@ -263,7 +291,7 @@ private struct ReceiveRow: View {
                                 .scaleEffect(0.8)
                         } else {
                             Image(systemName: "qrcode")
-                                .foregroundColor(.blue)
+                                .foregroundStyle(.blue)
                                 .font(.footnote)
                                 .fontWeight(.bold)
                         }
@@ -454,6 +482,11 @@ extension ActiveSlotView {
         return slot.receiveAddress ?? normalizedAddress(card.address)
     }
 
+    fileprivate var exhaustedReceiveMessage: String? {
+        guard card.isExhausted else { return nil }
+        return "This card can no longer receive funds."
+    }
+
     fileprivate var explorerAddress: String? {
         slot.normalizedAddress ?? normalizedAddress(card.address)
     }
@@ -463,10 +496,8 @@ extension ActiveSlotView {
     }
 
     fileprivate var slotPositionText: String {
-        if let activeSlot = card.displayActiveSlotNumber,
-            let totalSlots = card.totalSlots
-        {
-            return "\(activeSlot)/\(totalSlots)"
+        if let slotProgressText = card.displaySlotProgressText {
+            return slotProgressText
         }
 
         if let totalSlots = card.totalSlots {

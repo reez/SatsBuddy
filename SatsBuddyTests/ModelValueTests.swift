@@ -34,6 +34,7 @@ final class ModelValueTests: XCTestCase {
         let slot = makeSlotInfo(slotNumber: 4)
 
         XCTAssertEqual(card.displayActiveSlotNumber, 3)
+        XCTAssertEqual(card.displaySlotProgressText, "3/10")
         XCTAssertEqual(slot.displaySlotNumber, 5)
     }
 
@@ -175,6 +176,7 @@ final class ModelValueTests: XCTestCase {
 
         XCTAssertTrue(exhaustedCard.isExhausted)
         XCTAssertNil(exhaustedCard.displayActiveSlotNumber)
+        XCTAssertEqual(exhaustedCard.displaySlotProgressText, "10/10")
     }
 
     func testPreferredCurrencyCodeUsesSupportedLocaleCurrency() {
@@ -394,6 +396,61 @@ final class ModelValueTests: XCTestCase {
         XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
         XCTAssertNil(viewModel.sweepBalanceDisabledMessage)
         XCTAssertNil(viewModel.sweepBalanceDisabledLinkURL)
+    }
+
+    @MainActor
+    func testDetailViewModelFetchesBalanceForLastUsedSlotWhenCardIsExhausted() async {
+        let olderSlot = makeSlotInfo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000008")!,
+            slotNumber: 8,
+            isActive: false,
+            isUsed: true,
+            address: "bc1qoldslot",
+            balance: nil,
+            state: .historical
+        )
+        let finalSlot = makeSlotInfo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000009")!,
+            slotNumber: 9,
+            isActive: false,
+            isUsed: true,
+            address: "bc1qfinalslot",
+            balance: nil,
+            state: .historical
+        )
+        let card = makeSatsCard(
+            address: nil,
+            activeSlot: 10,
+            totalSlots: 10,
+            slots: [olderSlot, finalSlot]
+        )
+        let viewModel = SatsCardDetailViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { address, _ in
+                    XCTAssertEqual(address, "bc1qfinalslot")
+                    return Self.makeBalance(totalSats: 12_500, confirmedSats: 12_500)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        viewModel.loadSlotDetails(for: card, traceID: "TEST")
+
+        await waitUntil {
+            !viewModel.isLoading
+        }
+
+        XCTAssertEqual(viewModel.slots.last?.balance, 12_500)
+        XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
+        XCTAssertNil(viewModel.errorMessage)
     }
 
     @MainActor

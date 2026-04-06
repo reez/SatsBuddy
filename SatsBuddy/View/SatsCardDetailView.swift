@@ -229,6 +229,14 @@ struct SatsCardDetailView: View {
         .dynamicTypeSize(.accessibility3)
     }
 
+    #Preview("Exhausted Card") {
+        CardDetailStatePreview(
+            card: CardDetailStatePreview.makeExhaustedCard(balance: 12_500),
+            viewModel: CardDetailStatePreview.makeExhaustedViewModel(balance: 12_500),
+            canSweepBalance: true
+        )
+    }
+
     private let previewMempoolURL = URL(
         string:
             "https://mempool.space/tx/7d913f387d17f1ec7e2f0f4f6d7e04d89f2c3b6f1c6d5e4a3b2c1d0e9f8a7b6c"
@@ -256,7 +264,7 @@ struct SatsCardDetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: .zero) {
                         ActiveSlotView(
-                            slot: activeSlot,
+                            slot: displaySlot,
                             card: card,
                             isLoading: false,
                             viewModel: viewModel,
@@ -282,8 +290,10 @@ struct SatsCardDetailView: View {
             }
         }
 
-        private var activeSlot: SlotInfo {
-            card.slots.first(where: { $0.isActive }) ?? card.slots[0]
+        private var displaySlot: SlotInfo {
+            card.slots.first(where: { $0.isActive })
+                ?? card.slots.last(where: { $0.isUsed })
+                ?? card.slots[0]
         }
 
         fileprivate static func makeCard(
@@ -348,6 +358,50 @@ struct SatsCardDetailView: View {
             viewModel.isSweepBalanceButtonDisabled = isSweepBalanceButtonDisabled
             viewModel.sweepBalanceDisabledMessage = sweepBalanceDisabledMessage
             viewModel.sweepBalanceDisabledLinkURL = sweepBalanceDisabledLinkURL
+            return viewModel
+        }
+
+        fileprivate static func makeExhaustedCard(balance: UInt64) -> SatsCardInfo {
+            let slots = [
+                SlotInfo(
+                    slotNumber: 8,
+                    isActive: false,
+                    isUsed: true,
+                    pubkey: "02previousslotpubkey",
+                    pubkeyDescriptor: "wpkh(02previousslotpubkey)",
+                    address: "bc1qpreviousslotaddress",
+                    balance: nil,
+                    state: .historical
+                ),
+                SlotInfo(
+                    slotNumber: 9,
+                    isActive: false,
+                    isUsed: true,
+                    pubkey: "02finalslotpubkey",
+                    pubkeyDescriptor: "wpkh(02finalslotpubkey)",
+                    address: "bc1qfinalslotaddress",
+                    balance: balance,
+                    state: .historical
+                ),
+            ]
+
+            return SatsCardInfo(
+                version: "1.0.3",
+                address: nil,
+                pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351",
+                cardIdent: "EXHAUSTED-CARD",
+                activeSlot: 10,
+                totalSlots: 10,
+                slots: slots,
+                isActive: true,
+                label: "Exhausted SATSCARD"
+            )
+        }
+
+        fileprivate static func makeExhaustedViewModel(balance: UInt64) -> SatsCardDetailViewModel {
+            let viewModel = SatsCardDetailViewModel()
+            viewModel.slots = makeExhaustedCard(balance: balance).slots
+            viewModel.isSweepBalanceButtonDisabled = false
             return viewModel
         }
     }
