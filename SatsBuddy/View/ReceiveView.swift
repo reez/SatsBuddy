@@ -18,6 +18,7 @@ struct ReceiveView: View {
     @State private var qrImage: UIImage?
     @State private var isGeneratingQR = false
     @State private var isQRLoading = true
+    @State private var copyResetTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -63,11 +64,7 @@ struct ReceiveView: View {
                             .foregroundStyle(.secondary)
 
                         Button {
-                            UIPasteboard.general.string = address
-                            isCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                isCopied = false
-                            }
+                            copyAddress()
                         } label: {
                             HStack {
                                 Text(address)
@@ -88,8 +85,26 @@ struct ReceiveView: View {
                     .padding(.horizontal)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                    Button {
+                        copyAddress()
+                    } label: {
+                        Label(
+                            isCopied ? "Copied" : "Copy address",
+                            systemImage: isCopied ? "checkmark" : "doc.on.doc"
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color(uiColor: .systemBackground))
+                    .background(Color(uiColor: .label), in: .capsule)
+                    .padding(.top, 8)
+
                 }
                 .padding()
+            }
+            .onDisappear {
+                copyResetTask?.cancel()
             }
             .navigationTitle("Receive")
             .navigationBarTitleDisplayMode(.inline)
@@ -105,6 +120,19 @@ struct ReceiveView: View {
             }
         }
 
+    }
+
+    private func copyAddress() {
+        UIPasteboard.general.string = address
+        isCopied = true
+
+        copyResetTask?.cancel()
+        copyResetTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+
+            guard !Task.isCancelled else { return }
+            isCopied = false
+        }
     }
 }
 
