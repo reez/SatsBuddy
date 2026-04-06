@@ -3,7 +3,7 @@ import XCTest
 @testable import SatsBuddy
 
 final class CardsStoreTests: XCTestCase {
-    func testUpsertAppendsNewCardAndReturnsFalse() {
+    func testUpsertInsertsNewCardAtTopAndReturnsFalse() {
         var cards = [makeSatsCard(cardIdent: "CARD-1")]
         let newCard = makeSatsCard(
             id: UUID(uuidString: "20000000-0000-0000-0000-000000000001")!,
@@ -15,7 +15,8 @@ final class CardsStoreTests: XCTestCase {
 
         XCTAssertFalse(didUpdate)
         XCTAssertEqual(cards.count, 2)
-        XCTAssertEqual(cards.last?.cardIdentifier, "CARD-2")
+        XCTAssertEqual(cards.first?.cardIdentifier, "CARD-2")
+        XCTAssertEqual(cards.last?.cardIdentifier, "CARD-1")
     }
 
     func testUpsertReplacesMatchingCardAndKeepsIndex() {
