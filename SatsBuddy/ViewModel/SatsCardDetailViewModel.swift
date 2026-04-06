@@ -27,13 +27,13 @@ class SatsCardDetailViewModel {
     }
 
     @MainActor
-    func loadSlotDetails(for card: SatsCardInfo, traceID: String? = nil) {
-        startBalanceFetch(for: card, traceID: traceID)
+    func loadSlotDetails(for card: SatsCardInfo) {
+        startBalanceFetch(for: card)
     }
 
     @MainActor
-    func refreshBalance(for card: SatsCardInfo, traceID: String? = nil) async {
-        let task = startBalanceFetch(for: card, traceID: traceID)
+    func refreshBalance(for card: SatsCardInfo) async {
+        let task = startBalanceFetch(for: card)
         await task?.value
     }
 
@@ -66,9 +66,7 @@ class SatsCardDetailViewModel {
 
     @MainActor
     @discardableResult
-    private func startBalanceFetch(for card: SatsCardInfo, traceID: String? = nil)
-        -> Task<Void, Never>?
-    {
+    private func startBalanceFetch(for card: SatsCardInfo) -> Task<Void, Never>? {
         errorMessage = nil
         isLoading = true
         isSweepBalanceButtonDisabled = true
@@ -76,15 +74,6 @@ class SatsCardDetailViewModel {
         sweepBalanceDisabledLinkURL = nil
 
         slots = card.slots
-
-        let traceID = traceID ?? String(UUID().uuidString.prefix(6))
-        let loadStart = Date()
-        Log.cktap.info(
-            "[\(traceID)] loadSlotDetails started for card \(card.cardIdentifier, privacy: .private(mask: .hash))"
-        )
-        Log.cktap.debug(
-            "[\(traceID)] Slots copied to detail view (count: \(card.slots.count))"
-        )
 
         balanceFetchTask?.cancel()
         let fetchToken = UUID()
@@ -95,23 +84,15 @@ class SatsCardDetailViewModel {
             guard let self else { return }
             await self.fetchBalanceForDisplayedSlot(
                 card: card,
-                loadStartedAt: loadStart,
-                traceID: traceID,
                 fetchToken: fetchToken
             )
         }
         balanceFetchTask = task
-
-        Log.cktap.debug(
-            "[\(traceID)] loadSlotDetails returning on main after \(String(format: "%.3f", Date().timeIntervalSince(loadStart)))s"
-        )
         return task
     }
 
     private func fetchBalanceForDisplayedSlot(
         card: SatsCardInfo,
-        loadStartedAt: Date,
-        traceID: String,
         fetchToken: UUID
     ) async {
         let shouldStart = await MainActor.run { () -> Bool in
@@ -127,7 +108,6 @@ class SatsCardDetailViewModel {
         }
 
         guard let balanceAddress = balanceFetchAddress(for: card) else {
-            Log.cktap.debug("[\(traceID)] Missing displayable slot address; skipping balance fetch")
             await MainActor.run {
                 if self.currentFetchToken == fetchToken {
                     self.isLoading = false
@@ -139,23 +119,12 @@ class SatsCardDetailViewModel {
             return
         }
 
-        Log.cktap.debug(
-            "[\(traceID)] Fetching balance for displayed slot address \(balanceAddress, privacy: .private(mask: .hash))"
-        )
-
         do {
-            let networkStart = Date()
             let balance = try await bdkClient.getBalanceFromAddress(balanceAddress, .bitcoin)
-            let pendingConfirmationLinkURL =
-                await pendingConfirmationLinkURL(
-                    for: balanceAddress,
-                    balance: balance,
-                    traceID: traceID
-                )
-            let networkDuration = Date().timeIntervalSince(networkStart)
-            let totalDuration = Date().timeIntervalSince(loadStartedAt)
-            let networkDurationString = String(format: "%.3f", networkDuration)
-            let totalDurationString = String(format: "%.3f", totalDuration)
+            let pendingConfirmationLinkURL = await pendingConfirmationLinkURL(
+                for: balanceAddress,
+                balance: balance
+            )
 
             if Task.isCancelled { return }
             let didUpdate = await MainActor.run { () -> Bool in
@@ -184,21 +153,9 @@ class SatsCardDetailViewModel {
                 return displayedSlotIndex != nil
             }
 
-            guard didUpdate else {
-                Log.cktap.debug("[\(traceID)] Displayed slot missing after network fetch")
-                return
-            }
-
-            Log.cktap.debug(
-                "[\(traceID)] Balance fetched successfully: \(balance.total.toSat(), privacy: .private) sats (network: \(networkDurationString)s, total: \(totalDurationString)s)"
-            )
+            guard didUpdate else { return }
         } catch {
-            let totalDuration = Date().timeIntervalSince(loadStartedAt)
-            let totalDurationString = String(format: "%.3f", totalDuration)
-
-            Log.cktap.error(
-                "[\(traceID)] Balance fetch failed: \(error.localizedDescription, privacy: .public)"
-            )
+            Log.cktap.error("Balance fetch failed: \(error.localizedDescription, privacy: .public)")
             if Task.isCancelled { return }
             await MainActor.run {
                 guard self.currentFetchToken == fetchToken else { return }
@@ -208,9 +165,6 @@ class SatsCardDetailViewModel {
                 self.sweepBalanceDisabledMessage = nil
                 self.sweepBalanceDisabledLinkURL = nil
             }
-            Log.cktap.error(
-                "[\(traceID)] Total time before failure: \(totalDurationString)s"
-            )
         }
     }
 
@@ -261,8 +215,7 @@ class SatsCardDetailViewModel {
 
     private func pendingConfirmationLinkURL(
         for address: String,
-        balance: Balance,
-        traceID: String
+        balance: Balance
     ) async -> URL? {
         guard balance.sweepBalanceDisabledMessage != nil else { return nil }
 
@@ -277,7 +230,7 @@ class SatsCardDetailViewModel {
             return URL(string: "https://mempool.space/tx/\(txid)")
         } catch {
             Log.cktap.error(
-                "[\(traceID)] Failed to fetch pending transaction link: \(error.localizedDescription, privacy: .public)"
+                "Failed to fetch pending transaction link: \(error.localizedDescription, privacy: .public)"
             )
             return nil
         }

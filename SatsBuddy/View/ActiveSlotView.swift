@@ -226,7 +226,7 @@ private struct ReceiveRow: View {
     @State private var copied = false
 
     var body: some View {
-        if let exhaustedMessage {
+        if exhaustedMessage != nil {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Receive")
                     .foregroundStyle(.secondary)

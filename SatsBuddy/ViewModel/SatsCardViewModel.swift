@@ -606,10 +606,6 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
 
         if Self.shouldVerifyAuthenticityDuringSetup(activeSlotAddress: liveStatus.addr) {
             try await SatsCardAuthenticityVerifier.verify(satsCard)
-        } else {
-            Log.cktap.info(
-                "Skipping SATSCARD authenticity verification during setupNextSlot because the active slot is new/empty for card \(target.cardIdentifier, privacy: .private(mask: .hash))"
-            )
         }
 
         if let cooldownSeconds = Self.cooldownSeconds(from: liveStatus.authDelay) {
@@ -621,9 +617,8 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
             alertMessage: "Activating slot…"
         )
 
-        let nextSlot: UInt8
         do {
-            nextSlot = try await satsCard.newSlot(cvc: cvc)
+            try await satsCard.newSlot(cvc: cvc)
         } catch {
             let postAttemptStatus = await satsCard.status()
             throw setupNextSlotError(
@@ -633,8 +628,6 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                 totalSlots: postAttemptStatus.numSlots
             )
         }
-
-        Log.cktap.info("newSlot completed -> next active slot \(nextSlot)")
 
         await updateStatus(
             "Refreshing card details…",

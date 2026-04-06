@@ -15,7 +15,6 @@ struct SatsCardDetailView: View {
     @Bindable var cardViewModel: SatsCardViewModel
     let priceStore: PriceStore
     @Environment(\.dismiss) private var dismiss
-    @State private var traceID = String(UUID().uuidString.prefix(6))
     @State private var labelText: String = ""
     @State private var isRenaming = false
     @State private var isShowingSend = false
@@ -56,10 +55,7 @@ struct SatsCardDetailView: View {
             .padding()
         }
         .refreshable {
-            await viewModel.refreshBalance(
-                for: updatedCard,
-                traceID: String(UUID().uuidString.prefix(6))
-            )
+            await viewModel.refreshBalance(for: updatedCard)
         }
         .coordinateSpace(name: "detailScroll")
         .navigationTitle(updatedCard.displayName)
@@ -73,7 +69,7 @@ struct SatsCardDetailView: View {
                         completionResult.refreshedCardInfo.map {
                             cardViewModel.applyCardSnapshot($0)
                         } ?? updatedCard
-                    await viewModel.refreshBalance(for: cardForReload, traceID: traceID)
+                    await viewModel.refreshBalance(for: cardForReload)
                     viewModel.applyPostBroadcastWarning(completionResult.warningMessage)
                 }
             )
@@ -111,15 +107,11 @@ struct SatsCardDetailView: View {
             Button("Cancel", role: .cancel) {}
         }
         .task(id: loadTaskID, priority: .userInitiated) {
-            Log.ui.info(
-                "[\(traceID)] Detail task triggered for card \(updatedCard.cardIdentifier, privacy: .private(mask: .hash))"
-            )
             let identifier = updatedCard.cardIdentifier
             await MainActor.run {
                 cardViewModel.detailLoadingCardIdentifier = identifier
-                viewModel.loadSlotDetails(for: updatedCard, traceID: traceID)
+                viewModel.loadSlotDetails(for: updatedCard)
             }
-            Log.ui.info("[\(traceID)] Detail task completed loadSlotDetails")
         }
         .sheet(isPresented: $isRenaming, onDismiss: { prepareLabelForEditing() }) {
             RenameCardSheet(

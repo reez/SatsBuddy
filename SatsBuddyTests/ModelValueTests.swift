@@ -179,6 +179,50 @@ final class ModelValueTests: XCTestCase {
         XCTAssertEqual(exhaustedCard.displaySlotProgressText, "10/10")
     }
 
+    func testFinalUsedActiveSlotIsTreatedAsExhausted() {
+        let finalSlot = makeSlotInfo(
+            slotNumber: 9,
+            isActive: true,
+            isUsed: true,
+            address: nil,
+            balance: nil,
+            state: .activeNeedsSetup
+        )
+        let card = makeSatsCard(
+            address: nil,
+            activeSlot: 9,
+            totalSlots: 10,
+            slots: [finalSlot]
+        )
+
+        XCTAssertTrue(card.isExhausted)
+        XCTAssertNil(card.displayActiveSlotNumber)
+        XCTAssertEqual(card.displaySlotProgressText, "10/10")
+    }
+
+    func testFinalUnusedActiveSlotIsNotTreatedAsExhausted() {
+        let finalSlot = makeSlotInfo(
+            slotNumber: 9,
+            isActive: true,
+            isUsed: false,
+            pubkey: nil,
+            pubkeyDescriptor: nil,
+            address: nil,
+            balance: nil,
+            state: .unused
+        )
+        let card = makeSatsCard(
+            address: nil,
+            activeSlot: 9,
+            totalSlots: 10,
+            slots: [finalSlot]
+        )
+
+        XCTAssertFalse(card.isExhausted)
+        XCTAssertEqual(card.displayActiveSlotNumber, 10)
+        XCTAssertEqual(card.displaySlotProgressText, "10/10")
+    }
+
     func testPreferredCurrencyCodeUsesSupportedLocaleCurrency() {
         let price = currentPriceMock
 
@@ -307,7 +351,7 @@ final class ModelValueTests: XCTestCase {
             )
         )
 
-        viewModel.loadSlotDetails(for: card, traceID: "TEST")
+        viewModel.loadSlotDetails(for: card)
 
         await waitUntil {
             !viewModel.isLoading
@@ -347,7 +391,7 @@ final class ModelValueTests: XCTestCase {
             )
         )
 
-        await viewModel.refreshBalance(for: card, traceID: "TEST")
+        await viewModel.refreshBalance(for: card)
 
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertEqual(viewModel.slots.first?.balance, 21_000)
@@ -386,7 +430,7 @@ final class ModelValueTests: XCTestCase {
             )
         )
 
-        viewModel.loadSlotDetails(for: card, traceID: "TEST")
+        viewModel.loadSlotDetails(for: card)
 
         await waitUntil {
             !viewModel.isLoading
@@ -442,7 +486,7 @@ final class ModelValueTests: XCTestCase {
             )
         )
 
-        viewModel.loadSlotDetails(for: card, traceID: "TEST")
+        viewModel.loadSlotDetails(for: card)
 
         await waitUntil {
             !viewModel.isLoading
