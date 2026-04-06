@@ -210,6 +210,25 @@ struct SatsCardDetailView: View {
         )
     }
 
+    #Preview("Accessibility 3") {
+        CardDetailStatePreview(
+            card: CardDetailStatePreview.makeCard(
+                balance: 15_000,
+                cardIdent: "DEMO-CARD-12345-67890-LONG",
+                label: "Primary travel SATSCARD with a long preview name"
+            ),
+            viewModel: CardDetailStatePreview.makeViewModel(
+                balance: 15_000,
+                isSweepBalanceButtonDisabled: true,
+                sweepBalanceDisabledMessage:
+                    "Pending confirmation while the last sweep finalizes on-chain.",
+                sweepBalanceDisabledLinkURL: previewMempoolURL
+            ),
+            canSweepBalance: false
+        )
+        .dynamicTypeSize(.accessibility3)
+    }
+
     private let previewMempoolURL = URL(
         string:
             "https://mempool.space/tx/7d913f387d17f1ec7e2f0f4f6d7e04d89f2c3b6f1c6d5e4a3b2c1d0e9f8a7b6c"
@@ -267,7 +286,11 @@ struct SatsCardDetailView: View {
             card.slots.first(where: { $0.isActive }) ?? card.slots[0]
         }
 
-        fileprivate static func makeCard(balance: UInt64) -> SatsCardInfo {
+        fileprivate static func makeCard(
+            balance: UInt64,
+            cardIdent: String? = nil,
+            label: String? = nil
+        ) -> SatsCardInfo {
             let slots = [
                 SlotInfo(
                     slotNumber: 0,
@@ -305,10 +328,12 @@ struct SatsCardDetailView: View {
                 version: "1.0.3",
                 address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
                 pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351",
+                cardIdent: cardIdent,
                 activeSlot: 2,
                 totalSlots: 10,
                 slots: slots,
-                isActive: true
+                isActive: true,
+                label: label
             )
         }
 

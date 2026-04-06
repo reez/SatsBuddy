@@ -166,3 +166,18 @@ extension SendReviewView {
         onContinue: {}
     )
 }
+
+#Preview("Accessibility 3") {
+    SendReviewView(
+        address:
+            "tb1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+        amount: "ALL",
+        sweptBalance: 1_250_000,
+        slotDisplayNumber: 10,
+        requiresUnsealBeforeSweep: true,
+        activatesNextSlotAfterSweep: true,
+        fee: 17,
+        onContinue: {}
+    )
+    .dynamicTypeSize(.accessibility3)
+}

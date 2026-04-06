@@ -220,4 +220,14 @@ extension SendFeeView {
             onNext: { _ in }
         )
     }
+
+    #Preview("Accessibility 3") {
+        SendFeeView(
+            viewModel: .init(feeClient: .failingMock),
+            address: "tb1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+            amount: "1250000",
+            onNext: { _ in }
+        )
+        .dynamicTypeSize(.accessibility3)
+    }
 #endif

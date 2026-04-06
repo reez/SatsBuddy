@@ -111,3 +111,11 @@ struct ReceiveView: View {
 #Preview {
     ReceiveView(address: "", isCopied: .constant(false))
 }
+
+#Preview("Accessibility 3") {
+    ReceiveView(
+        address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+        isCopied: .constant(false)
+    )
+    .dynamicTypeSize(.accessibility3)
+}
