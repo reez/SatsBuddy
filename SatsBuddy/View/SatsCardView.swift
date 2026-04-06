@@ -47,8 +47,8 @@ struct SatsCardView: View {
                         .fontWeight(.medium)
                 }
 
-                if let activeSlot = card.displayActiveSlotNumber, let totalSlots = card.totalSlots {
-                    Text("Slot \(activeSlot)/\(totalSlots)")
+                if let slotProgressText = card.displaySlotProgressText {
+                    Text("Slot \(slotProgressText)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -92,6 +92,42 @@ struct SatsCardView: View {
             card: sampleCard,
             onRemove: {
             },
+            cardViewModel: SatsCardViewModel(
+                ckTapService: .mock,
+                cardsStore: .mock
+            ),
+            isDetailLoading: false
+        )
+        .padding()
+    }
+
+    #Preview("Exhausted Card") {
+        let finalSlot = SlotInfo(
+            slotNumber: 9,
+            isActive: false,
+            isUsed: true,
+            pubkey: "02finalslotpubkey",
+            pubkeyDescriptor: "wpkh(02finalslotpubkey)",
+            address: "bc1qfinalslotaddress",
+            balance: 0,
+            state: .historical
+        )
+
+        let exhaustedCard = SatsCardInfo(
+            version: "1.0.3",
+            birth: 1,
+            address: nil,
+            pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9388",
+            cardIdent: "EXHAUSTED-CARD",
+            activeSlot: 10,
+            totalSlots: 10,
+            slots: [finalSlot],
+            isActive: true
+        )
+
+        SatsCardView(
+            card: exhaustedCard,
+            onRemove: {},
             cardViewModel: SatsCardViewModel(
                 ckTapService: .mock,
                 cardsStore: .mock

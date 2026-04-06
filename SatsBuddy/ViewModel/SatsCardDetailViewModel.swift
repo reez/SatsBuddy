@@ -93,7 +93,7 @@ class SatsCardDetailViewModel {
         // Kick off balance fetching on a background task so navigation isn't blocked.
         let task = Task(priority: .userInitiated) { [weak self] in
             guard let self else { return }
-            await self.fetchBalanceForActiveSlot(
+            await self.fetchBalanceForDisplayedSlot(
                 card: card,
                 loadStartedAt: loadStart,
                 traceID: traceID,
@@ -108,7 +108,7 @@ class SatsCardDetailViewModel {
         return task
     }
 
-    private func fetchBalanceForActiveSlot(
+    private func fetchBalanceForDisplayedSlot(
         card: SatsCardInfo,
         loadStartedAt: Date,
         traceID: String,
@@ -126,8 +126,8 @@ class SatsCardDetailViewModel {
             }
         }
 
-        guard let activeSlotAddress = activeSlotAddress(for: card) else {
-            Log.cktap.debug("[\(traceID)] Missing active slot address; skipping balance fetch")
+        guard let balanceAddress = balanceFetchAddress(for: card) else {
+            Log.cktap.debug("[\(traceID)] Missing displayable slot address; skipping balance fetch")
             await MainActor.run {
                 if self.currentFetchToken == fetchToken {
                     self.isLoading = false
@@ -140,15 +140,15 @@ class SatsCardDetailViewModel {
         }
 
         Log.cktap.debug(
-            "[\(traceID)] Fetching balance for active slot address \(activeSlotAddress, privacy: .private(mask: .hash))"
+            "[\(traceID)] Fetching balance for displayed slot address \(balanceAddress, privacy: .private(mask: .hash))"
         )
 
         do {
             let networkStart = Date()
-            let balance = try await bdkClient.getBalanceFromAddress(activeSlotAddress, .bitcoin)
+            let balance = try await bdkClient.getBalanceFromAddress(balanceAddress, .bitcoin)
             let pendingConfirmationLinkURL =
                 await pendingConfirmationLinkURL(
-                    for: activeSlotAddress,
+                    for: balanceAddress,
                     balance: balance,
                     traceID: traceID
                 )
@@ -159,25 +159,33 @@ class SatsCardDetailViewModel {
 
             if Task.isCancelled { return }
             let didUpdate = await MainActor.run { () -> Bool in
-                guard
-                    self.currentFetchToken == fetchToken,
-                    let activeSlotIndex = self.slots.firstIndex(where: { $0.isActive })
-                else {
+                guard self.currentFetchToken == fetchToken else {
                     self.isLoading = false
                     self.isSweepBalanceButtonDisabled = true
                     return false
                 }
 
-                self.slots[activeSlotIndex].balance = balance.total.toSat()
+                let displayedSlotIndex =
+                    if let displayedSlotNumber = self.displayedSlot(for: card)?.slotNumber {
+                        self.slots.firstIndex(where: { $0.slotNumber == displayedSlotNumber })
+                    } else if card.isExhausted {
+                        self.slots.lastIndex(where: { $0.isUsed })
+                    } else {
+                        self.slots.firstIndex(where: { $0.isActive })
+                    }
+
+                if let displayedSlotIndex {
+                    self.slots[displayedSlotIndex].balance = balance.total.toSat()
+                }
                 self.isLoading = false
                 self.isSweepBalanceButtonDisabled = balance.sweepBalanceDisabled
                 self.sweepBalanceDisabledMessage = balance.sweepBalanceDisabledMessage
                 self.sweepBalanceDisabledLinkURL = pendingConfirmationLinkURL
-                return true
+                return displayedSlotIndex != nil
             }
 
             guard didUpdate else {
-                Log.cktap.debug("[\(traceID)] Active slot missing after network fetch")
+                Log.cktap.debug("[\(traceID)] Displayed slot missing after network fetch")
                 return
             }
 
@@ -225,8 +233,8 @@ class SatsCardDetailViewModel {
         }
     }
 
-    private func activeSlotAddress(for card: SatsCardInfo) -> String? {
-        if let slotAddress = card.slots.first(where: { $0.isActive })?.address?
+    private func balanceFetchAddress(for card: SatsCardInfo) -> String? {
+        if let slotAddress = displayedSlot(for: card)?.address?
             .trimmingCharacters(in: .whitespacesAndNewlines),
             !slotAddress.isEmpty
         {
@@ -240,6 +248,15 @@ class SatsCardDetailViewModel {
         }
 
         return nil
+    }
+
+    private func displayedSlot(for card: SatsCardInfo) -> SlotInfo? {
+        if let activeSlot = card.slots.first(where: { $0.isActive }) {
+            return activeSlot
+        }
+
+        guard card.isExhausted else { return nil }
+        return card.slots.last(where: { $0.isUsed })
     }
 
     private func pendingConfirmationLinkURL(

@@ -252,4 +252,15 @@ struct SatsCardInfo: Identifiable, Codable {
         }
         return Int(activeSlot) + 1
     }
+
+    var displaySlotProgressText: String? {
+        guard let totalSlots, totalSlots > 0 else { return nil }
+
+        if let displayActiveSlotNumber {
+            return "\(displayActiveSlotNumber)/\(totalSlots)"
+        }
+
+        guard isExhausted else { return nil }
+        return "\(totalSlots)/\(totalSlots)"
+    }
 }
