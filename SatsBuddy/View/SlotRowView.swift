@@ -132,6 +132,23 @@ extension SlotRowView {
     .padding()
 }
 
+#Preview("Accessibility 3", traits: .sizeThatFitsLayout) {
+    SlotRowView(
+        slot: .init(
+            slotNumber: UInt8(1),
+            isActive: true,
+            isUsed: true,
+            pubkey: "03389ffce9cd9ae88dcc0631e88a821ffdbe9bfe26018eb2b4ad5b5db35ca9a5c",
+            pubkeyDescriptor: nil,
+            address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+            balance: 21_000
+        ),
+        priceStore: PriceStore()
+    )
+    .padding()
+    .dynamicTypeSize(.accessibility3)
+}
+
 extension SlotRowView where Footer == EmptyView {
     init(slot: SlotInfo, priceStore: PriceStore) {
         self.init(slot: slot, priceStore: priceStore) { EmptyView() }

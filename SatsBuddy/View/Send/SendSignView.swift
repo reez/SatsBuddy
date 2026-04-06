@@ -165,3 +165,25 @@ struct SendSignView: View {
         onDone: { _ in }
     )
 }
+
+#Preview("Accessibility 3") {
+    SendSignView(
+        viewModel: SendSignViewModel(
+            address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+            feeRate: 10,
+            slot: SlotInfo(
+                slotNumber: 0,
+                isActive: true,
+                isUsed: true,
+                pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f",
+                pubkeyDescriptor: nil,
+                address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+                balance: 10_000
+            ),
+            expectedCardIdentifier: "DEMO-CARD-12345-67890-LONG",
+            network: .bitcoin
+        ),
+        onDone: { _ in }
+    )
+    .dynamicTypeSize(.accessibility3)
+}
