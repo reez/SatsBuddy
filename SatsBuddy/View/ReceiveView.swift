@@ -89,8 +89,8 @@ struct ReceiveView: View {
                         copyAddress()
                     } label: {
                         Label(
-                            isCopied ? "Copied" : "Copy Address",
-                            systemImage: isCopied ? "checkmark" : "doc.on.doc"
+                            isCopied ? "Copied Address" : "Copy Address",
+                            systemImage: isCopied ? "doc.on.doc.fill" : "doc.on.doc"
                         )
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
@@ -130,7 +130,7 @@ struct ReceiveView: View {
 
         copyResetTask?.cancel()
         copyResetTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(1))
+            try? await Task.sleep(for: .milliseconds(500))
 
             guard !Task.isCancelled else { return }
             isCopied = false
