@@ -88,10 +88,12 @@ struct ReceiveView: View {
                     Button {
                         copyAddress()
                     } label: {
-                        Label(
-                            isCopied ? "Copied Address" : "Copy Address",
-                            systemImage: isCopied ? "doc.on.doc.fill" : "doc.on.doc"
-                        )
+                        HStack(spacing: 8) {
+                            Image(systemName: isCopied ? "doc.on.doc.fill" : "doc.on.doc")
+                                .contentTransition(.symbolEffect(.replace))
+
+                            Text("Copy Address")
+                        }
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical)
@@ -126,14 +128,18 @@ struct ReceiveView: View {
 
     private func copyAddress() {
         UIPasteboard.general.string = address
-        isCopied = true
+        withAnimation(.snappy(duration: 0.2, extraBounce: 0)) {
+            isCopied = true
+        }
 
         copyResetTask?.cancel()
         copyResetTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(500))
 
             guard !Task.isCancelled else { return }
-            isCopied = false
+            withAnimation(.snappy(duration: 0.2, extraBounce: 0)) {
+                isCopied = false
+            }
         }
     }
 }
