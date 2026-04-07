@@ -18,6 +18,7 @@ struct ReceiveView: View {
     @State private var qrImage: UIImage?
     @State private var isGeneratingQR = false
     @State private var isQRLoading = true
+    @State private var copyResetTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -46,7 +47,7 @@ struct ReceiveView: View {
                                     .transition(.opacity)
                             }
                         }
-                        .padding()
+                        //                        .padding()
 
                         Divider()
                             .padding(.horizontal)
@@ -59,25 +60,21 @@ struct ReceiveView: View {
                         .padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Address")
-                            .foregroundStyle(.secondary)
+                        //                        Text("Address")
+                        //                            .foregroundStyle(.secondary)
 
                         Button {
-                            UIPasteboard.general.string = address
-                            isCopied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                isCopied = false
-                            }
+                            copyAddress()
                         } label: {
                             HStack {
                                 Text(address)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                                Spacer(minLength: 80)
-                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
-                                    .foregroundColor(isCopied ? .green : .blue)
-                                    .font(.caption)
-                                    .symbolEffect(.bounce, value: isCopied)
+                                //                                Spacer(minLength: 80)
+                                //                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                                //                                    .foregroundColor(isCopied ? .green : .blue)
+                                //                                    .font(.caption)
+                                //                                    .symbolEffect(.bounce, value: isCopied)
                             }
                         }
                         .buttonStyle(.plain)
@@ -88,8 +85,30 @@ struct ReceiveView: View {
                     .padding(.horizontal)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                    Button {
+                        copyAddress()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: isCopied ? "doc.on.doc.fill" : "doc.on.doc")
+                                .contentTransition(.symbolEffect(.replace))
+
+                            Text("Copy Address")
+                        }
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color(uiColor: .systemBackground))
+                    .background(Color(uiColor: .label), in: .capsule)
+                    .padding(.top, 8)
+                    .padding(.horizontal)
+
                 }
                 .padding()
+            }
+            .onDisappear {
+                copyResetTask?.cancel()
             }
             .navigationTitle("Receive")
             .navigationBarTitleDisplayMode(.inline)
@@ -106,10 +125,30 @@ struct ReceiveView: View {
         }
 
     }
+
+    private func copyAddress() {
+        UIPasteboard.general.string = address
+        withAnimation(.snappy(duration: 0.2, extraBounce: 0)) {
+            isCopied = true
+        }
+
+        copyResetTask?.cancel()
+        copyResetTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+
+            guard !Task.isCancelled else { return }
+            withAnimation(.snappy(duration: 0.2, extraBounce: 0)) {
+                isCopied = false
+            }
+        }
+    }
 }
 
 #Preview {
-    ReceiveView(address: "", isCopied: .constant(false))
+    ReceiveView(
+        address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
+        isCopied: .constant(false)
+    )
 }
 
 #Preview("Accessibility 3") {
