@@ -87,22 +87,18 @@ class SatsCardDetailViewModel {
                 card: card,
                 fetchToken: fetchToken
             )
-            
-            await self.fetchBalanceForUnseleadSlot()
+
+            await self.updateUnseleadBalance()
         }
         balanceFetchTask = task
         return task
     }
     
-    private func fetchBalanceForUnseleadSlot() async {
-        guard slots.count > .zero else { return }
-
-        unseleadBalance = .zero
-        for i in 0..<slots.count {
-            if let address = slots[i].address, slots[i].state == .historical {
-                await getBalance(for: address, network: .bitcoin)
-                unseleadBalance += slots[i].balance ?? .zero
-            }
+    @MainActor
+    private func updateUnseleadBalance() {
+        unseleadBalance = slots.reduce(into: UInt64.zero) { total, slot in
+            guard slot.state == .historical else { return }
+            total += slot.balance ?? .zero
         }
     }
     
