@@ -23,6 +23,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     enum State {
         case idle
         case preparingPsbt
+        case syncingWallet
         case ready
         case tapping
         case unsealed
@@ -49,6 +50,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
     private enum StatusPhase {
         case preparingSweep
+        case syncingWallet
         case readyToSignAndBroadcast
         case stillPreparing
         case enterCvc
@@ -75,6 +77,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
             switch self {
             case .preparingSweep:
                 return "Preparing sweep transaction…"
+            case .syncingWallet:
+                return "Syncing wallet with the network…"
             case .readyToSignAndBroadcast:
                 return "Enter CVC, tap card to send transaction."
             case .stillPreparing:
@@ -170,7 +174,7 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     var state: State = .idle
     var isBusy: Bool {
         switch state {
-        case .preparingPsbt, .tapping:
+        case .preparingPsbt, .syncingWallet, .tapping:
             return true
         default:
             return false
@@ -251,6 +255,9 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
                 return
             }
 
+            state = .syncingWallet
+            setStatusMessage(.syncingWallet)
+
             let preparedPsbt = try await bdkClient.buildPsbt(
                 sourceDescriptor,
                 address,
@@ -275,6 +282,8 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
         guard case .ready = state else {
             if case .preparingPsbt = state {
                 setStatusMessage(.stillPreparing)
+            } else if case .syncingWallet = state {
+                setStatusMessage(.syncingWallet)
             }
             return
         }
