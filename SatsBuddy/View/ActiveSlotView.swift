@@ -22,6 +22,7 @@ struct ActiveSlotView: View {
     @Binding var isSweepButtonHidden: Bool
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
+    @State private var showSlotsSheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -34,9 +35,7 @@ struct ActiveSlotView: View {
                 balanceFormat: $balanceFormat,
                 errorMessage: viewModel.errorMessage,
                 priceStore: priceStore,
-                onTapUnseleadedBalance: {
-                    
-                }
+                onTapUnseleadedBalance: { showSlotsSheet = true }
             )
 
             if let onSweepBalance {
@@ -124,6 +123,17 @@ struct ActiveSlotView: View {
             .animation(.smooth, value: isLoading)
 
             Spacer()
+        }
+        .navigationDestination(isPresented: $showSlotsSheet) {
+            SlotsRowListView(
+                totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
+                slots: viewModel.slots,
+                card: card,
+                viewModel: viewModel,
+                priceStore: priceStore
+            )
+            .navigationTitle("All Slots")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
