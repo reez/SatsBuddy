@@ -18,6 +18,7 @@ class SatsCardDetailViewModel {
     var isSweepBalanceButtonDisabled = true
     var sweepBalanceDisabledMessage: String?
     var sweepBalanceDisabledLinkURL: URL?
+    var unseleadBalance: UInt64 = .zero
     private let bdkClient: BdkClient
     private var currentFetchToken: UUID?
     private var balanceFetchTask: Task<Void, Never>?
@@ -86,11 +87,25 @@ class SatsCardDetailViewModel {
                 card: card,
                 fetchToken: fetchToken
             )
+            
+            await self.fetchBalanceForUnseleadSlot()
         }
         balanceFetchTask = task
         return task
     }
+    
+    private func fetchBalanceForUnseleadSlot() async {
+        guard slots.count > .zero else { return }
 
+        unseleadBalance = .zero
+        for i in 0..<slots.count {
+            if let address = slots[i].address, slots[i].state == .historical {
+                await getBalance(for: address, network: .bitcoin)
+                unseleadBalance += slots[i].balance ?? .zero
+            }
+        }
+    }
+    
     private func fetchBalanceForDisplayedSlot(
         card: SatsCardInfo,
         fetchToken: UUID
