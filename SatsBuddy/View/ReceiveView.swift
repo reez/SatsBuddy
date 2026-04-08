@@ -97,8 +97,10 @@ struct ReceiveView: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical)
+                        .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
+                    .sensoryFeedback(.success, trigger: isCopied) { _, newValue in newValue }
                     .foregroundStyle(Color(uiColor: .systemBackground))
                     .background(Color(uiColor: .label), in: .capsule)
                     .padding(.top, 8)
