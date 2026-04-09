@@ -498,6 +498,55 @@ final class ModelValueTests: XCTestCase {
     }
 
     @MainActor
+    func testDetailViewModelNormalizesTerminalFinalSlotBeforeFetchingBalance() async {
+        let finalSlot = makeSlotInfo(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000010")!,
+            slotNumber: 9,
+            isActive: true,
+            isUsed: true,
+            address: "bc1qfinalslot",
+            balance: nil,
+            state: .activeNeedsSetup
+        )
+        let card = makeSatsCard(
+            address: nil,
+            activeSlot: 9,
+            totalSlots: 10,
+            slots: [finalSlot]
+        )
+        let viewModel = SatsCardDetailViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { address, _ in
+                    XCTAssertEqual(address, "bc1qfinalslot")
+                    return Self.makeBalance(totalSats: 28_206, confirmedSats: 28_206)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        viewModel.loadSlotDetails(for: card)
+
+        await waitUntil {
+            !viewModel.isLoading
+        }
+
+        XCTAssertEqual(viewModel.slots.count, 1)
+        XCTAssertFalse(viewModel.slots[0].isActive)
+        XCTAssertEqual(viewModel.slots[0].state, .historical)
+        XCTAssertEqual(viewModel.slots[0].balance, 28_206)
+        XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+
+    @MainActor
     func testDetailViewModelApplyPostBroadcastWarningShowsWarningWhenNoOtherErrorExists() {
         let viewModel = SatsCardDetailViewModel()
 
