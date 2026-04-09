@@ -73,7 +73,7 @@ class SatsCardDetailViewModel {
         sweepBalanceDisabledMessage = nil
         sweepBalanceDisabledLinkURL = nil
 
-        slots = card.slots
+        slots = card.displaySlots
 
         balanceFetchTask?.cancel()
         let fetchToken = UUID()
@@ -205,12 +205,12 @@ class SatsCardDetailViewModel {
     }
 
     private func displayedSlot(for card: SatsCardInfo) -> SlotInfo? {
-        if let activeSlot = card.slots.first(where: { $0.isActive }) {
+        if let activeSlot = card.displaySlots.first(where: { $0.isActive }) {
             return activeSlot
         }
 
         guard card.isExhausted else { return nil }
-        return card.slots.last(where: { $0.isUsed })
+        return card.displaySlots.last(where: { $0.isUsed })
     }
 
     private func pendingConfirmationLinkURL(

@@ -248,7 +248,27 @@ struct SatsCardInfo: Identifiable, Codable {
 
         // Some cards appear to leave the final consumed slot as "current" instead of
         // advancing `activeSlot` past `totalSlots`. Treat that terminal state as exhausted.
-        return isTerminalFinalSlot
+        return exhaustedTerminalSlotNumber != nil
+    }
+
+    var displaySlots: [SlotInfo] {
+        guard let exhaustedTerminalSlotNumber else { return slots }
+
+        return slots.map { slot in
+            guard slot.slotNumber == exhaustedTerminalSlotNumber else { return slot }
+
+            return SlotInfo(
+                id: slot.id,
+                slotNumber: slot.slotNumber,
+                isActive: false,
+                isUsed: true,
+                pubkey: slot.pubkey,
+                pubkeyDescriptor: slot.pubkeyDescriptor,
+                address: slot.address,
+                balance: slot.balance,
+                state: .historical
+            )
+        }
     }
 
     var displayActiveSlotNumber: Int? {
@@ -270,14 +290,15 @@ struct SatsCardInfo: Identifiable, Codable {
         return "\(totalSlots)/\(totalSlots)"
     }
 
-    private var isTerminalFinalSlot: Bool {
-        guard let activeSlot, let totalSlots, totalSlots > 0 else { return false }
-        guard activeSlot == totalSlots - 1 else { return false }
+    private var exhaustedTerminalSlotNumber: UInt8? {
+        guard let activeSlot, let totalSlots, totalSlots > 0 else { return nil }
+        guard activeSlot == totalSlots - 1 else { return nil }
         guard let currentSlot = slots.first(where: { $0.isActive && $0.slotNumber == activeSlot })
         else {
-            return false
+            return nil
         }
 
-        return currentSlot.isUsed && currentSlot.state == .activeNeedsSetup
+        guard currentSlot.isUsed && currentSlot.state == .activeNeedsSetup else { return nil }
+        return currentSlot.slotNumber
     }
 }
