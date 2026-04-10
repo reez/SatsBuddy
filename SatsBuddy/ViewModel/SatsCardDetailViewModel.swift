@@ -95,10 +95,15 @@ class SatsCardDetailViewModel {
     }
     
     @MainActor
-    private func updateUnseleadBalance() {
-        unseleadBalance = slots.reduce(into: UInt64.zero) { total, slot in
-            guard slot.state == .historical else { return }
-            total += slot.balance ?? .zero
+    private func updateUnseleadBalance() async {
+        guard slots.count > .zero else { return }
+
+        unseleadBalance = .zero
+        for i in 0..<slots.count {
+            if let address = slots[i].address, slots[i].state == .historical {
+                await getBalance(for: address, network: .bitcoin)
+                unseleadBalance += slots[i].balance ?? .zero
+            }
         }
     }
     

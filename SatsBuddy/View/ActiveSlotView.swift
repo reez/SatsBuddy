@@ -237,7 +237,7 @@ private struct BalanceHeaderView: View {
     private func buildUnseleadBalance() -> some View {
         HStack(spacing: 8) {
             if unseleadBalance > .zero {
-                Text("⚠️ Unselead Balance:")
+                Text("⚠️ Unsealed Balance:")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 buildBalance(unseleadBalance, id: "format-\(balanceFormat)-unselead", font: .caption)
