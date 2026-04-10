@@ -407,7 +407,7 @@ extension SatsCardDetailView {
     private var exhaustedSlot: SlotInfo? {
         guard updatedCard.isExhausted else { return nil }
         return viewModel.slots.last(where: { $0.isUsed })
-            ?? updatedCard.slots.last(where: { $0.isUsed })
+            ?? updatedCard.displaySlots.last(where: { $0.isUsed })
     }
 
     private var slotForDisplay: SlotInfo {

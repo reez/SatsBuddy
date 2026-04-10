@@ -31,11 +31,14 @@ struct SlotHistoryView: View {
         card: SatsCardInfo,
         priceStore: PriceStore
     ) {
-        self.slot = slot
+        let displaySlot =
+            card.displaySlots.first(where: { $0.slotNumber == slot.slotNumber }) ?? slot
+
+        self.slot = displaySlot
         self.network = network
         self.card = card
         self.priceStore = priceStore
-        _slotDetails = State(initialValue: slot)
+        _slotDetails = State(initialValue: displaySlot)
         _viewModel = State(initialValue: viewModel)
     }
 
@@ -109,7 +112,7 @@ struct SlotHistoryView: View {
         }
         .navigationDestination(isPresented: $isShowingSend) {
             SendFlowView(
-                slot: slot,
+                slot: slotDetails,
                 card: card,
                 onBroadcastSuccess: { _ in
                     isRefreshingBalanceAfterBroadcast = true
