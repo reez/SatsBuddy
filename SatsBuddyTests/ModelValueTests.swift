@@ -472,8 +472,15 @@ final class ModelValueTests: XCTestCase {
             bdkClient: BdkClient(
                 deriveAddress: { descriptor, _ in descriptor },
                 getBalanceFromAddress: { address, _ in
-                    XCTAssertEqual(address, "bc1qfinalslot")
-                    return Self.makeBalance(totalSats: 12_500, confirmedSats: 12_500)
+                    switch address {
+                    case "bc1qfinalslot":
+                        return Self.makeBalance(totalSats: 12_500, confirmedSats: 12_500)
+                    case "bc1qoldslot":
+                        return Self.makeBalance(totalSats: 0, confirmedSats: 0)
+                    default:
+                        XCTFail("Unexpected address: \(address)")
+                        return Self.makeBalance(totalSats: 0, confirmedSats: 0)
+                    }
                 },
                 warmUp: {},
                 getTransactionsForAddress: { _, _, _ in
@@ -489,7 +496,7 @@ final class ModelValueTests: XCTestCase {
         viewModel.loadSlotDetails(for: card)
 
         await waitUntil {
-            !viewModel.isLoading
+            viewModel.slots.last?.balance != nil
         }
 
         XCTAssertEqual(viewModel.slots.last?.balance, 12_500)
