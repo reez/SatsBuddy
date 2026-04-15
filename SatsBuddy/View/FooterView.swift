@@ -26,7 +26,7 @@ struct FooterView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("SATSCARD • Version \(updatedCard.version) • Made in ".uppercased())
                 + Text("Canada".uppercased()).foregroundColor(.red)
-            Text("SATSBUDDY • Version \(appVersion) alpha 1 • Made in ".uppercased())
+            Text("SATSBUDDY • Version \(appVersion) alpha 2 • Made in ".uppercased())
                 + Text("Nashville".uppercased()).foregroundColor(.blue)
         }
         .foregroundStyle(.secondary)
