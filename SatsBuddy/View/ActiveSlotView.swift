@@ -236,7 +236,7 @@ private struct ReceiveRow: View {
                             .foregroundStyle(.primary)
                     }
 
-                    Spacer(minLength: 80)
+                    Spacer(minLength: 12)
                 }
             }
             .padding(.vertical, 8)
@@ -249,7 +249,7 @@ private struct ReceiveRow: View {
                         Text("Activate next slot")
                             .foregroundStyle(.primary)
 
-                        Spacer(minLength: 80)
+                        Spacer(minLength: 12)
 
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .foregroundStyle(.blue)
@@ -269,13 +269,13 @@ private struct ReceiveRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Receive")
                         .foregroundStyle(.secondary)
-                    HStack(alignment: .center) {
+                    HStack(alignment: .top) {
                         Text(displayAddress ?? "No address")
                             .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
 
-                        Spacer(minLength: 80)
+                        Spacer(minLength: 12)
 
                         if isPreparingReceiveSheet {
                             ProgressView()
@@ -319,12 +319,12 @@ private struct CardIdRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Card ID")
                     .foregroundStyle(.secondary)
-                HStack(alignment: .center) {
+                HStack(alignment: .top) {
                     Text(cardIdentifier)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
 
-                    Spacer(minLength: 80)
+                    Spacer(minLength: 12)
 
                     Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
                         .font(.footnote)
@@ -364,7 +364,7 @@ private struct ExplorerRow: View {
                             .foregroundColor(.primary)
                     }
 
-                    Spacer(minLength: 80)
+                    Spacer(minLength: 12)
 
                     Image(systemName: "arrow.up.right")
                         .font(.footnote)
@@ -406,7 +406,7 @@ private struct SlotNavigationRow: View {
                     Text(slotPositionText)
                         .foregroundColor(.primary)
                 }
-                Spacer(minLength: 80)
+                Spacer(minLength: 12)
                 Image(systemName: "chevron.right")
                     .font(.footnote)
                     .fontWeight(.semibold)
@@ -438,7 +438,7 @@ private struct RefreshRow: View {
                     Text(refreshTimestampText)
                         .foregroundColor(.primary)
 
-                    Spacer(minLength: 80)
+                    Spacer(minLength: 12)
 
                     if isScanning {
                         ProgressView()
