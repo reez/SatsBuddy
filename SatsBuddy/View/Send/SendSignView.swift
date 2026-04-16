@@ -25,20 +25,32 @@ struct SendSignView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Expected card ID")
-                    .font(.headline)
+                    //                    .font(.headline)
+                    .foregroundStyle(.secondary)
 
                 Text(viewModel.expectedCardIdentifier)
                     .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
+                    //                    .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Destination: \(viewModel.address)")
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Text("Fee rate: \(viewModel.feeRate) sat/vB")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Destination")
+                        .foregroundStyle(.secondary)
+                    Text(viewModel.address)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Fee rate")
+                        .foregroundStyle(.secondary)
+                    Text("\(viewModel.feeRate) sat/vB")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -162,7 +174,7 @@ struct SendSignView: View {
                 address: "bc1qexample",
                 balance: 10_000
             ),
-            expectedCardIdentifier: "DEMO-CARD",
+            expectedCardIdentifier: "DEMO-CARD-12345-67890",
             network: .bitcoin
         ),
         onDone: { _ in }
