@@ -272,10 +272,10 @@ private struct ReceiveRow: View {
                     HStack(alignment: .top) {
                         Text(displayAddress ?? "No address")
                             .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .layoutPriority(1)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
 
-                        Spacer(minLength: 12)
+                        Spacer(minLength: 80)
 
                         if isPreparingReceiveSheet {
                             ProgressView()
@@ -321,10 +321,10 @@ private struct CardIdRow: View {
                     .foregroundStyle(.secondary)
                 HStack(alignment: .top) {
                     Text(cardIdentifier)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(1)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
 
-                    Spacer(minLength: 12)
+                    Spacer(minLength: 80)
 
                     Image(systemName: isCardIdCopied ? "checkmark" : "doc.on.doc")
                         .font(.footnote)
