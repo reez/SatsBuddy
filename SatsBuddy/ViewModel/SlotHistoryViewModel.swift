@@ -88,7 +88,7 @@ final class SlotHistoryViewModel {
                 }
             } catch {
                 Log.cktap.error(
-                    "[\(traceID)] Failed to fetch balance: \(error.localizedDescription, privacy: .public)"
+                    "[\(traceID)] Failed to fetch balance: \(error.localizedDescription, privacy: .private(mask: .hash))"
                 )
                 await MainActor.run {
                     guard self.currentTaskID == taskID else { return }
@@ -113,7 +113,7 @@ final class SlotHistoryViewModel {
             guard didSetError else { return }
 
             Log.cktap.error(
-                "[\(traceID)] Failed to fetch transactions: \(error.localizedDescription, privacy: .public)"
+                "[\(traceID)] Failed to fetch transactions: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
 
             do {
@@ -128,7 +128,7 @@ final class SlotHistoryViewModel {
                 }
             } catch {
                 Log.cktap.error(
-                    "[\(traceID)] Failed to fetch balance after transaction error: \(error.localizedDescription, privacy: .public)"
+                    "[\(traceID)] Failed to fetch balance after transaction error: \(error.localizedDescription, privacy: .private(mask: .hash))"
                 )
                 await MainActor.run {
                     guard self.currentTaskID == taskID else { return }

@@ -155,7 +155,9 @@ class SatsCardDetailViewModel {
 
             guard didUpdate else { return }
         } catch {
-            Log.cktap.error("Balance fetch failed: \(error.localizedDescription, privacy: .public)")
+            Log.cktap.error(
+                "Balance fetch failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
+            )
             if Task.isCancelled { return }
             await MainActor.run {
                 guard self.currentFetchToken == fetchToken else { return }
@@ -182,7 +184,7 @@ class SatsCardDetailViewModel {
             }
         } catch {
             Log.cktap.error(
-                "getBalance failed: \(error.localizedDescription, privacy: .public)"
+                "getBalance failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
         }
     }
@@ -230,7 +232,7 @@ class SatsCardDetailViewModel {
             return URL(string: "https://mempool.space/tx/\(txid)")
         } catch {
             Log.cktap.error(
-                "Failed to fetch pending transaction link: \(error.localizedDescription, privacy: .public)"
+                "Failed to fetch pending transaction link: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
             return nil
         }
