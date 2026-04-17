@@ -239,7 +239,7 @@ private struct BdkService {
 
         if shouldRevealNextAddress {
             let addressInfo = wallet.revealNextAddress(keychain: .external)
-            Log.cktap.info("Revealed address: \(addressInfo.address)")
+            Log.cktap.info("Revealed next address")
         }
 
         return wallet
