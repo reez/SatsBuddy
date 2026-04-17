@@ -291,7 +291,7 @@ final class ModelValueTests: XCTestCase {
         )
         XCTAssertEqual(
             SendReviewView.nextSlotSetupDisclosure,
-            "If another slot is available, SatsBuddy will activate it automatically so the card is ready to receive again."
+            "If another slot is available, SATSBUDDY will activate it automatically so the card is ready to receive again."
         )
     }
 
