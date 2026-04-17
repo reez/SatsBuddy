@@ -103,7 +103,7 @@ class SatsCardViewModel: NSObject, NFCTagReaderSessionDelegate {
                     "Connection to the SATSCARD was interrupted. Keep the card steady and try again."
             case .slotAdvancedRefreshRequired:
                 return
-                    "Next slot was activated, but SatsBuddy could not refresh the card details. Refresh the card before trying again."
+                    "Next slot was activated, but SATSBUDDY could not refresh the card details. Refresh the card before trying again."
             case .raw(let message):
                 return message
             }

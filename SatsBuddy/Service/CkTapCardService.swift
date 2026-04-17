@@ -193,7 +193,7 @@ final class CkTapCardService {
             return try addressDeriver.deriveAddress(descriptor, network)
         } catch {
             Log.cktap.error(
-                "Derive address failed for slot \(slotNumber): \(error.localizedDescription, privacy: .public)"
+                "Derive address failed for slot \(slotNumber): \(error.localizedDescription, privacy: .private(mask: .hash))"
             )
             return nil
         }
