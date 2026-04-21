@@ -104,7 +104,10 @@ final class SlotHistoryViewModel {
         } catch {
             let didSetError = await MainActor.run { () -> Bool in
                 guard self.currentTaskID == taskID else { return false }
-                self.errorMessage = "Unable to load transactions."
+                self.errorMessage = NetworkRequestFailureMessage.message(
+                    for: error,
+                    context: .transactions
+                )
                 self.canRetryCurrentError = true
                 self.isSweepBalanceButtonDisabled = true
                 return true

@@ -779,6 +779,13 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
     }
 
     private func friendlyError(for error: Error) -> String {
+        if NetworkRequestFailureMessage.shouldUseNetworkBackedMessage(for: error) {
+            return NetworkRequestFailureMessage.message(
+                for: error,
+                context: .sweepPreparation
+            )
+        }
+
         if let createError = error as? BitcoinDevKit.CreateTxError {
             switch createError {
             case .CoinSelection(let message):
@@ -865,9 +872,22 @@ final class SendSignViewModel: NSObject, @MainActor NFCTagReaderSessionDelegate 
 
     private func handleTerminalFailure(_ error: Error) {
         clearCvcIfNeeded(for: error)
-        let message = userFacingMessage(for: error, includeRetryInstruction: false)
+        let usesNetworkBackedMessage = NetworkRequestFailureMessage.shouldUseNetworkBackedMessage(
+            for: error
+        )
+        let message =
+            if usesNetworkBackedMessage {
+                NetworkRequestFailureMessage.message(
+                    for: error,
+                    context: .transactionBroadcast
+                )
+            } else {
+                userFacingMessage(for: error, includeRetryInstruction: false)
+            }
         let alertMessage: String
-        if let authenticityError = error as? SatsCardAuthenticityError {
+        if usesNetworkBackedMessage {
+            alertMessage = "Network unavailable."
+        } else if let authenticityError = error as? SatsCardAuthenticityError {
             alertMessage = authenticityError.alertMessage
         } else if let cktapError = cktapError(from: error) {
             switch cktapError {
