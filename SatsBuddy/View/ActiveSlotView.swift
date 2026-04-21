@@ -133,6 +133,10 @@ private struct BalanceHeaderView: View {
     let errorMessage: String?
     let priceStore: PriceStore
     private var price: Price? { priceStore.price }
+    private var priceUnavailableMessage: String? {
+        guard balanceFormat == .fiat else { return nil }
+        return priceStore.errorMessage
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -203,6 +207,15 @@ private struct BalanceHeaderView: View {
                 Text(errorMessage)
                     .font(.footnote)
                     .foregroundStyle(.red)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+            }
+
+            if let priceUnavailableMessage {
+                Text(priceUnavailableMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
