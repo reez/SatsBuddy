@@ -161,7 +161,10 @@ class SatsCardDetailViewModel {
             if Task.isCancelled { return }
             await MainActor.run {
                 guard self.currentFetchToken == fetchToken else { return }
-                self.errorMessage = "Failed to fetch balance: \(error.localizedDescription)"
+                self.errorMessage = NetworkRequestFailureMessage.message(
+                    for: error,
+                    context: .balance
+                )
                 self.isLoading = false
                 self.isSweepBalanceButtonDisabled = true
                 self.sweepBalanceDisabledMessage = nil

@@ -29,6 +29,10 @@ struct SlotRowView<Footer: View>: View {
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
     @State private var isAddressCopied: Bool = false
     private var price: Price? { priceStore.price }
+    private var priceUnavailableMessage: String? {
+        guard balanceFormat == .fiat else { return nil }
+        return priceStore.errorMessage
+    }
 
     init(slot: SlotInfo, priceStore: PriceStore, @ViewBuilder footer: () -> Footer) {
         self.slot = slot
@@ -41,6 +45,13 @@ struct SlotRowView<Footer: View>: View {
 
             if slot.isActive || slot.balance != nil, let balance = slot.balance {
                 balanceRow(balance: balance)
+
+                if let priceUnavailableMessage {
+                    Text(priceUnavailableMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             if slot.isUsed, let address = slot.address, !address.isEmpty {

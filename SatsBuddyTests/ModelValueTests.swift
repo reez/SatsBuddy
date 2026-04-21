@@ -401,6 +401,43 @@ final class ModelValueTests: XCTestCase {
     }
 
     @MainActor
+    func testDetailViewModelShowsOfflineMessageWhenBalanceFetchFailsWithoutConnectivity() async {
+        let slot = makeSlotInfo(balance: 12_345)
+        let card = makeSatsCard(slots: [slot])
+        let viewModel = SatsCardDetailViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    throw URLError(.notConnectedToInternet)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    []
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        viewModel.loadSlotDetails(for: card)
+
+        await waitUntil {
+            !viewModel.isLoading
+        }
+
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            "Live balance unavailable while offline. Connect and pull to refresh."
+        )
+        XCTAssertEqual(viewModel.slots.first?.balance, 12_345)
+        XCTAssertTrue(viewModel.isSweepBalanceButtonDisabled)
+        XCTAssertNil(viewModel.sweepBalanceDisabledMessage)
+        XCTAssertNil(viewModel.sweepBalanceDisabledLinkURL)
+    }
+
+    @MainActor
     func testDetailViewModelKeepsSweepEnabledWhenConfirmedFundsRemainAlongsidePending() async {
         let slot = makeSlotInfo(balance: nil)
         let card = makeSatsCard(slots: [slot])

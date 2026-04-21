@@ -33,8 +33,14 @@ final class PriceStore {
                 Log.cktap.error(
                     "PriceStore.refreshPrice failed: \(error.localizedDescription, privacy: .public)"
                 )
+                let errorMessage = await MainActor.run {
+                    NetworkRequestFailureMessage.message(
+                        for: error,
+                        context: .price(hasCachedPrice: self.price != nil)
+                    )
+                }
                 await MainActor.run {
-                    self.errorMessage = error.localizedDescription
+                    self.errorMessage = errorMessage
                 }
             }
         }

@@ -38,8 +38,34 @@ final class PriceStoreTests: XCTestCase {
         store.refreshPrice()
 
         await waitUntil {
-            store.errorMessage == "Price fetch failed"
+            store.errorMessage == "Live BTC price unavailable right now."
         }
         XCTAssertNil(store.price)
+    }
+
+    func testRefreshPriceFailureWithCachedPriceExplainsFallback() async {
+        let expectedPrice = Price(
+            time: 1_734_000_002,
+            usd: 96_000,
+            eur: 89_000,
+            gbp: 76_000,
+            cad: 129_000,
+            chf: 85_000,
+            aud: 137_000,
+            jpy: 14_300_000
+        )
+        let store = PriceStore(
+            priceClient: PriceClient(fetchPrice: {
+                throw URLError(.notConnectedToInternet)
+            })
+        )
+        store.price = expectedPrice
+
+        store.refreshPrice()
+
+        await waitUntil {
+            store.errorMessage == "Live BTC price unavailable. Using the last loaded price."
+        }
+        XCTAssertEqual(store.price, expectedPrice)
     }
 }

@@ -158,7 +158,42 @@ final class SlotHistoryViewModelTests: XCTestCase {
 
         await viewModel.loadHistory(for: slot)
 
-        XCTAssertEqual(viewModel.errorMessage, "Unable to load transactions.")
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            "Transaction history unavailable right now. Try again."
+        )
+        XCTAssertEqual(viewModel.transactions, [])
+        XCTAssertEqual(viewModel.slotBalance, 21_000)
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertTrue(viewModel.canRetryCurrentError)
+        XCTAssertFalse(viewModel.isSweepBalanceButtonDisabled)
+    }
+
+    func testLoadHistoryShowsOfflineMessageWhenTransactionsFailWithoutConnectivity() async {
+        let slot = makeSlotInfo(address: "bc1qoffline", balance: 321)
+        let viewModel = SlotHistoryViewModel(
+            bdkClient: BdkClient(
+                deriveAddress: { descriptor, _ in descriptor },
+                getBalanceFromAddress: { _, _ in
+                    Self.makeBalance(totalSats: 21_000, confirmedSats: 21_000)
+                },
+                warmUp: {},
+                getTransactionsForAddress: { _, _, _ in
+                    throw URLError(.notConnectedToInternet)
+                },
+                buildPsbt: { _, _, _, _ in
+                    throw TestError.expected("buildPsbt not used in this test")
+                },
+                broadcast: { _, _ in }
+            )
+        )
+
+        await viewModel.loadHistory(for: slot)
+
+        XCTAssertEqual(
+            viewModel.errorMessage,
+            "Transaction history unavailable while offline. Connect and try again."
+        )
         XCTAssertEqual(viewModel.transactions, [])
         XCTAssertEqual(viewModel.slotBalance, 21_000)
         XCTAssertFalse(viewModel.isLoading)
