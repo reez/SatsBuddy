@@ -22,6 +22,7 @@ struct ActiveSlotView: View {
     @Binding var isSweepButtonHidden: Bool
 
     @AppStorage("balanceDisplayFormat") private var balanceFormat: BalanceDisplayFormat = .bip177
+    @State private var showSlotsSheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -30,9 +31,11 @@ struct ActiveSlotView: View {
             BalanceHeaderView(
                 slot: slot,
                 isLoading: isLoading,
+                unseleadBalance: viewModel.unseleadBalance,
                 balanceFormat: $balanceFormat,
                 errorMessage: viewModel.errorMessage,
-                priceStore: priceStore
+                priceStore: priceStore,
+                onTapUnseleadedBalance: { showSlotsSheet = true }
             )
 
             if let onSweepBalance {
@@ -121,6 +124,17 @@ struct ActiveSlotView: View {
 
             Spacer()
         }
+        .navigationDestination(isPresented: $showSlotsSheet) {
+            SlotsRowListView(
+                totalSlots: card.totalSlots ?? UInt8(clamping: viewModel.slots.count),
+                slots: viewModel.slots,
+                card: card,
+                viewModel: viewModel,
+                priceStore: priceStore
+            )
+            .navigationTitle("All Slots")
+            .navigationBarTitleDisplayMode(.inline)
+        }
     }
 }
 
@@ -129,76 +143,36 @@ struct ActiveSlotView: View {
 private struct BalanceHeaderView: View {
     let slot: SlotInfo
     let isLoading: Bool
+    let unseleadBalance: UInt64
     @Binding var balanceFormat: BalanceDisplayFormat
     let errorMessage: String?
     let priceStore: PriceStore
     private var price: Price? { priceStore.price }
+    let onTapUnseleadedBalance: () -> Void
 
     var body: some View {
         VStack(spacing: 16) {
-            HStack(spacing: 15) {
-                if balanceFormat.showsBitcoinSymbol {
-                    Image(systemName: "bitcoinsign")
-                        .foregroundStyle(.secondary)
-                        .font(.title)
-                        .fontWeight(.thin)
-                } else if balanceFormat == .fiat {
-                    let symbol = balanceFormat.displayPrefix(price: price)
-                    if !symbol.isEmpty {
-                        Text(symbol)
-                            .foregroundStyle(.secondary)
-                            .font(.title)
-                            .fontWeight(.thin)
+            buildBalance(slot.balance, id: "format-\(balanceFormat)")
+                .font(.largeTitle)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .fontWeight(.bold)
+                .fontDesign(.rounded)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .animation(.smooth, value: slot.balance)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        let formats = BalanceDisplayFormat.allCases
+                        balanceFormat = formats[(balanceFormat.index + 1) % formats.count]
                     }
                 }
-
-                Text(formattedBalance)
-                    .contentTransition(.numericText(countsDown: true))
-                    .opacity(slot.balance == nil ? 0.3 : 1)
-                    .animation(
-                        .spring(response: 0.4, dampingFraction: 0.8),
-                        value: balanceFormat
-                    )
-
-                Text(balanceFormat.displayText(price: price))
-                    .foregroundStyle(.secondary)
-                    .font(.title)
-                    .fontWeight(.thin)
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        )
-                    )
-                    .id("format-\(balanceFormat)")
-                    .animation(
-                        .spring(response: 0.3, dampingFraction: 0.7),
-                        value: balanceFormat
-                    )
-
-                if isLoading {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 20, height: 20)
-                        .opacity(isLoading ? 1 : 0)
-                        .accessibilityHidden(!isLoading)
-                }
+                .sensoryFeedback(.selection, trigger: balanceFormat)
+            
+            Button(action: onTapUnseleadedBalance) {
+                buildUnseleadBalance()
             }
-            .font(.largeTitle)
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .fontWeight(.bold)
-            .fontDesign(.rounded)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(.smooth, value: slot.balance)
-            .onTapGesture {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    let formats = BalanceDisplayFormat.allCases
-                    balanceFormat = formats[(balanceFormat.index + 1) % formats.count]
-                }
-            }
-            .sensoryFeedback(.selection, trigger: balanceFormat)
-
+            .foregroundStyle(.primary)
+            
             if let errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
@@ -209,9 +183,75 @@ private struct BalanceHeaderView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    private func buildBalance(
+        _ balance: UInt64?,
+        id: String,
+        font: Font = .title
+    ) -> some View {
+        HStack(spacing: 8) {
+            if balanceFormat.showsBitcoinSymbol {
+                Image(systemName: "bitcoinsign")
+                    .foregroundStyle(.secondary)
+                    .font(font)
+                    .fontWeight(.thin)
+            } else if balanceFormat == .fiat {
+                let symbol = balanceFormat.displayPrefix(price: price)
+                if !symbol.isEmpty {
+                    Text(symbol)
+                        .foregroundStyle(.secondary)
+                        .font(font)
+                        .fontWeight(.thin)
+                }
+            }
 
-    private var formattedBalance: String {
-        let amount = slot.balance ?? 0
+            Text(formattedBalance(balance))
+                .font(font)
+                .contentTransition(.numericText(countsDown: true))
+                .opacity(balance == nil ? 0.3 : 1)
+                .animation(
+                    .spring(response: 0.4, dampingFraction: 0.8),
+                    value: balanceFormat
+                )
+
+            Text(balanceFormat.displayText(price: price))
+                .foregroundStyle(.secondary)
+                .font(font)
+                .fontWeight(.thin)
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    )
+                )
+                .id(id)
+                .animation(
+                    .spring(response: 0.3, dampingFraction: 0.7),
+                    value: balanceFormat
+                )
+        }
+    }
+    
+    @ViewBuilder
+    private func buildUnseleadBalance() -> some View {
+        HStack(spacing: 8) {
+            if unseleadBalance > .zero {
+                Text("⚠️ Unsealed Balance:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                buildBalance(unseleadBalance, id: "format-\(balanceFormat)-unselead", font: .caption)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                Spacer()
+            }
+        }
+    }
+
+    private func formattedBalance(_ balance: UInt64?) -> String {
+        let amount = balance ?? 0
         return balanceFormat.formatted(amount, price: price)
     }
 }
