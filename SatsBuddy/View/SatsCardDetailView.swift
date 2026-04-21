@@ -169,7 +169,10 @@ struct SatsCardDetailView: View {
 #if DEBUG
     #Preview {
         CardDetailStatePreview(
-            card: CardDetailStatePreview.makeCard(balance: 21_000),
+            card: CardDetailStatePreview.makeCard(
+                balance: 21_021,
+                label: "Christmas Card"
+            ),
             viewModel: CardDetailStatePreview.makeViewModel(
                 balance: 21_000,
                 isSweepBalanceButtonDisabled: false
@@ -321,7 +324,7 @@ struct SatsCardDetailView: View {
                     pubkey: "02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351",
                     pubkeyDescriptor:
                         "wpkh(02e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1351)",
-                    address: "bc1qrp33g013ahg3pq0ny9kxwj42yl4xpr3xz4fzqc",
+                    address: "bc1qjxhwqzqt4snc3x3wg3gfnk4ftvrrarack8876t",
                     balance: balance
                 ),
             ]
