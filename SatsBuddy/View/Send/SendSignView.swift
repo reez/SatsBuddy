@@ -16,7 +16,7 @@ struct SendSignView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Text("Sign and broadcast")
+            Text("Sign and Broadcast")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .lineLimit(1)
@@ -25,20 +25,32 @@ struct SendSignView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Expected card ID")
-                    .font(.headline)
+                    //                    .font(.headline)
+                    .foregroundStyle(.secondary)
 
                 Text(viewModel.expectedCardIdentifier)
                     .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
+                    //                    .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Destination: \(viewModel.address)")
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Text("Fee rate: \(viewModel.feeRate) sat/vB")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Destination")
+                        .foregroundStyle(.secondary)
+                    Text(viewModel.address)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Fee rate")
+                        .foregroundStyle(.secondary)
+                    Text("\(viewModel.feeRate) sat/vB")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -130,7 +142,7 @@ struct SendSignView: View {
             }
         }
         .padding()
-        .navigationTitle("Sign")
+        .navigationTitle("Sweep")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.runPreflightIfNeeded()
@@ -151,7 +163,7 @@ struct SendSignView: View {
 #Preview {
     SendSignView(
         viewModel: SendSignViewModel(
-            address: "bc1qexample",
+            address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
             feeRate: 10,
             slot: SlotInfo(
                 slotNumber: 0,
@@ -159,10 +171,10 @@ struct SendSignView: View {
                 isUsed: true,
                 pubkey: "02f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f",
                 pubkeyDescriptor: nil,
-                address: "bc1qexample",
+                address: "bc1pxg0lakl0x4jee73f38m334qsma7mn2yv764x9an5ylht6tx8ccdsxtktrt",
                 balance: 10_000
             ),
-            expectedCardIdentifier: "DEMO-CARD",
+            expectedCardIdentifier: "DEMO-CARD-12345-67890",
             network: .bitcoin
         ),
         onDone: { _ in }

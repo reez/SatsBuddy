@@ -291,7 +291,7 @@ final class ModelValueTests: XCTestCase {
         )
         XCTAssertEqual(
             SendReviewView.nextSlotSetupDisclosure,
-            "If another slot is available, SatsBuddy will activate it automatically so the card is ready to receive again."
+            "If another slot is available, SATSBUDDY will activate it automatically so the card is ready to receive again."
         )
     }
 
@@ -561,13 +561,13 @@ final class ModelValueTests: XCTestCase {
         viewModel.errorMessage = "Failed to fetch balance: timeout"
 
         viewModel.applyPostBroadcastWarning(
-            "Next slot was activated, but SatsBuddy could not refresh the card details. Refresh the card before trying again."
+            "Next slot was activated, but SATSBUDDY could not refresh the card details. Refresh the card before trying again."
         )
 
         XCTAssertEqual(
             viewModel.errorMessage,
             """
-            Next slot was activated, but SatsBuddy could not refresh the card details. Refresh the card before trying again.
+            Next slot was activated, but SATSBUDDY could not refresh the card details. Refresh the card before trying again.
             Failed to fetch balance: timeout
             """
         )

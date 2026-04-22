@@ -35,34 +35,43 @@ struct SendReviewView: View {
                             .fontWeight(.semibold)
 
                         VStack(spacing: 0) {
-                            HStack {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text("Destination")
-                                Spacer()
+                                    .foregroundStyle(.secondary)
                                 Text(address)
+                                    //                                    .fixedSize(horizontal: false, vertical: true)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.bottom, 8)
 
                             Divider().background(Color(uiColor: .systemGray6))
 
-                            HStack {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text("Fee rate")
-                                Spacer()
+                                    .foregroundStyle(.secondary)
                                 Text("\(fee) sat/vB")
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
 
                             Divider().background(Color(uiColor: .systemGray6))
 
-                            HStack {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text("Amount")
-                                Spacer()
-                                Text(displayAmount)
-                                    .minimumScaleFactor(0.25)
+                                    .foregroundStyle(.secondary)
+                                Text(amount)
+                                    //                                    .minimumScaleFactor(0.5)
+                                    .fontWeight(.semibold)
+                                if let sweptBalance {
+                                    Text("\(sweptBalance.formatted(.number)) sats")
+                                        .minimumScaleFactor(0.75)
+                                        .fontWeight(.semibold)
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.top, 8)
-                            .fontWeight(.semibold)
                         }
                         .padding()
                         .background(
@@ -128,7 +137,7 @@ struct SendReviewView: View {
 
 extension SendReviewView {
     static let nextSlotSetupDisclosure =
-        "If another slot is available, SatsBuddy will activate it automatically so the card is ready to receive again."
+        "If another slot is available, SATSBUDDY will activate it automatically so the card is ready to receive again."
 
     static func sweepDisclosure(
         for slotDisplayNumber: Int,
@@ -147,11 +156,6 @@ extension SendReviewView {
 
         return
             "Continuing will permanently unseal Slot \(slotDisplayNumber) and move this SATSCARD to the next slot."
-    }
-
-    fileprivate var displayAmount: String {
-        guard let sweptBalance else { return amount }
-        return "\(amount) (\(sweptBalance.formatted(.number)) sats)"
     }
 }
 
