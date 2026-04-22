@@ -55,3 +55,33 @@ targets:
       - package: KeychainAccess
       - package: BitcoinUI
       - package: CodeScanner
+
+  SatsBuddyTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SatsBuddyTests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.reez.SatsBuddyTests
+    dependencies:
+      - target: SatsBuddy
+
+schemes:
+  SatsBuddy:
+    build:
+      targets:
+        SatsBuddy: all
+        SatsBuddyTests: [test]
+    test:
+      targets:
+        - SatsBuddyTests
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
