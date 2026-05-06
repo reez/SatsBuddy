@@ -1,0 +1,14 @@
+// Release.xcconfig
+
+#include "Base.xcconfig"
+
+// Debug Info
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+MTL_ENABLE_DEBUG_INFO = NO
+
+// Optimization
+SWIFT_COMPILATION_MODE = wholemodule
+
+// Validation
+VALIDATE_PRODUCT = YES
+ENABLE_NS_ASSERTIONS = NO
